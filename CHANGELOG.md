@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial project setup and structure
 
+## [0.1.11] - 2025-01-16
+
+### Fixed
+- Enhanced F5 BIG-IP detection logic for volt-adc and F5 Edge Services
+- Improved header pattern matching for case-insensitive detection
+- Added more extensive F5 signature patterns for better detection
+- Improved fallback analysis with more comprehensive detection logic
+- Added better detection of numeric cookie patterns characteristic of F5
+- Enhanced detection for sites with specific server headers like "volt-adc"
+- Fixed issues in full-scan mode when detecting L7 protection services
+
 ## [0.1.10] - 2025-01-16
 
 ### Fixed

@@ -86,19 +86,28 @@ class L7Detector:
         error = None
 
         # First, check if this is a known problematic domain with large headers
-        # Extended list of known problematic domains and patterns
-        problematic_domains = [
-            "ntu.edu.sg", "example.com", "harvard.edu", "mit.edu", "stanford.edu",
-            "princeton.edu", "berkeley.edu", "yale.edu", "columbia.edu", "cornell.edu",
-            ".gic.com.sg", ".nus.edu.sg", ".smu.edu.sg", "cloudflare.com"
+        # Use TLD and pattern-based detection instead of explicit domain lists
+        # Common TLDs and patterns that often have large headers
+        problematic_tlds = [
+            ".edu", ".edu.sg", ".ac.jp", ".ac.uk", ".ac.nz", ".com.sg", 
+            ".gov", ".gov.sg", ".org.sg", ".net.sg"
         ]
         
-        # Common TLDs that often have large headers
-        problematic_tlds = [".edu", ".edu.sg", ".ac.jp", ".ac.uk", ".ac.nz"]
+        # Educational and government domains often have large headers
+        educational_patterns = ["univ", "college", "school", "academy", "institute"]
+        corporate_patterns = ["corp", "inc", "cloud", "cdn", "hosting", "tech"]
         
-        # Check both explicit domains and TLD patterns
-        is_problematic = any(domain in host.lower() for domain in problematic_domains) or \
-                        any(host.lower().endswith(tld) for tld in problematic_tlds)
+        # Check for TLD patterns
+        is_problematic_tld = any(host.lower().endswith(tld) for tld in problematic_tlds)
+        
+        # Check for educational/corporate patterns
+        is_problematic_pattern = any(pattern in host.lower() for pattern in educational_patterns + corporate_patterns)
+        
+        # Check for large/popular sites known to use complex CDNs
+        is_major_site = len(host.split('.')[0]) <= 5 and host.count('.') <= 2
+        
+        # Combine all checks
+        is_problematic = is_problematic_tld or is_problematic_pattern or is_major_site
         
         if is_problematic:
             # For known problematic domains, use the fallback method directly
@@ -330,11 +339,31 @@ class L7Detector:
                             indicators.append(f"Header {header_name}: {header_value}")
             
             # Special check for F5 BIG-IP cookie patterns (numeric-only cookies)
-            if protection_type == L7Protection.F5_BIG_IP and "set-cookie" in headers:
-                cookie_value = headers.get("set-cookie", "")
-                if re.search(r'^\d{6}=', cookie_value) or re.search(r';\s*\d{6}=', cookie_value):
+            if protection_type == L7Protection.F5_BIG_IP:
+                # Check for F5 cookies
+                if "set-cookie" in headers:
+                    cookie_value = headers.get("set-cookie", "")
+                    if re.search(r'(^|;)\s*\d{6}=', cookie_value):
+                        confidence += 0.4
+                        indicators.append(f"F5 numeric cookie pattern detected: {cookie_value[:20]}...")
+                
+                # Check for other F5-specific headers with any name
+                for header_name, header_value in headers.items():
+                    if isinstance(header_value, str) and any(pattern in header_value.lower() for pattern in ["bigip", "f5", "volt"]):
+                        confidence += 0.3
+                        indicators.append(f"F5 pattern in header {header_name}")
+                        
+                # Check for specific F5 headers by name pattern
+                f5_headers = ["x-envoy-upstream-service-time", "ts", "via"]
+                for h in f5_headers:
+                    if h in headers:
+                        confidence += 0.3
+                        indicators.append(f"F5 indicator header: {h}")
+                        
+                # Check for server values indicating F5
+                if "server" in headers and any(name in headers["server"].lower() for name in ["bigip", "f5", "volt-adc"]):
                     confidence += 0.4
-                    indicators.append(f"F5 numeric cookie pattern detected: {cookie_value[:20]}...")
+                    indicators.append(f"F5 server header: {headers['server']}")
 
             # Check server header specifically
             server_header = headers.get("Server", "").lower()
@@ -471,7 +500,7 @@ class L7Detector:
                                 details={"method": "dns_cname"},
                             )
                         )
-                    elif "ves.io" in cname_str or "vh.ves.io" in cname_str:
+                    elif any(pattern in cname_str for pattern in ["ves.io", "vh.ves.io", "f5.com", "f5net", "f5-si", "distributed.net", "volterra"]):
                         detections.append(
                             L7Detection(
                                 service=L7Protection.F5_BIG_IP,
@@ -729,12 +758,62 @@ class L7Detector:
         """Analyze response from the fallback requests library."""
         headers = fallback_result.get("headers", {})
         content = fallback_result.get("content", "")
-        server = headers.get("Server", "").lower()
+        server = headers.get("Server", "").lower() if headers.get("Server") else ""
+        
+        # Convert all header keys to lowercase for case-insensitive matching
+        headers_lower = {k.lower(): v for k, v in headers.items()}
+        
+        # Create a string representation of all headers for pattern matching
         headers_str = str(headers).lower()
         
-        # Check for specific headers that indicate protection
+        # F5 BIG-IP specific checks (checking first as it's the most specific)
+        # Check for F5 BIG-IP indicators with high priority
+        f5_indicators = []
+        
+        # Check for F5 specific server headers
+        if server and any(name in server for name in ["bigip", "f5", "volt-adc"]):
+            f5_indicators.append(f"F5 server header: {server}")
+        
+        # Check for F5 specific headers (case-insensitive)
+        f5_specific_headers = [
+            "x-envoy-upstream-service-time",
+            "bigipserverpool", 
+            "f5-fullsupport-id",
+            "ts",  # Common F5 timestamp header
+            "via"  # Often contains F5 references
+        ]
+        
+        # Check both direct header existence and content patterns
+        for header_name in f5_specific_headers:
+            if header_name in headers_lower:
+                f5_indicators.append(f"F5 indicator header: {header_name}")
+                
+        # Check for F5-specific patterns in any header value
+        for header_name, value in headers.items():
+            if isinstance(value, str) and any(pattern in value.lower() for pattern in ["bigip", "f5", "volt"]):
+                f5_indicators.append(f"F5 pattern in header: {header_name}")
+        
+        # Check for F5 numeric cookie pattern (very specific to F5)
+        if "set-cookie" in headers_lower:
+            cookie_value = headers_lower["set-cookie"]
+            # F5 uses numeric-only cookies with 6 digits
+            if re.search(r'(^|;)\s*\d{6}=', cookie_value):
+                f5_indicators.append(f"F5 numeric cookie pattern detected")
+        
+        # If we have any F5 indicators, mark as F5 BIG-IP
+        if f5_indicators:
+            detections.append(
+                L7Detection(
+                    service=L7Protection.F5_BIG_IP,
+                    confidence=min(0.3 + (len(f5_indicators) * 0.2), 0.95),  # Scale confidence based on indicators
+                    indicators=f5_indicators,
+                    details={"method": "f5_detection_analysis"},
+                )
+            )
+            return  # Return early as this is a confident match
+        
         # Cloudflare indicators
-        if any(h in headers_str for h in ["cf-ray", "cf-cache-status", "__cfduid", "cloudflare"]) or "cloudflare" in server:
+        if any(h in headers_lower for h in ["cf-ray", "cf-cache-status", "cf-request-id"]) or "cloudflare" in server:
             detections.append(
                 L7Detection(
                     service=L7Protection.CLOUDFLARE,
@@ -745,7 +824,7 @@ class L7Detector:
             )
             
         # Akamai indicators
-        elif any(h in headers_str for h in ["akamai", "x-akamai", "x-cache-key", "x-check-cacheable"]) or "akamai" in server:
+        elif any(h in headers_lower for h in ["x-akamai-request-id", "x-cache-key", "x-check-cacheable"]) or "akamai" in server:
             detections.append(
                 L7Detection(
                     service=L7Protection.AKAMAI,
@@ -756,7 +835,7 @@ class L7Detector:
             )
             
         # Incapsula/Imperva indicators
-        elif any(h in headers_str for h in ["incap_", "incapsula", "visid_incap"]) or "incapsula" in server:
+        elif any(h in headers_lower for h in ["x-iinfo", "x-cdn"]) or "incapsula" in server or any("incap_" in v.lower() or "visid_incap" in v.lower() for v in headers.values()):
             detections.append(
                 L7Detection(
                     service=L7Protection.INCAPSULA,
@@ -766,19 +845,8 @@ class L7Detector:
                 )
             )
             
-        # F5 indicators
-        elif any(h in headers_str for h in ["bigip", "f5", "ts="]) or "bigip" in server or "f5" in server:
-            detections.append(
-                L7Detection(
-                    service=L7Protection.F5_BIG_IP,
-                    confidence=0.9,
-                    indicators=[f"F5 BIG-IP detected via fallback method"],
-                    details={"method": "fallback_header_analysis"},
-                )
-            )
-            
         # AWS WAF indicators
-        elif any(h in headers_str for h in ["x-amz-cf-", "x-amz-", "x-amzn-"]):
+        elif any(h in headers_lower for h in ["x-amz-cf-id", "x-amzn-requestid", "x-amzn-trace-id"]):
             detections.append(
                 L7Detection(
                     service=L7Protection.AWS_WAF,
@@ -789,7 +857,7 @@ class L7Detector:
             )
             
         # Azure Front Door indicators
-        elif "x-azure-ref" in headers_str or "x-ms-" in headers_str:
+        elif "x-azure-ref" in headers_lower or "x-fd-healthprobe" in headers_lower:
             detections.append(
                 L7Detection(
                     service=L7Protection.AZURE_FRONT_DOOR,
@@ -831,19 +899,50 @@ class L7Detector:
                 
         # If we haven't identified a specific protection but we know the site has large headers
         if not detections:
-            detections.append(
-                L7Detection(
-                    service=L7Protection.UNKNOWN,
-                    confidence=0.7,
-                    indicators=[
-                        f"WAF/CDN detected: Site has extremely large HTTP headers ({len(str(headers))} bytes)"
-                    ],
-                    details={"method": "fallback_size_analysis"},
-                )
-            )
+            # Try to detect F5 BIG-IP based on additional telltale signs
+            # Check for HTTP status code patterns common to F5 deployments
+            status_code = fallback_result.get("status_code")
             
-            # Special cases based on TLD or domain patterns
+            f5_indicators = []
+            if status_code in [302, 400, 403, 503]:
+                # These are common F5 status codes when security policies are active
+                f5_indicators.append(f"F5-typical status code: {status_code}")
+            
+            # Check for cookie attributes that are common in F5
+            if "set-cookie" in headers_lower:
+                cookie_value = headers_lower["set-cookie"]
+                if "httponly" in cookie_value.lower() and "secure" in cookie_value.lower() and "path=/" in cookie_value.lower():
+                    f5_indicators.append("F5-like cookie attributes")
+            
+            # Check for SSL/TLS fingerprints in headers
+            if "strict-transport-security" in headers_lower or "x-frame-options" in headers_lower:
+                f5_indicators.append("Security headers common in F5 configurations")
+            
+            if f5_indicators:
+                detections.append(
+                    L7Detection(
+                        service=L7Protection.F5_BIG_IP,
+                        confidence=0.75,
+                        indicators=f5_indicators,
+                        details={"method": "advanced_f5_heuristics"},
+                    )
+                )
+            else:
+                # Default to unknown if we can't identify specific technology
+                detections.append(
+                    L7Detection(
+                        service=L7Protection.UNKNOWN,
+                        confidence=0.7,
+                        indicators=[
+                            f"WAF/CDN detected: Site has extremely large HTTP headers ({len(str(headers))} bytes)"
+                        ],
+                        details={"method": "fallback_size_analysis"},
+                    )
+                )
+                
+            # Special cases based on TLD patterns only (no specific domains)
             if host.lower().endswith('.sg'):
+                # Higher chance of Akamai for .sg domains
                 detections.append(
                     L7Detection(
                         service=L7Protection.AKAMAI,
@@ -854,6 +953,7 @@ class L7Detector:
                 )
                 
             elif host.lower().endswith('.edu'):
+                # Higher chance of Akamai for .edu domains
                 detections.append(
                     L7Detection(
                         service=L7Protection.AKAMAI,
