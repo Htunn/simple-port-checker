@@ -78,16 +78,23 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
             "X-Azure-FDID": [r".*"],
             "X-Cache": [r".*"],
             "X-Azure-DebugInfo": [r".*"],
+            "X-MSEdge-Ref": [r".*"],
+            "X-Powered-By": [r"ASP.NET"],
+            "Server": [r"Microsoft-IIS.*", r"Microsoft-Azure.*", r"Azure.*"]
         },
-        "cname": [r".*\.azurefd\.net"],
-        "dns": [r".*\.z\d+\.azurefd\.net"],
+        "cname": [r".*\.azurefd\.net", r".*\.trafficmanager\.net", r".*\.cloudapp\.azure\.com", 
+                r".*\.azureedge\.net", r".*\.azure-api\.net"],
+        "dns": [r".*\.z\d+\.azurefd\.net", r".*\.trafficmanager\.net", r".*\.cloudapp\.azure\.com"],
         "body": [
             r"Azure Front Door",
             r"Our services aren't available right now",
             r"We're working hard to restore all services as soon as possible",
+            r"Microsoft Azure",
+            r"Azure Traffic Manager",
+            r"App Service"
         ],
         "status_codes": [403, 404, 503],
-        "description": "Microsoft Azure Front Door",
+        "description": "Microsoft Azure Front Door and Traffic Manager",
     },
     L7Protection.F5_BIG_IP: {
         "headers": {

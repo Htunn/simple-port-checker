@@ -93,6 +93,9 @@ class L7Detector:
             ".gov", ".gov.sg", ".org.sg", ".net.sg"
         ]
         
+        # Government domains often use Azure services - special check for these
+        government_tlds = [".gov", ".gov.sg", ".gc.ca", ".gov.uk"]
+        
         # Educational and government domains often have large headers
         educational_patterns = ["univ", "college", "school", "academy", "institute"]
         corporate_patterns = ["corp", "inc", "cloud", "cdn", "hosting", "tech"]
@@ -105,6 +108,32 @@ class L7Detector:
         
         # Check for large/popular sites known to use complex CDNs
         is_major_site = len(host.split('.')[0]) <= 5 and host.count('.') <= 2
+        
+        # Check if this is likely a government domain using Azure
+        is_government_domain = any(host.lower().endswith(tld) for tld in government_tlds)
+        
+        # For government domains, do an immediate check for Azure Traffic Manager
+        if is_government_domain:
+            # Check for Azure Traffic Manager via DNS
+            if await self._check_azure_traffic_manager(host):
+                detections.append(
+                    L7Detection(
+                        service=L7Protection.AZURE_FRONT_DOOR,
+                        confidence=0.9,
+                        indicators=[f"Azure Traffic Manager detected via DNS CNAME record"],
+                        details={"method": "government_domain_azure_check"},
+                    )
+                )
+                # Return immediately with Azure detection
+                return L7Result(
+                    host=host,
+                    url=url,
+                    detections=detections,
+                    response_headers={},
+                    response_time=time.time() - start_time,
+                    status_code=None,  # No HTTP request made yet
+                    error=None,
+                )
         
         # Combine all checks
         is_problematic = is_problematic_tld or is_problematic_pattern or is_major_site
@@ -491,7 +520,16 @@ class L7Detector:
                                 details={"method": "dns_cname"},
                             )
                         )
-                    elif "azurefd.net" in cname_str:
+                    elif "trafficmanager.net" in cname_str:
+                        detections.append(
+                            L7Detection(
+                                service=L7Protection.AZURE_FRONT_DOOR,
+                                confidence=0.85,
+                                indicators=[f"CNAME: {cname_str} (Azure Traffic Manager)"],
+                                details={"method": "dns_cname"},
+                            )
+                        )
+                    elif "azurefd.net" in cname_str or "azureedge.net" in cname_str or "cloudapp.azure.com" in cname_str:
                         detections.append(
                             L7Detection(
                                 service=L7Protection.AZURE_FRONT_DOOR,
@@ -537,6 +575,41 @@ class L7Detector:
             pass  # Ignore DNS errors
 
         return detections
+
+    async def _check_azure_traffic_manager(self, host: str) -> bool:
+        """
+        Specifically check if a domain is using Azure Traffic Manager.
+        
+        Args:
+            host: Target hostname
+            
+        Returns:
+            Boolean indicating whether Azure Traffic Manager is detected
+        """
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 2  # Short timeout for quick checks
+            
+            try:
+                # Check CNAME records for Azure Traffic Manager patterns
+                cname_answers = resolver.resolve(host, "CNAME")
+                for cname in cname_answers:
+                    cname_str = str(cname.target).lower()
+                    if "trafficmanager.net" in cname_str:
+                        return True
+                    elif "azurefd.net" in cname_str:
+                        return True
+                    elif "azureedge.net" in cname_str:
+                        return True
+                    elif "cloudapp.azure.com" in cname_str:
+                        return True
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                pass
+            
+        except Exception:
+            pass
+            
+        return False
 
     def _is_cloudflare_ip(self, ip: str) -> bool:
         """Check if IP address belongs to Cloudflare."""
@@ -857,13 +930,34 @@ class L7Detector:
             )
             
         # Azure Front Door indicators
-        elif "x-azure-ref" in headers_lower or "x-fd-healthprobe" in headers_lower:
+        elif any(h in headers_lower for h in ["x-azure-ref", "x-fd-healthprobe", "x-msedge-ref"]) or "microsoft" in server:
+            # Collect indicators for more detailed reporting
+            azure_indicators = []
+            
+            # Check for specific Azure header patterns
+            if "x-azure-ref" in headers_lower:
+                azure_indicators.append("X-Azure-Ref header present")
+            if "x-fd-healthprobe" in headers_lower:
+                azure_indicators.append("X-FD-HealthProbe header present")
+            if "x-msedge-ref" in headers_lower:
+                azure_indicators.append("X-MSEdge-Ref header present")
+            if "microsoft" in server:
+                azure_indicators.append(f"Server: {server}")
+                
+            # Check for IIS/ASP.NET indicators which are common with Azure services
+            if "x-powered-by" in headers_lower and "asp.net" in headers_lower["x-powered-by"].lower():
+                azure_indicators.append("X-Powered-By: ASP.NET (typical with Azure)")
+                
+            # If no specific indicators found, use a generic one
+            if not azure_indicators:
+                azure_indicators = ["Azure Front Door/Traffic Manager detected via header analysis"]
+                
             detections.append(
                 L7Detection(
                     service=L7Protection.AZURE_FRONT_DOOR,
                     confidence=0.8,
-                    indicators=[f"Azure Front Door detected via fallback method"],
-                    details={"method": "fallback_header_analysis"},
+                    indicators=azure_indicators,
+                    details={"method": "enhanced_azure_detection"},
                 )
             )
             
