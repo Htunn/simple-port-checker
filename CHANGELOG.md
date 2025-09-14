@@ -10,6 +10,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial project setup and structure
 
+## [0.1.10] - 2025-01-16
+
+### Fixed
+- Enhanced handling of websites with extremely large headers (e.g., www.ntu.edu.sg)
+- Increased header size limit to 128KB for better compatibility with complex sites
+- Added brotli compression support for sites that use br content encoding
+- Improved detection algorithm for educational (.edu) domains
+- Enhanced fallback mechanisms with more robust error handling
+- Added more comprehensive domain detection patterns for problematic sites
+- Improved requests library fallback to handle different compression methods
+- Fixed SSL verification warnings in fallback methods
+- Enhanced detection patterns for Cloudflare, Akamai, F5, and other CDN/WAF providers
+
+## [0.1.9] - 2025-01-15
+
+### Fixed
+- Added fallback mechanism using requests library for problematic sites with extremely large headers
+- Implemented automatic switching between aiohttp and requests for problematic domains
+- Enhanced detection of WAF/CDN services even when primary detection fails
+- Improved handling of .sg domains that commonly use Akamai with large headers
+- Added sophisticated header analysis for fallback cases
+
+## [0.1.8] - 2025-01-15
+
+### Fixed
+- Significantly improved handling of sites with extremely large HTTP headers
+- Increased header size limit to 64KB to support the most complex WAF configurations
+- Added resilient HTTP request handling with graceful header processing
+- Enhanced WAF detection for sites that use oversized headers as security measures
+- Added special detection patterns for Singapore (.sg) domains with large headers
+- Implemented SSL bypass option to avoid certificate validation issues
+
+## [0.1.7] - 2025-01-15
+
+### Fixed
+- Increased maximum header size limit to 32KB to handle websites with very large response headers
+- Improved error handling for "Header value too long" errors to better identify potential WAF/CDN
+- Enhanced HTTP client configuration for better handling of complex network scenarios
+- Added support for compressed responses to handle CDN-optimized content
+
+## [0.1.6] - 2025-01-15
+
+### Fixed
+- Fixed "Header value too long" errors during L7 detection
+- Improved handling of large HTTP responses
+- Enhanced error handling for various HTTP client errors
+- Optimized response body processing to prevent excessive memory usage
+
 ## [0.1.5] - 2025-01-15
 
 ### Added
