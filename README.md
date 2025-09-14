@@ -316,7 +316,6 @@ This tool is intended for legitimate security testing and network diagnostics on
 
 - 📖 [Documentation](https://github.com/htunn/simple-port-checker#readme)
 - 🐛 [Issue Tracker](https://github.com/htunn/simple-port-checker/issues)
-- 💬 [Discussions](https://github.com/htunn/simple-port-checker/discussions)
 
 ## Acknowledgments
 

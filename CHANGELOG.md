@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial project setup and structure
 
+## [0.1.4] - 2025-01-15
+
+### Added
+- Explicit notification when a target is not protected by L7 services in CLI output
+- Added a dedicated table in summary displaying all unprotected hosts
+- Improved visibility of unprotected hosts in scan results
+
+## [0.1.3] - 2025-01-15
+
+### Added
+- Support for Azure Front Door detection
+
+## [0.1.2] - 2025-01-15
+
+### Fixed
+- Updated GitHub Actions to use latest versions
+
 ## [0.1.0] - 2025-01-14
 
 ### Added

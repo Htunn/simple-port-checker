@@ -304,6 +304,7 @@ def _display_l7_result(result: L7Result):
             )
     else:
         panel_content.append("[red]✗ No L7 Protection Detected[/red]")
+        panel_content.append("[bold red]The endpoint is NOT protected by any L7 service (WAF/CDN)[/bold red]")
 
     panel_content.append(f"[dim]Response time: {result.response_time:.2f}s[/dim]")
 
@@ -365,7 +366,7 @@ def _display_l7_summary(batch_result: BatchL7Result):
             f"[green]L7 check completed in {batch_result.total_scan_time:.2f} seconds[/green]\n"
             f"[yellow]Hosts checked: {len(batch_result.results)}[/yellow]\n"
             f"[yellow]Protected hosts: {len(batch_result.protected_hosts)}[/yellow]\n"
-            f"[yellow]Unprotected hosts: {len(batch_result.unprotected_hosts)}[/yellow]\n"
+            f"[bold red]Unprotected hosts: {len(batch_result.unprotected_hosts)}[/bold red]\n"
             f"[yellow]Failed checks: {len(batch_result.failed_checks)}[/yellow]",
             title="L7 Protection Summary",
             border_style="blue",
@@ -385,6 +386,19 @@ def _display_l7_summary(batch_result: BatchL7Result):
             table.add_row(service.replace("_", " ").title(), str(count))
 
         console.print(table)
+    
+    # Display unprotected hosts
+    if batch_result.unprotected_hosts:
+        console.print("\n[bold red]Unprotected Hosts (No L7 Protection):[/bold red]")
+        
+        unprotected_table = Table()
+        unprotected_table.add_column("Host", style="red")
+        unprotected_table.add_column("Status", style="red")
+        
+        for result in batch_result.unprotected_hosts:
+            unprotected_table.add_row(result.host, "NOT PROTECTED")
+            
+        console.print(unprotected_table)
 
 
 def _save_results(results, filename: str):
