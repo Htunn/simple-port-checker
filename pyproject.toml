@@ -10,10 +10,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "htunn", email = "htunnthuthu.linux@gmail.com"}
 ]
 maintainers = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "htunn", email = "htunnthuthu.linux@gmail.com"}
 ]
 keywords = ["firewall", "port-scanner", "l7-protection", "waf", "network", "security"]
 classifiers = [
@@ -53,10 +53,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/simple-port-checker"
-Repository = "https://github.com/yourusername/simple-port-checker"
-Issues = "https://github.com/yourusername/simple-port-checker/issues"
-Documentation = "https://github.com/yourusername/simple-port-checker#readme"
+Homepage = "https://github.com/htunn/simple-port-checker"
+Repository = "https://github.com/htunn/simple-port-checker"
+Issues = "https://github.com/htunn/simple-port-checker/issues"
+Documentation = "https://github.com/htunn/simple-port-checker#readme"
 
 [project.scripts]
 port-checker = "simple_port_checker.cli:main"
