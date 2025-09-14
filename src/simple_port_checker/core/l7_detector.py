@@ -265,6 +265,15 @@ class L7Detector:
                                 details={"method": "dns_cname"},
                             )
                         )
+                    elif "azurefd.net" in cname_str:
+                        detections.append(
+                            L7Detection(
+                                service=L7Protection.AZURE_FRONT_DOOR,
+                                confidence=0.9,
+                                indicators=[f"CNAME: {cname_str}"],
+                                details={"method": "dns_cname"},
+                            )
+                        )
 
             except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
                 pass  # No CNAME records

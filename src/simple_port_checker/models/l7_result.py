@@ -16,6 +16,7 @@ class L7Protection(Enum):
     UNKNOWN = "unknown"
     AWS_WAF = "aws_waf"
     AZURE_WAF = "azure_waf"
+    AZURE_FRONT_DOOR = "azure_front_door"
     F5_BIG_IP = "f5_big_ip"
     CLOUDFLARE = "cloudflare"
     AKAMAI = "akamai"

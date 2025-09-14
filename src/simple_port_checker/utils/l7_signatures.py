@@ -71,6 +71,24 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
         "status_codes": [403, 503],
         "description": "Microsoft Azure Web Application Firewall",
     },
+    L7Protection.AZURE_FRONT_DOOR: {
+        "headers": {
+            "X-Azure-Ref": [r".*"],
+            "X-FD-HealthProbe": [r".*"],
+            "X-Azure-FDID": [r".*"],
+            "X-Cache": [r".*"],
+            "X-Azure-DebugInfo": [r".*"],
+        },
+        "cname": [r".*\.azurefd\.net"],
+        "dns": [r".*\.z\d+\.azurefd\.net"],
+        "body": [
+            r"Azure Front Door",
+            r"Our services aren't available right now",
+            r"We're working hard to restore all services as soon as possible",
+        ],
+        "status_codes": [403, 404, 503],
+        "description": "Microsoft Azure Front Door",
+    },
     L7Protection.F5_BIG_IP: {
         "headers": {
             "X-WA-Info": [r".*"],
