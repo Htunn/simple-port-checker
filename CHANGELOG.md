@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial project setup and structure
 
+## [0.1.5] - 2025-01-15
+
+### Added
+- Improved F5 BIG-IP WAF detection for different F5 implementations
+- Added detection for F5 Edge Services via VES.IO domain patterns
+- Enhanced F5 cookie pattern detection
+- Added additional status code and response body patterns for F5 detection
+
 ## [0.1.4] - 2025-01-15
 
 ### Added

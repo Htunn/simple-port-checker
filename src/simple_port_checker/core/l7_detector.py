@@ -152,7 +152,7 @@ class L7Detector:
             List of L7Detection objects
         """
         detections = []
-
+        
         # Check headers against signatures
         for protection_type, signatures in self.signatures.items():
             confidence = 0.0
@@ -166,6 +166,13 @@ class L7Detector:
                         if re.search(pattern.lower(), header_value):
                             confidence += 0.3
                             indicators.append(f"Header {header_name}: {header_value}")
+            
+            # Special check for F5 BIG-IP cookie patterns (numeric-only cookies)
+            if protection_type == L7Protection.F5_BIG_IP and "set-cookie" in headers:
+                cookie_value = headers.get("set-cookie", "")
+                if re.search(r'^\d{6}=', cookie_value) or re.search(r';\s*\d{6}=', cookie_value):
+                    confidence += 0.4
+                    indicators.append(f"F5 numeric cookie pattern detected: {cookie_value[:20]}...")
 
             # Check server header specifically
             server_header = headers.get("Server", "").lower()
@@ -271,6 +278,15 @@ class L7Detector:
                                 service=L7Protection.AZURE_FRONT_DOOR,
                                 confidence=0.9,
                                 indicators=[f"CNAME: {cname_str}"],
+                                details={"method": "dns_cname"},
+                            )
+                        )
+                    elif "ves.io" in cname_str or "vh.ves.io" in cname_str:
+                        detections.append(
+                            L7Detection(
+                                service=L7Protection.F5_BIG_IP,
+                                confidence=0.8,
+                                indicators=[f"CNAME: {cname_str} (F5 Edge Services)"],
                                 details={"method": "dns_cname"},
                             )
                         )

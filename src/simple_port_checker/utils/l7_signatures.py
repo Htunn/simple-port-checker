@@ -94,8 +94,9 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
             "X-WA-Info": [r".*"],
             "BigipServerPool": [r".*"],
             "F5-FullSupport-Id": [r".*"],
-            "Set-Cookie": [r"BIGipServer", r"F5_fullSupport", r"LastMRH_Session"],
+            "Set-Cookie": [r"BIGipServer", r"F5_fullSupport", r"LastMRH_Session", r"[0-9]{6}="],
             "Server": [r"BigIP", r"F5", r"BIG-IP"],
+            "X-envoy-upstream-service-time": [r".*"]
         },
         "server": [r"BigIP", r"F5", r"BIG-IP"],
         "body": [
@@ -105,8 +106,9 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
             r"F5 Networks",
             r"Application Security Manager",
             r"Request Rejected",
+            r"HTTP Error 404\. The requested resource is not found\.",
         ],
-        "status_codes": [403],
+        "status_codes": [403, 404],
         "description": "F5 BIG-IP Application Security Manager",
     },
     L7Protection.AKAMAI: {
