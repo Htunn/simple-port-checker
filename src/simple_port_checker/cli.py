@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import click
+import dns.resolver
 from rich.console import Console
 from rich.table import Table
 from rich.progress import (
@@ -84,18 +85,22 @@ def scan(targets, ports, timeout, concurrent, output, verbose, top_ports):
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--port", "-p", type=int, help="Specific port to check")
 @click.option("--path", default="/", help="URL path to test")
-def l7_check(targets, timeout, user_agent, output, verbose, port, path):
+@click.option("--trace-dns", "-d", is_flag=True, help="Include DNS trace information in results")
+def l7_check(targets, timeout, user_agent, output, verbose, port, path, trace_dns):
     """Check for L7 protection services (WAF, CDN, etc.)."""
 
     console.print(
         f"[blue]Starting L7 protection check for {len(targets)} target(s)[/blue]"
     )
     console.print(f"[yellow]Timeout: {timeout}s[/yellow]")
+    
+    if trace_dns:
+        console.print("[yellow]DNS trace enabled - will check DNS records and resolved IPs[/yellow]")
 
     # Run L7 detection
     asyncio.run(
         _run_l7_detection(
-            list(targets), timeout, user_agent, output, verbose, port, path
+            list(targets), timeout, user_agent, output, verbose, port, path, trace_dns
         )
     )
 
@@ -127,6 +132,29 @@ def full_scan(targets, ports, timeout, concurrent, output, verbose):
     # Run full scan
     asyncio.run(
         _run_full_scan(list(targets), port_list, timeout, concurrent, output, verbose)
+    )
+
+
+@main.command("dns-trace")
+@click.argument("targets", nargs=-1, required=True)
+@click.option("--timeout", "-t", default=5, help="Request timeout in seconds")
+@click.option("--output", "-o", help="Output file (JSON format)")
+@click.option("--check-protection", "-c", is_flag=True, help="Check each resolved IP for L7 protection")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def dns_trace(targets, timeout, output, check_protection, verbose):
+    """Trace DNS records and analyze L7 protection on resolved IPs."""
+
+    console.print(
+        f"[blue]Starting DNS trace for {len(targets)} target(s)[/blue]"
+    )
+    console.print(f"[yellow]Timeout: {timeout}s[/yellow]")
+    
+    if check_protection:
+        console.print("[yellow]L7 protection analysis enabled[/yellow]")
+
+    # Run DNS trace analysis
+    asyncio.run(
+        _run_dns_trace_analysis(list(targets), timeout, output, check_protection, verbose)
     )
 
 
@@ -191,6 +219,7 @@ async def _run_l7_detection(
     verbose: bool,
     port: Optional[int],
     path: str,
+    trace_dns: bool,
 ):
     """Run L7 protection detection with progress display."""
 
@@ -214,11 +243,17 @@ async def _run_l7_detection(
             progress.update(detect_task, description=f"Checking {target}...")
 
             try:
-                result = await detector.detect(target, port, path)
+                # Pass the trace_dns parameter to the detect method
+                result = await detector.detect(target, port, path, trace_dns=trace_dns)
                 results.append(result)
 
                 if verbose:
-                    _display_l7_result(result)
+                    # Display the result with DNS trace information if available
+                    _display_l7_result(result, show_trace=trace_dns or verbose)
+                    
+                    # If DNS trace is enabled and verbose is true, also show detailed DNS trace
+                    if trace_dns and verbose:
+                        _display_dns_trace(result)
 
             except Exception as e:
                 console.print(f"[red]Error checking {target}: {e}[/red]")
@@ -250,9 +285,122 @@ async def _run_full_scan(
     await _run_port_scan(targets, ports, timeout, concurrent, None, verbose)
 
     console.print("\n[yellow]Phase 2: L7 Protection Detection[/yellow]")
-    await _run_l7_detection(targets, timeout, None, None, verbose, None, "/")
+    await _run_l7_detection(targets, timeout, None, None, verbose, None, "/", True)
 
     console.print("\n[green]Full scan completed![/green]")
+
+
+async def _run_dns_trace_analysis(targets, timeout, output, check_protection, verbose):
+    """Run DNS trace analysis for multiple targets."""
+    
+    start_time = time.time()
+    detector = L7Detector(timeout=timeout)
+    results = []
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+
+        trace_task = progress.add_task("Tracing DNS records...", total=len(targets))
+
+        for target in targets:
+            progress.update(trace_task, description=f"Tracing {target}...")
+
+            try:
+                # Get detailed DNS trace
+                dns_trace = await detector.get_dns_trace(target)
+                
+                # Also get L7 detection for the domain
+                domain_result = await detector.detect(target)
+                results.append(domain_result)
+                
+                # Display the DNS trace information
+                await _display_detailed_dns_trace(target, dns_trace, domain_result, check_protection, verbose)
+                
+            except Exception as e:
+                console.print(f"[red]Error tracing {target}: {e}[/red]")
+
+            progress.advance(trace_task)
+
+    # Save to JSON if requested
+    if output:
+        try:
+            trace_data = []
+            for result in results:
+                trace_data.append({
+                    "host": result.host,
+                    "dns_trace": result.dns_trace,
+                    "l7_result": result.to_dict()
+                })
+            
+            with open(output, "w") as f:
+                json.dump(trace_data, f, indent=2)
+            console.print(f"[green]Results saved to {output}[/green]")
+        except Exception as e:
+            console.print(f"[red]Error saving results: {e}[/red]")
+
+async def _display_detailed_dns_trace(target: str, dns_trace: dict, domain_result: L7Result, check_protection: bool, verbose: bool):
+    """Display detailed DNS trace information."""
+    
+    console.print(f"\n[bold blue]DNS Trace for {target}[/bold blue]")
+    
+    # Show CNAME chain
+    if dns_trace.get("cname_chain"):
+        console.print("[cyan]CNAME Chain:[/cyan]")
+        for cname in dns_trace["cname_chain"]:
+            console.print(f"  [green]{cname['from']} → {cname['to']}[/green] (depth: {cname['depth']})")
+    else:
+        console.print("[yellow]No CNAME records found[/yellow]")
+    
+    # Show resolved IPs
+    if dns_trace.get("resolved_ips"):
+        console.print("\n[cyan]Resolved IPs:[/cyan]")
+        for hostname, ips in dns_trace["resolved_ips"].items():
+            console.print(f"  [bold]{hostname}:[/bold] {', '.join(ips)}")
+    
+    # Show IP protection if check_protection is enabled
+    if check_protection and dns_trace.get("ip_protection"):
+        console.print("\n[cyan]IP Protection Analysis:[/cyan]")
+        for ip, protection in dns_trace["ip_protection"].items():
+            if "service" in protection:
+                console.print(f"  [green]{ip}: {protection['service']} ({protection['confidence']:.1%}) via {protection['origin_host']}[/green]")
+            elif "error" in protection:
+                console.print(f"  [red]{ip}: Failed to check ({protection['error']})[/red]")
+    
+    # Show domain protection
+    if domain_result.is_protected and domain_result.primary_protection:
+        console.print("\n[cyan]Domain Protection:[/cyan]")
+        service = domain_result.primary_protection.service.value
+        confidence = domain_result.primary_protection.confidence
+        console.print(f"  [yellow]{target}: {service} ({confidence:.1%})[/yellow]")
+        
+        # Compare with IP protection if available
+        if check_protection and dns_trace.get("ip_protection"):
+            ip_services = set()
+            for prot in dns_trace["ip_protection"].values():
+                if "service" in prot:
+                    ip_services.add(prot["service"])
+            
+            if ip_services:
+                if service in ip_services:
+                    console.print("[green]  ✓ Domain and IP protection match[/green]")
+                else:
+                    console.print("[yellow]  ⚠ Domain and IP protection differ[/yellow]")
+    else:
+        console.print(f"\n[yellow]No L7 protection detected for {target}[/yellow]")
+    
+    # Show verbose information if requested
+    if verbose and domain_result.detections:
+        console.print("\n[cyan]Detailed Detection Information:[/cyan]")
+        for detection in domain_result.detections:
+            console.print(f"  [dim]Service: {detection.service.value}, Confidence: {detection.confidence:.1%}[/dim]")
+            if detection.indicators:
+                console.print(f"  [dim]Indicators: {', '.join(detection.indicators[:3])}[/dim]")
 
 
 def _display_scan_result(result: ScanResult):
@@ -283,7 +431,7 @@ def _display_scan_result(result: ScanResult):
     console.print()
 
 
-def _display_l7_result(result: L7Result):
+def _display_l7_result(result: L7Result, show_trace: bool = False):
     """Display individual L7 detection result."""
 
     if result.error:
@@ -307,6 +455,32 @@ def _display_l7_result(result: L7Result):
         panel_content.append("[bold red]The endpoint is NOT protected by any L7 service (WAF/CDN)[/bold red]")
 
     panel_content.append(f"[dim]Response time: {result.response_time:.2f}s[/dim]")
+    
+    # Add DNS trace information if requested and available
+    if show_trace and result.dns_trace and any(result.dns_trace.values()):
+        panel_content.append("")
+        panel_content.append("[cyan]DNS Trace Information:[/cyan]")
+        
+        # Show CNAME chain
+        if "cname_chain" in result.dns_trace and result.dns_trace["cname_chain"]:
+            panel_content.append("[cyan]CNAME Chain:[/cyan]")
+            for cname in result.dns_trace["cname_chain"]:
+                panel_content.append(f"  [dim]{cname['from']} → {cname['to']}[/dim]")
+        
+        # Show resolved IPs
+        if "resolved_ips" in result.dns_trace and result.dns_trace["resolved_ips"]:
+            panel_content.append("[cyan]Resolved IPs:[/cyan]")
+            for host, ips in result.dns_trace["resolved_ips"].items():
+                panel_content.append(f"  [dim]{host}: {', '.join(ips)}[/dim]")
+        
+        # Show IP protection
+        if "ip_protection" in result.dns_trace and result.dns_trace["ip_protection"]:
+            panel_content.append("[cyan]IP Protection Analysis:[/cyan]")
+            for ip, protection in result.dns_trace["ip_protection"].items():
+                if "service" in protection:
+                    panel_content.append(f"  [green]{ip}: {protection['service']} ({protection['confidence']:.1%})[/green]")
+                elif "error" in protection:
+                    panel_content.append(f"  [dim]{ip}: Failed to check ({protection['error']})[/dim]")
 
     console.print(
         Panel(
@@ -481,5 +655,73 @@ def _display_service_info(target: str, port: int, service_info: dict):
     console.print()
 
 
-if __name__ == "__main__":
-    main()
+def _display_dns_trace(result: L7Result):
+    """Display DNS trace information."""
+    
+    if not result.dns_trace or not any(result.dns_trace.values()):
+        console.print(f"[yellow]No DNS trace information available for {result.host}[/yellow]")
+        return
+    
+    dns_trace = result.dns_trace
+    
+    # Prepare the trace panel content
+    trace_content = []
+    trace_content.append(f"[bold]DNS Trace for {result.host}[/bold]")
+    trace_content.append("")
+    
+    # Show CNAME chain
+    if "cname_chain" in dns_trace and dns_trace["cname_chain"]:
+        trace_content.append("[bold cyan]CNAME Chain:[/bold cyan]")
+        for cname in dns_trace["cname_chain"]:
+            trace_content.append(f"  {cname['from']} → [cyan]{cname['to']}[/cyan] (depth: {cname['depth']})")
+        trace_content.append("")
+    else:
+        trace_content.append("[yellow]No CNAME records found[/yellow]")
+        trace_content.append("")
+    
+    # Show resolved IPs
+    if "resolved_ips" in dns_trace and dns_trace["resolved_ips"]:
+        trace_content.append("[bold cyan]Resolved IPs:[/bold cyan]")
+        for host, ips in dns_trace["resolved_ips"].items():
+            trace_content.append(f"  [bold]{host}:[/bold] {', '.join(ips)}")
+        trace_content.append("")
+    
+    # Show IP protection
+    if "ip_protection" in dns_trace and dns_trace["ip_protection"]:
+        trace_content.append("[bold cyan]IP Protection Analysis:[/bold cyan]")
+        for ip, protection in dns_trace["ip_protection"].items():
+            if "service" in protection:
+                trace_content.append(f"  [green]{ip}: {protection['service']} ({protection['confidence']:.1%}) via {protection['origin_host']}[/green]")
+            elif "error" in protection:
+                trace_content.append(f"  [red]{ip}: Failed to check ({protection['error']})[/red]")
+    
+    # Display primary protection and IP protection comparison
+    if result.is_protected:
+        trace_content.append("")
+        trace_content.append("[bold]Protection Analysis:[/bold]")
+        trace_content.append(f"  Domain: [cyan]{result.primary_protection.service.value}[/cyan] ({result.primary_protection.confidence:.1%})")
+        
+        # Check if the IP protection matches the domain protection
+        ip_services = set()
+        for protection in dns_trace.get("ip_protection", {}).values():
+            if "service" in protection:
+                ip_services.add(protection["service"])
+        
+        if ip_services:
+            trace_content.append(f"  IP services: [cyan]{', '.join(ip_services)}[/cyan]")
+            
+            # Compare domain protection with IP protection
+            domain_service = result.primary_protection.service.value
+            if domain_service in ip_services:
+                trace_content.append("[green]  ✓ Domain and IP protection match[/green]")
+            else:
+                trace_content.append("[yellow]  ⚠ Domain and IP protection differ[/yellow]")
+    
+    # Display the panel
+    console.print(
+        Panel(
+            "\n".join(trace_content),
+            title=f"DNS Trace - {result.host}",
+            border_style="blue",
+        )
+    )

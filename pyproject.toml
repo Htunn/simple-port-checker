@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simple-port-checker"
-version = "0.1.11"
+version = "0.2.0"
 description = "A comprehensive tool for checking firewall ports and L7 protection services"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -61,6 +61,7 @@ Documentation = "https://github.com/htunn/simple-port-checker#readme"
 
 [project.scripts]
 port-checker = "simple_port_checker.cli:main"
+simple-port-checker = "simple_port_checker.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/simple_port_checker"]
@@ -69,8 +70,13 @@ packages = ["src/simple_port_checker"]
 include = [
     "/src",
     "/tests",
+    "/docs",
+    "/examples",
     "/README.md",
     "/LICENSE",
+    "/CHANGELOG.md",
+    "/SECURITY.md",
+    "/CONTRIBUTING.md",
 ]
 
 [tool.black]

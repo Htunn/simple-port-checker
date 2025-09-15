@@ -8,9 +8,9 @@ This package provides functionality for:
 - Rich CLI interface with progress bars
 """
 
-__version__ = "0.1.11"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__version__ = "0.2.0"
+__author__ = "htunn"
+__email__ = "htunnthuthu.linux@gmail.com"
 __license__ = "MIT"
 
 from .core.port_scanner import PortChecker

@@ -58,7 +58,7 @@ class L7Detector:
         self.user_agent = user_agent or "SimplePortChecker/1.0 (Security Scanner)"
         self.signatures = L7_SIGNATURES
 
-    async def detect(self, host: str, port: int = None, path: str = "/") -> L7Result:
+    async def detect(self, host: str, port: int = None, path: str = "/", trace_dns: bool = False) -> L7Result:
         """
         Detect L7 protection services for a given host.
 
@@ -66,6 +66,7 @@ class L7Detector:
             host: Target hostname
             port: Optional port (defaults to 80/443 based on scheme)
             path: URL path to test
+            trace_dns: Whether to trace DNS records and check resolved IPs (default: False)
 
         Returns:
             L7Result with detection results
@@ -84,6 +85,9 @@ class L7Detector:
         response_headers = {}
         status_code = None
         error = None
+        
+        # Initialize DNS trace information
+        dns_trace_info = {}
 
         # First, check if this is a known problematic domain with large headers
         # Use TLD and pattern-based detection instead of explicit domain lists
@@ -297,9 +301,36 @@ class L7Detector:
             error = f"Request failed: {str(e)}"
 
         # Additional DNS-based detection
+        dns_trace_info = {
+            "cname_chain": [],
+            "resolved_ips": {},
+            "ip_protection": {}
+        }
+        
         if not error:
             dns_detections = await self._dns_detection(host)
             detections.extend(dns_detections)
+            
+            # Initialize traced_detections and dns_trace_result
+            traced_detections = []
+            dns_trace_result = None
+            
+            # Trace domain through CNAME chain to final IPs and check for protection
+            # Only perform the trace if trace_dns is True or for specific domain patterns
+            if trace_dns or is_problematic_tld or is_government_domain or host.count('.') >= 2:
+                traced_detections, dns_trace_result = await self._trace_domain_protection(host, port, path)
+                
+                # Update the DNS trace info with the results
+                if dns_trace_result:
+                    dns_trace_info = dns_trace_result
+                    
+                # Only add traced detections if we're doing a trace or we don't have strong detections yet
+                if trace_dns or not any(d.confidence > 0.8 for d in detections):
+                    detections.extend(traced_detections)
+                
+            # Only add IP-based detections if we don't have a high-confidence detection yet
+            if not any(d.confidence > 0.85 for d in detections) and traced_detections:
+                detections.extend(traced_detections)
 
         # Remove duplicates and sort by confidence
         unique_detections = self._deduplicate_detections(detections)
@@ -313,6 +344,7 @@ class L7Detector:
             response_time=time.time() - start_time,
             status_code=status_code,
             error=error,
+            dns_trace=dns_trace_info,
         )
 
     async def detect_multiple(
@@ -1056,3 +1088,420 @@ class L7Detector:
                         details={"method": "tld_pattern_analysis"},
                     )
                 )
+
+    async def _trace_domain_protection(self, host: str, port: int = None, path: str = "/") -> tuple:
+        """
+        Trace a domain through its CNAME chain to the final IPs and check each for L7 protection.
+        
+        Args:
+            host: Target hostname
+            port: Optional port number
+            path: URL path to test
+            
+        Returns:
+            Tuple of (List[L7Detection], dict) containing detections and DNS trace info
+        """
+        traced_detections = []
+        
+        # Store DNS trace information
+        dns_trace = {
+            "cname_chain": [],
+            "resolved_ips": {},
+            "ip_protection": {}
+        }
+        
+        try:
+            # Set up resolver
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 2.0  # Short timeout for DNS lookups
+            
+            # First, get CNAME records for the original host
+            try:
+                cname_answers = resolver.resolve(host, "CNAME")
+                
+                for cname in cname_answers:
+                    cname_str = str(cname.target).lower().rstrip('.')
+                    
+                    # Record CNAME in trace
+                    dns_trace["cname_chain"].append({
+                        "from": host,
+                        "to": cname_str,
+                        "depth": 0
+                    })
+                    
+                    # Now try to resolve the CNAME target to an IP
+                    try:
+                        # Check if the CNAME points to another CNAME
+                        try:
+                            cname2_answers = resolver.resolve(cname_str, "CNAME")
+                            for cname2 in cname2_answers:
+                                cname2_str = str(cname2.target).lower().rstrip('.')
+                                
+                                # Record the second-level CNAME
+                                dns_trace["cname_chain"].append({
+                                    "from": cname_str,
+                                    "to": cname2_str,
+                                    "depth": 1
+                                })
+                                
+                                # We'll stop at depth 2 for simplicity
+                                try:
+                                    a2_answers = resolver.resolve(cname2_str, "A")
+                                    if cname2_str not in dns_trace["resolved_ips"]:
+                                        dns_trace["resolved_ips"][cname2_str] = []
+                                        
+                                    for a2_record in a2_answers:
+                                        ip_str = str(a2_record)
+                                        dns_trace["resolved_ips"][cname2_str].append(ip_str)
+                                        
+                                        # Check this IP for protection
+                                        await self._check_ip_for_protection(ip_str, host, port, path, 
+                                                                         cname2_str, traced_detections, dns_trace)
+                                except Exception:
+                                    pass
+                        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                            # No second-level CNAME, try to resolve the first-level CNAME to IP
+                            try:
+                                a_answers = resolver.resolve(cname_str, "A")
+                                if cname_str not in dns_trace["resolved_ips"]:
+                                    dns_trace["resolved_ips"][cname_str] = []
+                                    
+                                for a_record in a_answers:
+                                    ip_str = str(a_record)
+                                    dns_trace["resolved_ips"][cname_str].append(ip_str)
+                                    
+                                    # Check this IP for protection
+                                    await self._check_ip_for_protection(ip_str, host, port, path, 
+                                                                     cname_str, traced_detections, dns_trace)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                        
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                # No CNAME records, try direct A record lookup
+                try:
+                    a_answers = resolver.resolve(host, "A")
+                    dns_trace["resolved_ips"][host] = []
+                    
+                    for a_record in a_answers:
+                        ip_str = str(a_record)
+                        dns_trace["resolved_ips"][host].append(ip_str)
+                        
+                        # Check this IP for protection
+                        await self._check_ip_for_protection(ip_str, host, port, path, 
+                                                         host, traced_detections, dns_trace)
+                except Exception:
+                    # Failed to resolve A records
+                    pass
+        except Exception:
+            # Handle any general errors
+            pass
+            
+        return traced_detections, dns_trace
+        
+    async def _check_ip_for_protection(self, ip_str: str, original_host: str, port: Optional[int], 
+                                       path: str, dns_name: str, detections_list: List, dns_trace: Dict[str, Any]) -> None:
+        """
+        Check an IP address for L7 protection and update the detections list.
+        
+        Args:
+            ip_str: IP address to check
+            original_host: Original hostname for Host header
+            port: Port number to check
+            path: URL path to test
+            dns_name: DNS name that resolved to this IP
+            detections_list: List to append detections to
+            dns_trace: DNS trace dictionary to update
+        """
+        try:
+            # Build test URL with proper port and path
+            for scheme in ["https", "http"]:
+                if port:
+                    url = f"{scheme}://{ip_str}:{port}{path}"
+                else:
+                    url = f"{scheme}://{ip_str}{path}"
+                
+                try:
+                    async with aiohttp.ClientSession(
+                        timeout=aiohttp.ClientTimeout(total=3.0),
+                        headers={
+                            "Host": original_host,
+                            "User-Agent": self.user_agent,
+                            "Accept": "*/*"
+                        },
+                        connector=aiohttp.TCPConnector(ssl=False)
+                    ) as session:
+                        async with session.get(url) as response:
+                            headers = dict(response.headers)
+                            
+                            detections = await self._analyze_response(response, headers, original_host)
+                            if detections:
+                                # Add detections to the list
+                                detections_list.extend(detections)
+                                
+                                # Record protection in DNS trace
+                                if ip_str not in dns_trace["ip_protection"]:
+                                    dns_trace["ip_protection"][ip_str] = {
+                                        "dns_name": dns_name,
+                                        "protections": []
+                                    }
+                                
+                                for detection in detections:
+                                    dns_trace["ip_protection"][ip_str]["protections"].append({
+                                        "service": detection.service.value,
+                                        "confidence": detection.confidence,
+                                        "url": url
+                                    })
+                                return
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    async def _check_single_ip_for_protection(self, ip_str: str, original_host: str) -> Optional[Dict[str, Any]]:
+        """
+        Check a single IP address for L7 protection and return result.
+        
+        Args:
+            ip_str: IP address to check
+            original_host: Original hostname for Host header
+            
+        Returns:
+            Dictionary with protection information or None
+        """
+        try:
+            for scheme in ["https", "http"]:
+                url = f"{scheme}://{ip_str}/"
+                
+                try:
+                    async with aiohttp.ClientSession(
+                        timeout=aiohttp.ClientTimeout(total=3.0),
+                        headers={
+                            "Host": original_host,
+                            "User-Agent": self.user_agent,
+                            "Accept": "*/*"
+                        },
+                        connector=aiohttp.TCPConnector(ssl=False)
+                    ) as session:
+                        async with session.get(url) as response:
+                            headers = dict(response.headers)
+                            
+                            detections = await self._analyze_response(response, headers, original_host)
+                            if detections:
+                                return {
+                                    "service": detections[0].service.value,
+                                    "confidence": detections[0].confidence
+                                }
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        
+        return None
+
+    async def get_dns_trace(self, domain: str) -> Dict[str, Any]:
+        """
+        Get detailed DNS trace information for a domain.
+        
+        Args:
+            domain: Domain to trace
+            
+        Returns:
+            Dictionary with detailed DNS trace information
+        """
+        dns_trace = {
+            "cname_chain": [],
+            "resolved_ips": {},
+            "ip_protection": {}
+        }
+        
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 2.0
+            visited = set()
+            
+            async def resolve_chain(host, depth=0):
+                if depth > 5 or host in visited:
+                    return
+                
+                visited.add(host)
+                
+                try:
+                    # Try to get CNAME records
+                    try:
+                        cname_answers = resolver.resolve(host, "CNAME")
+                        for cname in cname_answers:
+                            cname_str = str(cname.target).lower().rstrip('.')
+                            
+                            dns_trace["cname_chain"].append({
+                                "from": host,
+                                "to": cname_str,
+                                "depth": depth
+                            })
+                            
+                            await resolve_chain(cname_str, depth + 1)
+                    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                        # No CNAME records, try A records
+                        try:
+                            a_answers = resolver.resolve(host, "A")
+                            dns_trace["resolved_ips"][host] = []
+                            
+                            for a_record in a_answers:
+                                ip = str(a_record)
+                                dns_trace["resolved_ips"][host].append(ip)
+                                
+                                # Check for L7 protection on this IP
+                                protection = await self._check_single_ip_for_protection(ip, domain)
+                                if protection:
+                                    dns_trace["ip_protection"][ip] = {
+                                        "service": protection["service"],
+                                        "confidence": protection["confidence"],
+                                        "origin_host": host
+                                    }
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+            
+            await resolve_chain(domain)
+        except Exception as e:
+            dns_trace["error"] = str(e)
+        
+        return dns_trace
+
+    async def _debug_trace(self, host: str) -> None:
+        """Debug function to test DNS tracing."""
+        try:
+            print(f"DEBUG: Starting trace for {host}")
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 2.0
+
+            try:
+                # Check for CNAME
+                print(f"DEBUG: Checking CNAME for {host}")
+                try:
+                    cname_answers = resolver.resolve(host, "CNAME")
+                    for cname in cname_answers:
+                        cname_str = str(cname.target).lower().rstrip('.')
+                        print(f"DEBUG: Found CNAME: {host} -> {cname_str}")
+                        
+                        # Try to resolve the CNAME
+                        try:
+                            print(f"DEBUG: Resolving CNAME {cname_str}")
+                            a_answers = resolver.resolve(cname_str, "A")
+                            for a_record in a_answers:
+                                ip_str = str(a_record)
+                                print(f"DEBUG: CNAME resolved to IP: {cname_str} -> {ip_str}")
+                        except Exception as e:
+                            print(f"DEBUG: Failed to resolve CNAME {cname_str}: {e}")
+                            
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer) as e:
+                    print(f"DEBUG: No CNAME records for {host}: {e}")
+                    
+                # Check for direct A records
+                print(f"DEBUG: Checking A records for {host}")
+                try:
+                    a_answers = resolver.resolve(host, "A")
+                    for a_record in a_answers:
+                        ip_str = str(a_record)
+                        print(f"DEBUG: Found A record: {host} -> {ip_str}")
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer) as e:
+                    print(f"DEBUG: No A records for {host}: {e}")
+                    
+            except Exception as e:
+                print(f"DEBUG: General error in DNS resolution: {e}")
+        
+        except Exception as e:
+            print(f"DEBUG: Unexpected error: {e}")
+
+    async def trace_dns(self, host: str) -> Dict[str, Any]:
+        """
+        Trace DNS records to their ultimate A records and check for L7 protection on IPs.
+
+        Args:
+            host: Target hostname
+
+        Returns:
+            Dictionary with DNS trace information
+        """
+        dns_trace = {
+            "cname_chain": [],
+            "resolved_ips": [],
+            "ip_protection": {}
+        }
+
+        try:
+            # Initialize resolver
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 5
+
+            # Start with the original hostname
+            current_host = host
+            visited_hosts = set()
+
+            # Follow CNAME chain
+            while current_host not in visited_hosts:
+                visited_hosts.add(current_host)
+                
+                try:
+                    # Try to get CNAME record
+                    cname_answers = resolver.resolve(current_host, "CNAME")
+                    for cname in cname_answers:
+                        cname_target = str(cname.target).lower().rstrip('.')
+                        dns_trace["cname_chain"].append({
+                            "source": current_host,
+                            "target": cname_target
+                        })
+                        current_host = cname_target
+                        break
+                    
+                    # If we found a CNAME, continue to follow the chain
+                    if current_host != host and current_host not in visited_hosts:
+                        continue
+                    
+                except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                    # No CNAME found, try to get A record
+                    try:
+                        a_answers = resolver.resolve(current_host, "A")
+                        for a_record in a_answers:
+                            ip = str(a_record)
+                            if ip not in dns_trace["resolved_ips"]:
+                                dns_trace["resolved_ips"].append(ip)
+                    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                        pass
+                    
+                    # End of chain
+                    break
+                
+                except Exception as e:
+                    # Log error and break chain
+                    dns_trace["error"] = str(e)
+                    break
+            
+            # Check each IP for L7 protection
+            for ip in dns_trace["resolved_ips"]:
+                try:
+                    # Try to detect L7 protection on the IP
+                    ip_result = await self.detect(ip)
+                    
+                    if ip_result.is_protected and ip_result.primary_protection:
+                        dns_trace["ip_protection"][ip] = {
+                            "service": ip_result.primary_protection.service.value,
+                            "confidence": ip_result.primary_protection.confidence,
+                            "indicators": ip_result.primary_protection.indicators[:3] if ip_result.primary_protection.indicators else []
+                        }
+                    else:
+                        dns_trace["ip_protection"][ip] = {
+                            "service": "none",
+                            "confidence": 0.0
+                        }
+                except Exception as e:
+                    dns_trace["ip_protection"][ip] = {
+                        "error": str(e)[:100]
+                    }
+            
+        except Exception as e:
+            dns_trace["error"] = str(e)
+        
+        return dns_trace

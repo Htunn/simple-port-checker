@@ -6,10 +6,13 @@ A comprehensive Python tool for checking firewall ports and detecting L7 protect
 
 - ✅ **Port Scanning**: Check well-known firewall ports and services
 - 🛡️ **L7 Protection Detection**: Identify WAF/CDN services (F5, AWS WAF, Azure, Cloudflare, etc.)
-- 🚀 **Async Support**: High-performance concurrent scanning
+- � **DNS Trace**: Advanced DNS CNAME chain analysis and IP protection detection
+- �🚀 **Async Support**: High-performance concurrent scanning
 - 📊 **Rich Output**: Beautiful terminal output with progress bars
-- 🔧 **CLI Interface**: Easy-to-use command-line interface
+- 🔧 **Unified CLI**: All functionality accessible through a single command interface
 - 📦 **Pip Installable**: Available on PyPI
+- 🐍 **Type Hints**: Full type hint support for better IDE integration
+- 🏗️ **Production Ready**: Follows Python packaging best practices
 
 ## Installation
 
@@ -39,11 +42,20 @@ port-checker scan example.com --ports 80,443,8080
 # Check L7 protection
 port-checker l7-check example.com
 
+# DNS trace analysis
+port-checker dns-trace example.com
+
+# L7 check with DNS tracing
+port-checker l7-check example.com --trace-dns
+
 # Full scan with L7 detection
 port-checker full-scan example.com
 
 # Scan multiple targets
 port-checker scan example.com google.com --output results.json
+
+# Run as Python module
+python -m simple_port_checker scan example.com
 ```
 
 ### Python API Usage
@@ -287,6 +299,31 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+## What's New in v0.2.0 🎉
+
+This major release brings significant improvements to project structure and functionality:
+
+### 🏗️ **Complete Project Refactoring**
+- **Unified CLI**: All functionality now accessible through main `port-checker` command
+- **Clean Architecture**: Proper Python package structure following best practices
+- **Type Safety**: Full type hint support with `py.typed` file
+
+### 🔍 **Enhanced DNS Analysis**
+- **DNS Trace Command**: New `dns-trace` command for detailed CNAME chain analysis
+- **Integrated Tracing**: Use `--trace-dns` flag with L7 checks for comprehensive analysis
+- **Better Detection**: Improved protection detection through DNS-based analysis
+
+### 🚀 **Production Ready**
+- **Security Policy**: Added comprehensive security guidelines
+- **Better Testing**: Reorganized test suite following Python standards
+- **Documentation**: Updated and improved documentation
+- **CI/CD Ready**: Optimized for automated builds and publishing
+
+### ⚡ **Breaking Changes**
+- Removed standalone scripts (use unified CLI instead)
+- Moved tests to top-level directory
+- Removed `run.py` (use `python -m simple_port_checker` or installed commands)
+
 ## Contributing
 
 1. Fork the repository
@@ -301,6 +338,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
+### v0.2.0 (Latest)
+- Major project refactoring and cleanup
+- Unified CLI interface with DNS trace functionality
+- Production-ready structure with type hints
+- Enhanced security and documentation
+
 ### v0.1.0 (Initial Release)
 - Basic port scanning functionality
 - L7 protection detection
@@ -311,6 +356,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Security Considerations
 
 This tool is intended for legitimate security testing and network diagnostics only. Users are responsible for ensuring they have proper authorization before scanning any networks or systems they do not own.
+
+For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 
 ## Support
 

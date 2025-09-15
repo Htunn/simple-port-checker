@@ -58,6 +58,7 @@ class L7Result:
     status_code: Optional[int] = None
     error: Optional[str] = None
     timestamp: Optional[str] = None
+    dns_trace: Optional[Dict[str, Any]] = None  # Information about DNS chain and resolved IPs
 
     def __post_init__(self):
         """Set timestamp if not provided."""
@@ -65,6 +66,9 @@ class L7Result:
             from datetime import datetime, timezone
 
             self.timestamp = datetime.now(timezone.utc).isoformat()
+        
+        if self.dns_trace is None:
+            self.dns_trace = {}
 
     @property
     def primary_protection(self) -> Optional[L7Detection]:
@@ -106,6 +110,7 @@ class L7Result:
             "status_code": self.status_code,
             "error": self.error,
             "timestamp": self.timestamp,
+            "dns_trace": self.dns_trace,
             "summary": {
                 "is_protected": self.is_protected,
                 "primary_protection": (

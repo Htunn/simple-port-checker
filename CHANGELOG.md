@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-09-15
+
+### Major Refactoring and Cleanup
+- **BREAKING**: Removed standalone scripts directory and integrated all functionality into main CLI
+- **BREAKING**: Moved all tests to top-level `tests/` directory following Python packaging standards
+- **BREAKING**: Removed `run.py` entry point (use `python -m simple_port_checker` or installed CLI commands)
+
+### Added
+- Unified CLI interface with all functionality accessible via main commands
+- DNS trace functionality integrated into `dns-trace` command and `l7-check --trace-dns`
+- Type hint support with `py.typed` file for better IDE and tooling support
+- Security policy documentation (`SECURITY.md`)
+- Production-ready project structure following Python packaging best practices
+
+### Improved
+- Clean and consistent project organization under `src/simple_port_checker/`
+- Better error handling in DNS trace functionality
+- Fixed undefined variable issues in L7 detector
+- Updated documentation and project structure guide
+- Enhanced code organization and maintainability
+
+### Fixed
+- Method signature issues in `_check_ip_for_protection`
+- Variable scope problems in DNS tracing
+- Import path issues after test file reorganization
+- Duplicate test directories cleanup
+
+### Removed
+- `src/simple_port_checker/scripts/` directory (functionality moved to main CLI)
+- `run.py` standalone entry point
+- Unnecessary script entry points from pyproject.toml
+- Duplicate and outdated test files
+
 ## [Unreleased]
 
 ### Added
