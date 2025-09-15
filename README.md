@@ -61,24 +61,29 @@ python -m simple_port_checker scan example.com
 ### Python API Usage
 
 ```python
+import asyncio
 from simple_port_checker import PortChecker, L7Detector
 
 # Initialize scanner
 scanner = PortChecker()
 
-# Scan ports
-results = await scanner.scan_host("example.com", ports=[80, 443, 8080])
-print(f"Open ports: {len([p for p in results.ports if p.is_open])}")
+async def main():
+    # Scan ports
+    results = await scanner.scan_host("blog.htunnthuthu.tech", ports=[80, 443, 8080])
+    print(f"Open ports: {len([p for p in results.ports if p.is_open])}")
 
-# Detect L7 protection
-detector = L7Detector()
-protection = await detector.detect("example.com")
-if protection.primary_protection:
-    service = protection.primary_protection.service.value
-    confidence = protection.primary_protection.confidence
-    print(f"L7 Protection: {service} ({confidence:.0%})")
-else:
-    print("No L7 protection detected")
+    # Detect L7 protection
+    detector = L7Detector()
+    protection = await detector.detect("blog.htunnthuthu.tech")
+    if protection.primary_protection:
+        service = protection.primary_protection.service.value
+        confidence = protection.primary_protection.confidence
+        print(f"L7 Protection: {service} ({confidence:.0%})")
+    else:
+        print("No L7 protection detected")
+
+# Run the async function
+asyncio.run(main())
 ```
 
 ## Architecture & Flow
