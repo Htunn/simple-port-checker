@@ -30,13 +30,14 @@ from .core.l7_detector import L7Detector
 from .models.scan_result import ScanResult, BatchScanResult
 from .models.l7_result import L7Result, BatchL7Result
 from .utils.common_ports import TOP_PORTS, get_service_name, get_port_description
+from . import __version__
 
 
 console = Console()
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version=__version__)
 def main():
     """Simple Port Checker - A comprehensive tool for checking firewall ports and L7 protection."""
     pass
