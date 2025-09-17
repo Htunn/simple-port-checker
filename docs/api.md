@@ -199,6 +199,83 @@ print(f"WAF detected: {waf_results['waf_detected']}")
 print(f"Blocked requests: {len(waf_results['blocked_requests'])}")
 ```
 
+### MTLSChecker
+
+Class for checking mTLS (Mutual TLS) authentication support and requirements.
+
+#### Constructor
+
+```python
+from simple_port_checker import MTLSChecker
+
+# Default configuration
+checker = MTLSChecker()
+
+# Custom configuration
+checker = MTLSChecker(timeout=10, verify_ssl=True)
+```
+
+**Parameters:**
+- `timeout` (int): Connection timeout in seconds (default: 10)
+- `verify_ssl` (bool): Whether to verify SSL certificates (default: True)
+
+#### Methods
+
+##### `check_mtls(target, port=443, client_cert_path=None, client_key_path=None, ca_bundle_path=None)`
+
+Check if target supports mTLS authentication.
+
+**Parameters:**
+- `target` (str): Target hostname or IP address
+- `port` (int): Target port (default: 443)
+- `client_cert_path` (str, optional): Path to client certificate file (PEM format)
+- `client_key_path` (str, optional): Path to client private key file (PEM format)
+- `ca_bundle_path` (str, optional): Path to CA bundle file
+
+**Returns:** `MTLSResult` object
+
+**Example:**
+```python
+# Basic mTLS check
+result = await checker.check_mtls("example.com")
+print(f"Supports mTLS: {result.supports_mtls}")
+print(f"Requires client cert: {result.requires_client_cert}")
+
+# With client certificates
+result = await checker.check_mtls(
+    "example.com", 
+    client_cert_path="client.crt",
+    client_key_path="client.key"
+)
+print(f"Handshake successful: {result.handshake_successful}")
+print(f"TLS version: {result.tls_version}")
+```
+
+##### `batch_check_mtls(targets, client_cert_path=None, client_key_path=None, ca_bundle_path=None, max_concurrent=10)`
+
+Perform mTLS checks on multiple targets concurrently.
+
+**Parameters:**
+- `targets` (List[Tuple[str, int]]): List of (hostname, port) tuples
+- `client_cert_path` (str, optional): Path to client certificate file
+- `client_key_path` (str, optional): Path to client private key file
+- `ca_bundle_path` (str, optional): Path to CA bundle file
+- `max_concurrent` (int): Maximum concurrent connections (default: 10)
+
+**Returns:** `List[MTLSResult]`
+
+**Example:**
+```python
+targets = [
+    ("example.com", 443),
+    ("test.example.com", 8443),
+]
+
+results = await checker.batch_check_mtls(targets)
+for result in results:
+    print(f"{result.target}:{result.port} - mTLS: {result.supports_mtls}")
+```
+
 ## Data Models
 
 ### ScanResult
@@ -299,6 +376,88 @@ Enumeration of supported L7 protection services.
 - `RADWARE`: Radware DefensePro
 - `AZURE_FRONT_DOOR`: Azure Front Door
 - `UNKNOWN`: Unknown protection service
+
+### MTLSResult
+
+Contains the results of mTLS authentication checks.
+
+**Attributes:**
+- `target` (str): Target hostname or IP address
+- `port` (int): Target port number
+- `supports_mtls` (bool): Whether the target supports mTLS
+- `requires_client_cert` (bool): Whether client certificate is required
+- `server_cert_info` (CertificateInfo, optional): Server certificate information
+- `client_cert_requested` (bool): Whether server requests client certificate
+- `handshake_successful` (bool): Whether mTLS handshake was successful
+- `error_message` (str, optional): Error message if check failed
+- `cipher_suite` (str, optional): Cipher suite used in successful connection
+- `tls_version` (str, optional): TLS version used
+- `verification_mode` (str, optional): Certificate verification mode
+- `ca_bundle_path` (str, optional): Path to CA bundle used
+- `timestamp` (str): Timestamp of the check
+
+**Example:**
+```python
+result = await checker.check_mtls("example.com")
+print(f"mTLS supported: {result.supports_mtls}")
+print(f"Client cert required: {result.requires_client_cert}")
+
+if result.server_cert_info:
+    cert = result.server_cert_info
+    print(f"Server cert subject: {cert.subject}")
+    print(f"Valid until: {cert.not_valid_after}")
+```
+
+### CertificateInfo
+
+Information about an X.509 certificate.
+
+**Attributes:**
+- `subject` (str): Certificate subject DN
+- `issuer` (str): Certificate issuer DN
+- `version` (int): Certificate version
+- `serial_number` (str): Certificate serial number
+- `not_valid_before` (str): Certificate validity start date
+- `not_valid_after` (str): Certificate validity end date
+- `signature_algorithm` (str): Signature algorithm used
+- `key_algorithm` (str): Public key algorithm
+- `key_size` (int, optional): Public key size in bits
+- `san_dns_names` (List[str]): Subject Alternative Name DNS entries
+- `san_ip_addresses` (List[str]): Subject Alternative Name IP entries
+- `is_ca` (bool): Whether this is a CA certificate
+- `is_self_signed` (bool): Whether this is a self-signed certificate
+- `fingerprint_sha256` (str): SHA-256 fingerprint of the certificate
+
+**Example:**
+```python
+if result.server_cert_info:
+    cert = result.server_cert_info
+    print(f"Subject: {cert.subject}")
+    print(f"Algorithm: {cert.key_algorithm} ({cert.key_size} bits)")
+    print(f"SAN DNS: {', '.join(cert.san_dns_names)}")
+    print(f"Fingerprint: {cert.fingerprint_sha256}")
+```
+
+### BatchMTLSResult
+
+Contains the results of batch mTLS checks.
+
+**Attributes:**
+- `results` (List[MTLSResult]): Individual mTLS check results
+- `total_targets` (int): Total number of targets checked
+- `successful_checks` (int): Number of successful checks
+- `failed_checks` (int): Number of failed checks
+- `mtls_supported_count` (int): Number of targets supporting mTLS
+- `mtls_required_count` (int): Number of targets requiring client certificates
+- `timestamp` (str): Batch operation timestamp
+
+**Example:**
+```python
+batch_result = BatchMTLSResult.from_results(results)
+print(f"Total: {batch_result.total_targets}")
+print(f"mTLS supported: {batch_result.mtls_supported_count}")
+print(f"Success rate: {batch_result.successful_checks / batch_result.total_targets:.1%}")
+```
 
 ## Configuration
 
@@ -418,6 +577,56 @@ async def custom_waf_analysis(target):
     }
     
     return analysis
+```
+
+### mTLS Authentication Testing
+
+```python
+async def mtls_security_assessment(targets):
+    checker = MTLSChecker(timeout=10)
+    
+    # Batch check for mTLS support
+    target_ports = [(target, 443) for target in targets]
+    results = await checker.batch_check_mtls(target_ports)
+    
+    for result in results:
+        print(f"\n{result.target}:{result.port}")
+        print(f"  Supports mTLS: {result.supports_mtls}")
+        print(f"  Requires client cert: {result.requires_client_cert}")
+        
+        if result.server_cert_info:
+            cert = result.server_cert_info
+            print(f"  Certificate issuer: {cert.issuer}")
+            print(f"  Key algorithm: {cert.key_algorithm} ({cert.key_size} bits)")
+            
+        if result.error_message:
+            print(f"  Error: {result.error_message}")
+
+# Generate test certificates
+from simple_port_checker.core.mtls_checker import generate_self_signed_cert
+
+async def test_with_client_certs(target):
+    # Generate certificates for testing
+    cert_path = "test_client.crt"
+    key_path = "test_client.key"
+    
+    if generate_self_signed_cert("test-client", cert_path, key_path):
+        checker = MTLSChecker()
+        
+        # Test with client certificates
+        result = await checker.check_mtls(
+            target,
+            client_cert_path=cert_path,
+            client_key_path=key_path
+        )
+        
+        print(f"mTLS handshake successful: {result.handshake_successful}")
+        print(f"TLS version: {result.tls_version}")
+        print(f"Cipher suite: {result.cipher_suite}")
+        
+        # Clean up
+        Path(cert_path).unlink(missing_ok=True)
+        Path(key_path).unlink(missing_ok=True)
 ```
 
 ## Performance Considerations

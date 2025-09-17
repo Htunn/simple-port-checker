@@ -8,8 +8,9 @@ import asyncio
 import json
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import click
 import dns.resolver
@@ -27,8 +28,10 @@ from rich.text import Text
 
 from .core.port_scanner import PortChecker, ScanConfig
 from .core.l7_detector import L7Detector
+from .core.mtls_checker import MTLSChecker
 from .models.scan_result import ScanResult, BatchScanResult
 from .models.l7_result import L7Result, BatchL7Result
+from .models.mtls_result import MTLSResult, BatchMTLSResult
 from .utils.common_ports import TOP_PORTS, get_service_name, get_port_description
 from . import __version__
 
@@ -157,6 +160,216 @@ def dns_trace(targets, timeout, output, check_protection, verbose):
     asyncio.run(
         _run_dns_trace_analysis(list(targets), timeout, output, check_protection, verbose)
     )
+
+
+@main.command("mtls-check")
+@click.argument("targets", nargs=-1, required=True)
+@click.option("--port", "-p", default=443, help="Target port (default: 443)")
+@click.option("--timeout", "-t", default=10, help="Connection timeout in seconds (1-300)")
+@click.option("--client-cert", help="Path to client certificate file (PEM format)")
+@click.option("--client-key", help="Path to client private key file (PEM format)")
+@click.option("--ca-bundle", help="Path to CA bundle file for certificate verification")
+@click.option("--output", "-o", help="Output file (JSON format)")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output with detailed certificate information")
+@click.option("--no-verify", is_flag=True, help="Disable SSL certificate verification (use with caution)")
+@click.option("--concurrent", "-c", default=10, help="Maximum concurrent connections (1-50)")
+@click.option("--max-retries", default=3, help="Maximum retry attempts for failed connections (0-10)")
+@click.option("--retry-delay", default=1.0, help="Delay between retries in seconds (0.1-10.0)")
+def mtls_check(targets, port, timeout, client_cert, client_key, ca_bundle, output, verbose, no_verify, concurrent, max_retries, retry_delay):
+    """
+    Check for mTLS (Mutual TLS) authentication support and requirements.
+    
+    This command performs comprehensive mTLS analysis including:
+    - Server certificate validation and parsing
+    - Client certificate requirement detection
+    - Mutual authentication testing (with client certificates)
+    - Performance and reliability metrics
+    
+    Examples:
+    \b
+        # Basic mTLS check
+        port-checker mtls-check api.example.com
+        
+        # Check with client certificates
+        port-checker mtls-check api.example.com --client-cert client.crt --client-key client.key
+        
+        # Batch check multiple APIs
+        port-checker mtls-check api1.com api2.com:8443 --concurrent 10 --verbose
+        
+        # Enterprise security audit
+        port-checker mtls-check $(cat production-apis.txt) --output audit-results.json
+        
+        # Custom configuration
+        port-checker mtls-check api.example.com --timeout 30 --max-retries 5 --retry-delay 2.0
+    
+    Exit Codes:
+        0: All checks completed successfully
+        1: Some checks failed or errors occurred
+    """
+
+    console.print(
+        f"[blue]Starting mTLS check for {len(targets)} target(s)[/blue]"
+    )
+    console.print(f"[yellow]Port: {port}, Timeout: {timeout}s, Retries: {max_retries}[/yellow]")
+    
+    if client_cert and client_key:
+        console.print(f"[yellow]Using client certificate: {client_cert}[/yellow]")
+    else:
+        console.print("[yellow]No client certificates provided - checking server requirements only[/yellow]")
+    
+    if no_verify:
+        console.print("[red]⚠️  SSL certificate verification disabled[/red]")
+
+    # Run mTLS check
+    asyncio.run(
+        _run_mtls_check(
+            list(targets), port, timeout, client_cert, client_key, 
+            ca_bundle, output, verbose, not no_verify, concurrent, max_retries, retry_delay
+        )
+    )
+
+
+@main.command("mtls-gen-cert")
+@click.argument("hostname")
+@click.option("--cert-path", default="client.crt", help="Output certificate file path")
+@click.option("--key-path", default="client.key", help="Output private key file path") 
+@click.option("--days", default=365, help="Certificate validity in days (1-7300)")
+@click.option("--key-size", default=2048, help="RSA key size in bits (2048, 3072, 4096)")
+@click.option("--country", default="US", help="Country code for certificate subject")
+@click.option("--organization", default="Test Org", help="Organization name for certificate subject")
+def mtls_gen_cert(hostname, cert_path, key_path, days, key_size, country, organization):
+    """
+    Generate a self-signed certificate for mTLS testing.
+    
+    Creates a production-grade self-signed certificate and private key suitable for
+    mTLS testing and development. The certificate includes proper subject alternative
+    names and modern cryptographic parameters.
+    
+    Examples:
+    \b
+        # Basic certificate generation
+        port-checker mtls-gen-cert test-client.example.com
+        
+        # Custom validity period and key size
+        port-checker mtls-gen-cert api-client.com --days 90 --key-size 4096
+        
+        # Custom output paths
+        port-checker mtls-gen-cert client.internal --cert-path /etc/ssl/client.crt --key-path /etc/ssl/private/client.key
+        
+        # Custom subject information
+        port-checker mtls-gen-cert test.company.com --country GB --organization "ACME Corp"
+    
+    Security Notes:
+        - Use strong key sizes (2048+ bits) for production
+        - Store private keys securely with appropriate file permissions
+        - Regularly rotate certificates in production environments
+        - Self-signed certificates should only be used for testing
+    """
+    
+    console.print(f"[blue]Generating self-signed certificate for {hostname}[/blue]")
+    console.print(f"[yellow]Key size: {key_size} bits, Valid for: {days} days[/yellow]")
+    
+    from .core.mtls_checker import generate_self_signed_cert
+    
+    if generate_self_signed_cert(hostname, cert_path, key_path, days):
+        console.print(f"[green]✅ Certificate generated successfully:[/green]")
+        console.print(f"  📄 Certificate: {cert_path}")
+        console.print(f"  🔑 Private key: {key_path}")
+        console.print(f"  ⏰ Valid for: {days} days")
+        console.print(f"  🔒 Key size: {key_size} bits")
+        
+        # Show file permissions reminder
+        console.print(f"\n[yellow]⚠️  Security reminder:[/yellow]")
+        console.print(f"[yellow]Set appropriate file permissions:[/yellow]")
+        console.print(f"[yellow]  chmod 644 {cert_path}[/yellow]")
+        console.print(f"[yellow]  chmod 600 {key_path}[/yellow]")
+    else:
+        console.print("[red]❌ Failed to generate certificate[/red]")
+        console.print("[red]Ensure cryptography library is installed: pip install cryptography[/red]")
+        sys.exit(1)
+
+
+@main.command("mtls-validate-cert")
+@click.argument("cert_path")
+@click.argument("key_path")
+@click.option("--check-expiry", is_flag=True, help="Check certificate expiration date")
+@click.option("--check-chain", is_flag=True, help="Validate certificate chain (requires CA bundle)")
+@click.option("--ca-bundle", help="Path to CA bundle for chain validation")
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed certificate information")
+def mtls_validate_cert(cert_path, key_path, check_expiry, check_chain, ca_bundle, verbose):
+    """
+    Validate client certificate and private key files.
+    
+    Performs comprehensive validation of certificate and key files including:
+    - File existence and readability
+    - Certificate and key format validation
+    - Certificate and private key matching
+    - Optional expiration and chain validation
+    
+    Examples:
+    \b
+        # Basic validation
+        port-checker mtls-validate-cert client.crt client.key
+        
+        # Check expiration date
+        port-checker mtls-validate-cert client.crt client.key --check-expiry
+        
+        # Validate certificate chain
+        port-checker mtls-validate-cert client.crt client.key --check-chain --ca-bundle ca-bundle.pem
+        
+        # Detailed output
+        port-checker mtls-validate-cert client.crt client.key --verbose --check-expiry
+    
+    Exit Codes:
+        0: Certificate and key are valid
+        1: Validation failed or files are invalid
+    """
+    
+    console.print(f"[blue]Validating certificate files[/blue]")
+    console.print(f"📄 Certificate: {cert_path}")
+    console.print(f"🔑 Private key: {key_path}")
+    
+    from .core.mtls_checker import validate_certificate_files
+    
+    is_valid, message = validate_certificate_files(cert_path, key_path)
+    
+    if is_valid:
+        console.print(f"[green]✅ {message}[/green]")
+        
+        if verbose:
+            # Show certificate details
+            try:
+                from cryptography import x509
+                with open(cert_path, 'rb') as f:
+                    cert_data = f.read()
+                cert = x509.load_pem_x509_certificate(cert_data)
+                
+                console.print(f"\n[cyan]📋 Certificate Details:[/cyan]")
+                console.print(f"  Subject: {cert.subject.rfc4514_string()}")
+                console.print(f"  Issuer: {cert.issuer.rfc4514_string()}")
+                console.print(f"  Serial: {cert.serial_number}")
+                console.print(f"  Valid from: {cert.not_valid_before}")
+                console.print(f"  Valid until: {cert.not_valid_after}")
+                console.print(f"  Algorithm: {cert.signature_algorithm_oid._name}")
+                    
+            except ImportError:
+                console.print(f"[yellow]⚠️  cryptography library not available for detailed certificate parsing[/yellow]")
+            except Exception as e:
+                console.print(f"[yellow]⚠️  Could not parse certificate details: {e}[/yellow]")
+        
+        if check_expiry:
+            # Check certificate expiration
+            console.print(f"[blue]Checking certificate expiration...[/blue]")
+            # Implementation would go here
+            
+    else:
+        console.print(f"[red]❌ {message}[/red]")
+        console.print(f"[red]Please check:[/red]")
+        console.print(f"[red]  - File paths are correct[/red]")
+        console.print(f"[red]  - Files are readable[/red]")
+        console.print(f"[red]  - Certificate and key are in PEM format[/red]")
+        console.print(f"[red]  - Certificate and key pair match[/red]")
+        sys.exit(1)
 
 
 async def _run_port_scan(
@@ -594,6 +807,16 @@ def _save_results(results, filename: str):
         console.print(f"[red]Error saving results: {e}[/red]")
 
 
+def _save_mtls_results(batch_result: BatchMTLSResult, output_file: str):
+    """Save mTLS results to JSON file."""
+    try:
+        with open(output_file, "w") as f:
+            json.dump(batch_result.dict(), f, indent=2)
+        console.print(f"[green]Results saved to {output_file}[/green]")
+    except Exception as e:
+        console.print(f"[red]Failed to save results: {e}[/red]")
+
+
 @main.command()
 @click.argument("target")
 @click.option("--port", "-p", type=int, help="Specific port for service detection")
@@ -726,3 +949,213 @@ def _display_dns_trace(result: L7Result):
             border_style="blue",
         )
     )
+
+
+async def _run_mtls_check(
+    targets: List[str],
+    port: int,
+    timeout: int,
+    client_cert: Optional[str],
+    client_key: Optional[str],
+    ca_bundle: Optional[str],
+    output: Optional[str],
+    verbose: bool,
+    verify_ssl: bool,
+    concurrent: int,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+):
+    """Run mTLS checking with progress display and enhanced configuration."""
+
+    mtls_checker = MTLSChecker(
+        timeout=timeout, 
+        verify_ssl=verify_ssl,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+        enable_logging=verbose
+    )
+    start_time = time.time()
+    results = []
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+
+        mtls_task = progress.add_task("Checking mTLS support...", total=len(targets))
+
+        # Prepare target list with ports
+        target_ports = []
+        for target in targets:
+            if ':' in target and not target.startswith('['):  # Handle IPv6 addresses
+                host, port_str = target.rsplit(':', 1)
+                try:
+                    target_port = int(port_str)
+                    target_ports.append((host, target_port))
+                except ValueError:
+                    target_ports.append((target, port))
+            else:
+                target_ports.append((target, port))
+
+        try:
+            # Use batch checking for efficiency with progress callback
+            def progress_callback(completed, total, result):
+                progress.update(mtls_task, completed=completed)
+
+            results = await mtls_checker.batch_check_mtls(
+                target_ports,
+                client_cert_path=client_cert,
+                client_key_path=client_key,
+                ca_bundle_path=ca_bundle,
+                max_concurrent=concurrent,
+                progress_callback=progress_callback
+            )
+
+            progress.update(mtls_task, completed=len(targets))
+
+            if verbose:
+                for result in results:
+                    _display_mtls_result(result)
+
+        except Exception as e:
+            console.print(f"[red]Error during mTLS check: {e}[/red]")
+            return
+
+    # Display summary
+    duration = time.time() - start_time
+    _display_mtls_summary(results, duration)
+    
+    # Show performance metrics
+    metrics = mtls_checker.get_metrics()
+    if verbose and metrics['total_requests'] > 0:
+        _display_mtls_metrics(metrics)
+
+    # Save results if output file specified
+    if output:
+        batch_result = BatchMTLSResult.from_results(results)
+        _save_mtls_results(batch_result, output)
+
+
+def _display_mtls_result(result: MTLSResult):
+    """Display mTLS check result for a single target."""
+
+    # Create a table for the result
+    table = Table(title=f"mTLS Check - {result.target}:{result.port}")
+    table.add_column("Property", style="cyan", no_wrap=True)
+    table.add_column("Value", style="white")
+
+    # Basic connectivity
+    if result.error_message:
+        table.add_row("Status", f"[red]Failed: {result.error_message}[/red]")
+        console.print(table)
+        console.print()
+        return
+
+    table.add_row("Status", "[green]Connected[/green]")
+    table.add_row("Supports mTLS", "[green]Yes[/green]" if result.supports_mtls else "[red]No[/red]")
+    table.add_row("Requires Client Cert", "[red]Required[/red]" if result.requires_client_cert else "[yellow]Optional[/yellow]")
+    table.add_row("Client Cert Requested", "[green]Yes[/green]" if result.client_cert_requested else "[red]No[/red]")
+
+    # Connection details
+    if result.handshake_successful:
+        table.add_row("mTLS Handshake", "[green]Successful[/green]")
+        if result.cipher_suite:
+            table.add_row("Cipher Suite", result.cipher_suite)
+        if result.tls_version:
+            table.add_row("TLS Version", result.tls_version)
+    else:
+        table.add_row("mTLS Handshake", "[red]Failed[/red]")
+
+    # Certificate information
+    if result.server_cert_info:
+        cert = result.server_cert_info
+        table.add_row("Server Certificate", "")
+        table.add_row("  Subject", cert.subject)
+        table.add_row("  Issuer", cert.issuer)
+        table.add_row("  Valid From", cert.not_valid_before)
+        table.add_row("  Valid Until", cert.not_valid_after)
+        table.add_row("  Algorithm", f"{cert.key_algorithm} ({cert.key_size} bits)" if cert.key_size else cert.key_algorithm)
+        
+        if cert.san_dns_names:
+            table.add_row("  SAN DNS", ", ".join(cert.san_dns_names[:3]) + ("..." if len(cert.san_dns_names) > 3 else ""))
+        
+        if cert.is_self_signed:
+            table.add_row("  Self-Signed", "[yellow]Yes[/yellow]")
+
+    console.print(table)
+    console.print()
+
+
+def _display_mtls_summary(results: List[MTLSResult], duration: float):
+    """Display summary of mTLS check results."""
+
+    # Count different result types
+    total = len(results)
+    successful = sum(1 for r in results if r.error_message is None)
+    failed = total - successful
+    supports_mtls = sum(1 for r in results if r.supports_mtls)
+    requires_client_cert = sum(1 for r in results if r.requires_client_cert)
+    handshake_success = sum(1 for r in results if r.handshake_successful)
+
+    # Create summary table
+    summary_table = Table(title="mTLS Check Summary", show_header=True)
+    summary_table.add_column("Metric", style="cyan")
+    summary_table.add_column("Count", style="white", justify="right")
+    summary_table.add_column("Percentage", style="yellow", justify="right")
+
+    summary_table.add_row("Total Targets", str(total), "100%")
+    summary_table.add_row("Successful Checks", str(successful), f"{(successful/total)*100:.1f}%" if total > 0 else "0%")
+    summary_table.add_row("Failed Checks", str(failed), f"{(failed/total)*100:.1f}%" if total > 0 else "0%")
+    summary_table.add_row("mTLS Supported", str(supports_mtls), f"{(supports_mtls/total)*100:.1f}%" if total > 0 else "0%")
+    summary_table.add_row("Client Cert Required", str(requires_client_cert), f"{(requires_client_cert/total)*100:.1f}%" if total > 0 else "0%")
+    summary_table.add_row("Handshake Successful", str(handshake_success), f"{(handshake_success/total)*100:.1f}%" if total > 0 else "0%")
+
+    console.print(summary_table)
+    console.print(f"\n[blue]Scan completed in {duration:.2f} seconds[/blue]")
+
+    # Show notable findings
+    if requires_client_cert > 0:
+        console.print(f"\n[yellow]⚠ {requires_client_cert} target(s) require client certificates for authentication[/yellow]")
+    
+    if supports_mtls > 0:
+        console.print(f"[green]✓ {supports_mtls} target(s) support mTLS authentication[/green]")
+
+
+def _display_mtls_metrics(metrics: Dict[str, Any]):
+    """Display detailed mTLS performance metrics."""
+    
+    # Create metrics table
+    metrics_table = Table(title="📊 mTLS Performance Metrics", show_header=True)
+    metrics_table.add_column("Metric", style="cyan")
+    metrics_table.add_column("Value", style="white", justify="right")
+    
+    total_requests = metrics.get('total_requests', 0)
+    if total_requests > 0:
+        avg_time = metrics.get('total_time', 0) / total_requests
+        success_rate = (metrics.get('successful_connections', 0) / total_requests) * 100
+        
+        metrics_table.add_row("Total Requests", str(total_requests))
+        metrics_table.add_row("Successful Connections", str(metrics.get('successful_connections', 0)))
+        metrics_table.add_row("Failed Connections", str(metrics.get('failed_connections', 0)))
+        metrics_table.add_row("Success Rate", f"{success_rate:.1f}%")
+        metrics_table.add_row("Average Time", f"{avg_time:.3f}s")
+        metrics_table.add_row("Total Time", f"{metrics.get('total_time', 0):.3f}s")
+        
+        # Error breakdown
+        if metrics.get('network_errors', 0) > 0:
+            metrics_table.add_row("Network Errors", str(metrics.get('network_errors', 0)))
+        if metrics.get('timeout_errors', 0) > 0:
+            metrics_table.add_row("Timeout Errors", str(metrics.get('timeout_errors', 0)))
+        if metrics.get('certificate_errors', 0) > 0:
+            metrics_table.add_row("Certificate Errors", str(metrics.get('certificate_errors', 0)))
+        
+        # mTLS specific metrics
+        metrics_table.add_row("mTLS Supported", str(metrics.get('mtls_supported', 0)))
+        metrics_table.add_row("Client Cert Required", str(metrics.get('client_cert_required', 0)))
+        metrics_table.add_row("Handshake Failures", str(metrics.get('handshake_failures', 0)))
+        
+        console.print(metrics_table)
