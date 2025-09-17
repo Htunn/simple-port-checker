@@ -422,12 +422,12 @@ sequenceDiagram
     %% Phase 1: Server Certificate Discovery
     rect rgb(200, 255, 200)
         Note over Client,Target: Phase 1: Server Certificate Analysis
-        Client->>+Target: TCP Connect (port 443/custom)
-        Target-->>-Client: Connection established
+        Client->>Target: TCP Connect (port 443/custom)
+        Target-->>Client: Connection established
         
-        Client->>+Target: TLS Handshake (no client cert)
+        Client->>Target: TLS Handshake (no client cert)
         Target->>Target: Present server certificate
-        Target-->>-Client: Server certificate + chain
+        Target-->>Client: Server certificate + chain
         
         Client->>Client: Parse X.509 certificate
         Client->>Client: Extract subject, issuer, SAN, algorithms
@@ -438,7 +438,7 @@ sequenceDiagram
     %% Phase 2: Client Certificate Requirement Detection
     rect rgb(255, 220, 200)
         Note over Client,Target: Phase 2: Client Certificate Requirement Detection
-        Client->>+Target: TLS Handshake (without client cert)
+        Client->>Target: TLS Handshake (without client cert)
         
         alt Server requires client certificate
             Target-->>Client: SSL Error: certificate required
@@ -449,7 +449,7 @@ sequenceDiagram
             Client->>Client: Set requires_client_cert = false
             Client->>Client: Set client_cert_requested = true
         else Server does not support mTLS
-            Target-->>-Client: TLS Handshake successful
+            Target-->>Client: TLS Handshake successful
             Client->>Client: Set supports_mtls = false
             Client->>Client: Set client_cert_requested = false
         end
@@ -462,19 +462,19 @@ sequenceDiagram
             Client->>Client: Load client certificate chain
             Client->>Client: Load private key
             
-            Client->>+Target: mTLS Handshake with client cert
+            Client->>Target: mTLS Handshake with client cert
             Target->>Target: Verify client certificate
             
             alt Certificate validation successful
                 Target->>CA: Verify certificate chain (optional)
                 CA-->>Target: Certificate chain valid
                 Target-->>Client: mTLS Handshake successful
-                Target-->>-Client: Cipher suite + TLS version
+                Target-->>Client: Cipher suite + TLS version
                 Client->>Client: Set handshake_successful = true
                 Client->>Client: Extract cipher suite info
                 Client->>Client: Extract TLS version
             else Certificate validation failed
-                Target-->>-Client: SSL Error: certificate verification failed
+                Target-->>Client: SSL Error: certificate verification failed
                 Client->>Client: Set handshake_successful = false
                 Client->>Client: Log authentication failure
             end
