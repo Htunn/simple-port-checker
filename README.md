@@ -1,4 +1,4 @@
-# Simple Port Checker
+# Simple Port Checker   [![Publish to PyPI](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml/badge.svg)](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml)
 
 A comprehensive Python tool for checking firewall ports, detecting L7 protection services (WAF, CDN, etc.), and testing mTLS authentication.
 
