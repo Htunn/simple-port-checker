@@ -21,9 +21,9 @@ docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 
 | Tag | Description | Size | Architectures |
 |-----|-------------|------|---------------|
-| `latest` | Latest stable release | ![Docker Image Size](https://img.shields.io/docker/image-size/htunnthuthu/simple-port-checker/latest) | `linux/amd64`, `linux/arm64` |
-| `v0.4.0` | Version 0.4.0 | ![Docker Image Size](https://img.shields.io/docker/image-size/htunnthuthu/simple-port-checker/v0.4.0) | `linux/amd64`, `linux/arm64` |
-| `v0.3.0` | Version 0.3.0 | ![Docker Image Size](https://img.shields.io/docker/image-size/htunnthuthu/simple-port-checker/v0.3.0) | `linux/amd64`, `linux/arm64` |
+| `latest` | Latest stable release | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.4.0` | Version 0.4.0 | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.3.0` | Version 0.3.0 | ~48MB | `linux/amd64`, `linux/arm64` |
 
 **Recommendation**: Use `latest` for the most recent features, or pin to specific version tags for production deployments.
 
