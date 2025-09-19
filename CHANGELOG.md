@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-09-19
+
+### Fixed
+- **L7 Detection Bug**: Fixed critical false positive where CloudFront-protected sites ( aws.amazon.com) were incorrectly identified as F5 Big-IP
+- **Via Header Detection**: Corrected F5 detection logic to check via header content instead of just presence
+- **AWS WAF Detection**: Fixed fallback detection path that was incorrectly flagging any via header as F5
+
+### Enhanced
+- **CloudFront Differentiation**: AWS WAF detection now distinguishes between "CloudFront - AWS WAF" and pure "AWS WAF"
+- **Display Names**: Enhanced service name display logic to show more specific protection service information
+- **Detection Accuracy**: Improved confidence scoring and indicator analysis for AWS CloudFront services
+
+### Improved
+- **Detection Logic**: Refined F5 Big-IP detection to avoid false positives with CloudFront via headers
+- **Service Identification**: More precise identification of AWS protection services (CloudFront vs WAF)
+- **User Experience**: Clearer service names in CLI output and JSON results
+
 ## [0.4.0] - 2025-09-19
 
 ### Added

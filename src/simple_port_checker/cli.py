@@ -657,7 +657,14 @@ def _display_l7_result(result: L7Result, show_trace: bool = False):
     if result.is_protected:
         primary = result.primary_protection
         panel_content.append(f"[green]✓ L7 Protection Detected[/green]")
-        panel_content.append(f"[yellow]Primary: {primary.service.value}[/yellow]")
+        
+        # Check if there's a specific service name in detection details
+        if primary.details and "specific_service" in primary.details:
+            service_name = primary.details["specific_service"]
+        else:
+            service_name = primary.service.value
+            
+        panel_content.append(f"[yellow]Primary: {service_name}[/yellow]")
         panel_content.append(f"[yellow]Confidence: {primary.confidence:.1%}[/yellow]")
 
         if len(result.detections) > 1:

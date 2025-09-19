@@ -1,4 +1,9 @@
-# Simple Port Checker - Docker Documentation
+# Simple Port Checker| Tag | Description | Size | Architectures |
+|-----|-------------|------|---------------|
+| `latest` | Latest stable release | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.4.1` | Version 0.4.1 | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.4.0` | Version 0.4.0 | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.3.0` | Version 0.3.0 | ~50MB | `linux/amd64`, `linux/arm64` |cker Documentation
 
 🐳 **Official Docker Hub Repository**: [htunnthuthu/simple-port-checker](https://hub.docker.com/r/htunnthuthu/simple-port-checker)
 

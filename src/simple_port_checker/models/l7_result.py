@@ -45,6 +45,27 @@ class L7Detection:
         if self.details is None:
             self.details = {}
 
+    def get_display_name(self) -> str:
+        """Get the display name for this service, considering specific details."""
+        # Check if there's a custom service name in details
+        if self.details and "service_name" in self.details:
+            return self.details["service_name"]
+        
+        # For AWS WAF, check for CloudFront indicators
+        if self.service == L7Protection.AWS_WAF:
+            cloudfront_indicators = [
+                "cloudfront", "x-amz-cf-", "via.*cloudfront", 
+                "server: cloudfront", "x-cache.*cloudfront"
+            ]
+            indicators_text = " ".join(self.indicators).lower()
+            if any(indicator in indicators_text for indicator in cloudfront_indicators):
+                return "CloudFront - AWS WAF"
+            else:
+                return "AWS WAF"
+        
+        # Default to the enum value
+        return self.service.value
+
 
 @dataclass
 class L7Result:
@@ -98,7 +119,7 @@ class L7Result:
             "url": self.url,
             "detections": [
                 {
-                    "service": detection.service.value,
+                    "service": detection.get_display_name(),
                     "confidence": detection.confidence,
                     "indicators": detection.indicators,
                     "details": detection.details,
@@ -114,7 +135,7 @@ class L7Result:
             "summary": {
                 "is_protected": self.is_protected,
                 "primary_protection": (
-                    self.primary_protection.service.value
+                    self.primary_protection.get_display_name()
                     if self.primary_protection
                     else None
                 ),
@@ -176,7 +197,7 @@ class BatchL7Result:
         summary = {}
         for result in self.protected_hosts:
             if result.primary_protection:
-                service = result.primary_protection.service.value
+                service = result.primary_protection.get_display_name()
                 summary[service] = summary.get(service, 0) + 1
         return summary
 

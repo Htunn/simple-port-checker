@@ -415,16 +415,51 @@ class L7Detector:
                         indicators.append(f"F5 pattern in header {header_name}")
                         
                 # Check for specific F5 headers by name pattern
-                f5_headers = ["x-envoy-upstream-service-time", "ts", "via"]
-                for h in f5_headers:
+                f5_specific_headers = ["x-envoy-upstream-service-time", "ts"]
+                for h in f5_specific_headers:
                     if h in headers:
                         confidence += 0.3
                         indicators.append(f"F5 indicator header: {h}")
+                
+                # Check via header specifically for F5 content (not just presence)
+                if "via" in headers:
+                    via_content = headers["via"].lower()
+                    if any(f5_pattern in via_content for f5_pattern in ["big-ip", "f5", "volt"]):
+                        confidence += 0.3
+                        indicators.append(f"F5 pattern in via header: {headers['via']}")
                         
                 # Check for server values indicating F5
                 if "server" in headers and any(name in headers["server"].lower() for name in ["bigip", "f5", "volt-adc"]):
                     confidence += 0.4
                     indicators.append(f"F5 server header: {headers['server']}")
+
+            # Special check for AWS WAF to differentiate CloudFront vs pure AWS WAF
+            elif protection_type == L7Protection.AWS_WAF:
+                # Check if this is specifically CloudFront
+                cloudfront_indicators = []
+                server_header = headers.get("Server", "").lower()
+                
+                # CloudFront-specific indicators
+                if "cloudfront" in server_header:
+                    cloudfront_indicators.append("CloudFront server")
+                if "x-amz-cf-id" in headers:
+                    cloudfront_indicators.append("CloudFront distribution ID")
+                if "x-amz-cf-pop" in headers:
+                    cloudfront_indicators.append("CloudFront edge location")
+                if "via" in headers and "cloudfront" in headers["via"].lower():
+                    cloudfront_indicators.append("CloudFront via header")
+                
+                # Modify indicators to specify the service type
+                if cloudfront_indicators and confidence > 0.2:
+                    # Update indicators to show CloudFront - AWS WAF
+                    modified_indicators = []
+                    for indicator in indicators:
+                        if "Header Server:" in indicator and "cloudfront" in indicator:
+                            modified_indicators.append("CloudFront - AWS WAF detected")
+                        else:
+                            modified_indicators.append(indicator)
+                    modified_indicators.extend(cloudfront_indicators[:2])  # Add specific CloudFront indicators
+                    indicators = modified_indicators
 
             # Check server header specifically
             server_header = headers.get("Server", "").lower()
@@ -885,7 +920,7 @@ class L7Detector:
             "bigipserverpool", 
             "f5-fullsupport-id",
             "ts",  # Common F5 timestamp header
-            "via"  # Often contains F5 references
+            # Note: "via" header is checked separately for content, not just presence
         ]
         
         # Check both direct header existence and content patterns
@@ -904,6 +939,12 @@ class L7Detector:
             # F5 uses numeric-only cookies with 6 digits
             if re.search(r'(^|;)\s*\d{6}=', cookie_value):
                 f5_indicators.append(f"F5 numeric cookie pattern detected")
+        
+        # Check via header specifically for F5 content (not just presence)
+        if "via" in headers_lower:
+            via_content = headers_lower["via"]
+            if any(f5_pattern in via_content for f5_pattern in ["big-ip", "f5", "volt"]):
+                f5_indicators.append(f"F5 pattern in via header: {via_content}")
         
         # If we have any F5 indicators, mark as F5 BIG-IP
         if f5_indicators:
@@ -952,12 +993,43 @@ class L7Detector:
             
         # AWS WAF indicators
         elif any(h in headers_lower for h in ["x-amz-cf-id", "x-amzn-requestid", "x-amzn-trace-id"]):
+            # Check if this is CloudFront specifically
+            cloudfront_indicators = []
+            aws_waf_indicators = []
+            
+            # CloudFront-specific indicators
+            if any(h in headers_lower for h in ["x-amz-cf-id", "x-amz-cf-pop"]) or "cloudfront" in server:
+                cloudfront_indicators.extend([
+                    h for h in ["x-amz-cf-id", "x-amz-cf-pop", "x-cache"] 
+                    if h in headers_lower
+                ])
+                if "cloudfront" in server:
+                    cloudfront_indicators.append("server: cloudfront")
+                    
+            # General AWS WAF indicators
+            aws_waf_indicators.extend([
+                h for h in ["x-amzn-requestid", "x-amzn-trace-id"] 
+                if h in headers_lower
+            ])
+            
+            # Determine the specific service and message
+            if cloudfront_indicators:
+                service_name = "CloudFront - AWS WAF"
+                indicators = [f"{service_name} detected via fallback method"]
+                if cloudfront_indicators:
+                    indicators.extend([f"CloudFront indicator: {ind}" for ind in cloudfront_indicators[:2]])
+            else:
+                service_name = "AWS WAF"
+                indicators = [f"{service_name} detected via fallback method"]
+                if aws_waf_indicators:
+                    indicators.extend([f"AWS WAF indicator: {ind}" for ind in aws_waf_indicators[:2]])
+            
             detections.append(
                 L7Detection(
                     service=L7Protection.AWS_WAF,
                     confidence=0.8,
-                    indicators=[f"AWS WAF/CloudFront detected via fallback method"],
-                    details={"method": "fallback_header_analysis"},
+                    indicators=indicators,
+                    details={"method": "fallback_header_analysis", "specific_service": service_name},
                 )
             )
             
