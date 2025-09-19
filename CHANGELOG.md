@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-09-19
+
+### Added
+- **Docker Support**: Official Docker images now available on Docker Hub
+- Enhanced README.md with comprehensive Docker usage examples and Docker Hub integration
+- Docker workflow configured for manual deployment to PyPI environment
+- Multi-architecture Docker image support (AMD64, ARM64)
+- Automated Docker builds with GitHub Actions
+
+### Improved
+- Updated project documentation to highlight Docker availability
+- Added Docker Hub badges and links for better discoverability
+- Enhanced installation documentation with Docker Hub examples
+- Updated version references throughout documentation
+
+### Fixed
+- Docker workflow environment configuration for proper secret management
+- GitHub Actions workflow to use PyPI environment for Docker registry credentials
+
 ## [0.2.0] - 2025-09-15
 
 ### Major Refactoring and Cleanup

@@ -1,6 +1,7 @@
-# Simple Port Checker   [![Publish to PyPI](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml/badge.svg)](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml)
+# Simple Port Checker   
+[![Publish to PyPI](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml/badge.svg)](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml) [![Docker Hub](https://img.shields.io/docker/pulls/htunnthuthu/simple-port-checker)](https://hub.docker.com/r/htunnthuthu/simple-port-checker) [![Docker Image Version](https://img.shields.io/docker/v/htunnthuthu/simple-port-checker?label=docker%20version)](https://hub.docker.com/r/htunnthuthu/simple-port-checker/tags)
 
-A comprehensive Python tool for checking firewall ports, detecting L7 protection services (WAF, CDN, etc.), and testing mTLS authentication.
+A comprehensive Python tool for checking firewall ports, detecting L7 protection services (WAF, CDN, etc.), and testing mTLS authentication. Available as both a Python package and Docker container.
 
 ## Features
 
@@ -12,7 +13,8 @@ A comprehensive Python tool for checking firewall ports, detecting L7 protection
 - 📊 **Rich Output**: Beautiful terminal output with progress bars
 - 🔧 **Unified CLI**: All functionality accessible through a single command interface
 - 📦 **Pip Installable**: Available on PyPI
-- 🐍 **Type Hints**: Full type hint support for better IDE integration
+- � **Docker Ready**: Pre-built Docker images on Docker Hub
+- �🐍 **Type Hints**: Full type hint support for better IDE integration
 - 🏗️ **Production Ready**: Follows Python packaging best practices
 
 ## Installation
@@ -23,17 +25,38 @@ pip install simple-port-checker
 ```
 
 ### From Docker Hub
-```bash
-# Pull and run directly
-docker run --rm htunn/simple-port-checker:latest google.com 443
 
-# Pull specific version
-docker pull htunn/simple-port-checker:v0.3.0
+Docker images are available on [Docker Hub](https://hub.docker.com/r/htunnthuthu/simple-port-checker) with automated builds from this repository.
+
+```bash
+# Quick start - run directly without installation
+docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
+
+# Use specific version
+docker run --rm htunnthuthu/simple-port-checker:v0.4.0 example.com --ports 80,443
+
+# Run L7 protection check
+docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
+
+# Run full scan with all features
+docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
+
+# Use latest tag for most recent features
+docker pull htunnthuthu/simple-port-checker:latest
+
+# Available tags: latest, v0.4.0, v0.3.0, and other version tags
 ```
+
+**Docker Image Features:**
+- ✅ **Lightweight**: Based on Alpine Linux for minimal size
+- 🔒 **Secure**: Non-root user, minimal dependencies
+- 🏷️ **Multi-arch**: Supports AMD64 and ARM64 architectures  
+- 🔄 **Auto-updated**: Images built automatically from main branch
+- 📋 **Comprehensive**: All CLI features available in container
 
 ### From Source
 ```bash
-git clone https://github.com/htunn/simple-port-checker.git
+git clone https://github.com/htunnthuthu/simple-port-checker.git
 cd simple-port-checker
 pip install -e .
 ```
@@ -81,6 +104,31 @@ port-checker mtls-validate-cert client.crt client.key
 
 # Check multiple targets for mTLS support
 port-checker mtls-check example.com test.example.com --concurrent 5
+```
+
+### Docker Usage
+
+```bash
+# Basic port scan
+docker run --rm htunnthuthu/simple-port-checker:latest scan example.com
+
+# Scan with specific ports
+docker run --rm htunnthuthu/simple-port-checker:latest scan example.com --ports 80,443,8080
+
+# L7 protection detection
+docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com --trace-dns
+
+# Full comprehensive scan
+docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
+
+# mTLS testing
+docker run --rm htunnthuthu/simple-port-checker:latest mtls-check example.com
+
+# Save results to host (mount volume)
+docker run --rm -v $(pwd):/app/output htunnthuthu/simple-port-checker:latest scan example.com --output /app/output/results.json
+
+# Use specific version
+docker run --rm htunnthuthu/simple-port-checker:v0.4.0 scan example.com
 ```
 
 ### Python API Usage
@@ -663,7 +711,7 @@ user_agent: "SimplePortChecker/1.0"
 ### Setup Development Environment
 
 ```bash
-git clone https://github.com/htunn/simple-port-checker.git
+git clone https://github.com/htunnthuthu/simple-port-checker.git
 cd simple-port-checker
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -1042,6 +1090,44 @@ port-checker mtls-check \
   --output security-assessment.json
 ```
 
+## Docker Usage
+
+Simple Port Checker is available as a Docker image for easy deployment and isolation.
+
+### Quick Docker Examples
+
+```bash
+# Basic port check
+docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
+
+# mTLS check
+docker run --rm htunnthuthu/simple-port-checker:latest google.com 443 --mtls
+
+# Port range scan
+docker run --rm htunnthuthu/simple-port-checker:latest --scan-range 192.168.1.1-254 --ports 22,80,443
+
+# L7 protection check
+docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
+
+# Interactive shell
+docker run -it --rm htunnthuthu/simple-port-checker:latest bash
+```
+
+### Available Tags
+
+- `latest` - Latest stable release
+- `vX.Y.Z` - Specific version tags
+- `main` - Latest development build
+
+### Multi-Architecture Support
+
+Images are built for multiple architectures:
+- `linux/amd64` - Intel/AMD 64-bit
+- `linux/arm64` - ARM 64-bit (Apple Silicon, ARM servers)
+
+For detailed Docker usage instructions, see [Docker Documentation](docs/DOCKER.md).
+
+
 ## Summary
 
 The Simple Port Checker with mTLS authentication support provides a comprehensive, production-ready solution for:
@@ -1127,7 +1213,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-### v0.2.0 (Latest)
+### v0.4.0 (Latest)
+- **Docker Support**: Official Docker images now available on Docker Hub
+- Enhanced README.md with comprehensive Docker usage examples
+- Docker workflow configured for manual deployment to PyPI environment
+- Multi-architecture Docker image support (AMD64, ARM64)
+- Automated Docker builds with GitHub Actions
+- Updated project documentation to highlight Docker availability
+
+### v0.2.0
 - Major project refactoring and cleanup
 - Unified CLI interface with DNS trace functionality
 - Production-ready structure with type hints
@@ -1157,55 +1251,4 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - Inspired by nmap and other network scanning tools
 - Built with ❤️ for the security community
 
-## Docker Usage
-
-Simple Port Checker is available as a Docker image for easy deployment and isolation.
-
-### Quick Docker Examples
-
-```bash
-# Basic port check
-docker run --rm htunn/simple-port-checker:latest google.com 443
-
-# mTLS check
-docker run --rm htunn/simple-port-checker:latest google.com 443 --mtls
-
-# Port range scan
-docker run --rm htunn/simple-port-checker:latest --scan-range 192.168.1.1-254 --ports 22,80,443
-
-# L7 protection check
-docker run --rm htunn/simple-port-checker:latest l7-check example.com
-
-# Interactive shell
-docker run -it --rm htunn/simple-port-checker:latest bash
-```
-
-### Docker Compose
-
-Use the included `docker-compose.yml` for local development:
-
-```bash
-# Production build
-docker-compose up simple-port-checker
-
-# Development build with mounted source
-docker-compose up simple-port-checker-dev
-
-# Run specific commands
-docker-compose run --rm simple-port-checker example.com 443 --mtls
-```
-
-### Available Tags
-
-- `latest` - Latest stable release
-- `vX.Y.Z` - Specific version tags
-- `main` - Latest development build
-
-### Multi-Architecture Support
-
-Images are built for multiple architectures:
-- `linux/amd64` - Intel/AMD 64-bit
-- `linux/arm64` - ARM 64-bit (Apple Silicon, ARM servers)
-
-For detailed Docker usage instructions, see [Docker Documentation](docs/DOCKER.md).
 
