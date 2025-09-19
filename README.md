@@ -1,6 +1,8 @@
 # Simple Port Checker   
 [![Publish to PyPI](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml/badge.svg)](https://github.com/Htunn/simple-port-checker/actions/workflows/publish.yml) [![Docker Hub](https://img.shields.io/docker/pulls/htunnthuthu/simple-port-checker)](https://hub.docker.com/r/htunnthuthu/simple-port-checker) [![Docker Image Version](https://img.shields.io/docker/v/htunnthuthu/simple-port-checker?label=docker%20version)](https://hub.docker.com/r/htunnthuthu/simple-port-checker/tags)
 
+[![PyPI - Version](https://img.shields.io/pypi/v/simple-port-checker)](https://pypi.org/project/simple-port-checker/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/simple-port-checker)](https://pypistats.org/packages/simple-port-checker) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/simple-port-checker)](https://pypi.org/project/simple-port-checker/) [![PyPI Stats](https://img.shields.io/badge/PyPI%20Stats-simple--port--checker-blue)](https://pypistats.org/packages/simple-port-checker)
+
 A comprehensive Python tool for checking firewall ports, detecting L7 protection services (WAF, CDN, etc.), and testing mTLS authentication. Available as both a Python package and Docker container.
 
 ## Features
@@ -16,6 +18,22 @@ A comprehensive Python tool for checking firewall ports, detecting L7 protection
 - � **Docker Ready**: Pre-built Docker images on Docker Hub
 - �🐍 **Type Hints**: Full type hint support for better IDE integration
 - 🏗️ **Production Ready**: Follows Python packaging best practices
+
+## 📊 PyPI Statistics
+
+[![PyPI Download Stats](https://pypistats.org/api/packages/simple-port-checker/badge.svg?period=total)](https://pypistats.org/packages/simple-port-checker)
+
+**Package Information:**
+- 📦 **PyPI Package**: [simple-port-checker](https://pypi.org/project/simple-port-checker/)
+- 📈 **Download Statistics**: [PyPI Stats Dashboard](https://pypistats.org/packages/simple-port-checker)
+- 🐍 **Python Versions**: 3.12+
+- 📋 **License**: MIT
+- 🏷️ **Current Version**: ![PyPI Version](https://img.shields.io/pypi/v/simple-port-checker)
+
+**Quick Stats:**
+- ![Monthly Downloads](https://img.shields.io/pypi/dm/simple-port-checker?label=Monthly%20Downloads)
+- ![Total Downloads](https://img.shields.io/pepy/dt/simple-port-checker?label=Total%20Downloads)
+- ![Package Status](https://img.shields.io/pypi/status/simple-port-checker)
 
 ## Installation
 
@@ -33,7 +51,7 @@ Docker images are available on [Docker Hub](https://hub.docker.com/r/htunnthuthu
 docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.4.1 example.com --ports 80,443
+docker run --rm htunnthuthu/simple-port-checker:v0.4.2 example.com --ports 80,443
 
 # Run L7 protection check
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
@@ -44,7 +62,7 @@ docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 # Use latest tag for most recent features
 docker pull htunnthuthu/simple-port-checker:latest
 
-# Available tags: latest, v0.4.1, v0.4.0, v0.3.0, and other version tags
+# Available tags: latest, v0.4.2, v0.4.1, v0.4.0, v0.3.0, and other version tags
 ```
 
 **Docker Image Features:**
@@ -128,7 +146,7 @@ docker run --rm htunnthuthu/simple-port-checker:latest mtls-check example.com
 docker run --rm -v $(pwd):/app/output htunnthuthu/simple-port-checker:latest scan example.com --output /app/output/results.json
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.4.1 scan example.com
+docker run --rm htunnthuthu/simple-port-checker:v0.4.2 scan example.com
 ```
 
 ### Python API Usage
@@ -1213,7 +1231,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-### v0.4.1 (Latest)
+### v0.4.2 (Latest)
+- **Documentation Enhancement**: Added PyPI statistics and download badges to README
+- **Privacy Improvements**: Removed specific site references from documentation
+- **Professional Standards**: Enhanced documentation quality and consistency
+- **Version Management**: Improved version consistency across all files
+
+### v0.4.1
 - **L7 Detection Fix**: Fixed critical false positive where CloudFront sites were misidentified as F5 Big-IP
 - **Enhanced AWS WAF Detection**: Now distinguishes between "CloudFront - AWS WAF" and pure "AWS WAF"
 - **Improved Accuracy**: Better detection logic for AWS CloudFront vs F5 Big-IP services
