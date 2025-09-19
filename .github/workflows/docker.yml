@@ -1,16 +1,10 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 env:
   IMAGE_NAME: simple-port-checker
-  DOCKER_USERNAME: htunn
 
 jobs:
   build:
