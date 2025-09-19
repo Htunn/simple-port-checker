@@ -22,6 +22,15 @@ A comprehensive Python tool for checking firewall ports, detecting L7 protection
 pip install simple-port-checker
 ```
 
+### From Docker Hub
+```bash
+# Pull and run directly
+docker run --rm htunn/simple-port-checker:latest google.com 443
+
+# Pull specific version
+docker pull htunn/simple-port-checker:v0.3.0
+```
+
 ### From Source
 ```bash
 git clone https://github.com/htunn/simple-port-checker.git
@@ -1147,4 +1156,56 @@ For security vulnerabilities, please see our [Security Policy](SECURITY.md).
 - Thanks to the Python community for excellent libraries
 - Inspired by nmap and other network scanning tools
 - Built with ❤️ for the security community
+
+## Docker Usage
+
+Simple Port Checker is available as a Docker image for easy deployment and isolation.
+
+### Quick Docker Examples
+
+```bash
+# Basic port check
+docker run --rm htunn/simple-port-checker:latest google.com 443
+
+# mTLS check
+docker run --rm htunn/simple-port-checker:latest google.com 443 --mtls
+
+# Port range scan
+docker run --rm htunn/simple-port-checker:latest --scan-range 192.168.1.1-254 --ports 22,80,443
+
+# L7 protection check
+docker run --rm htunn/simple-port-checker:latest l7-check example.com
+
+# Interactive shell
+docker run -it --rm htunn/simple-port-checker:latest bash
+```
+
+### Docker Compose
+
+Use the included `docker-compose.yml` for local development:
+
+```bash
+# Production build
+docker-compose up simple-port-checker
+
+# Development build with mounted source
+docker-compose up simple-port-checker-dev
+
+# Run specific commands
+docker-compose run --rm simple-port-checker example.com 443 --mtls
+```
+
+### Available Tags
+
+- `latest` - Latest stable release
+- `vX.Y.Z` - Specific version tags
+- `main` - Latest development build
+
+### Multi-Architecture Support
+
+Images are built for multiple architectures:
+- `linux/amd64` - Intel/AMD 64-bit
+- `linux/arm64` - ARM 64-bit (Apple Silicon, ARM servers)
+
+For detailed Docker usage instructions, see [Docker Documentation](docs/DOCKER.md).
 

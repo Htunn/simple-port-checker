@@ -169,6 +169,10 @@ test-results/
 reports/
 *.json
 
+# Docker
+docker-compose.override.yml
+.docker/
+
 # Local config files
 config.yaml
 config.yml

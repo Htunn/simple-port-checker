@@ -1,0 +1,97 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+.hypothesis/
+htmlcov/
+coverage.xml
+*.cover
+.cache
+nosetests.xml
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Development
+.pre-commit-config.yaml
+setup_dev.sh
+requirements-dev.txt
+Makefile
+
+# Distribution
+dist/
+
+# Temporary files
+*.tmp
+*.log
+
+# GitHub
+.github/
+
+# SonarCloud
+sonar-project.properties
+
+# Examples (optional - remove if you want examples in the image)
+examples/
+
+# Keep these for the build
+!pyproject.toml
+!README.md
+!LICENSE
+!CHANGELOG.md
+!SECURITY.md
+!src/
+!tests/
