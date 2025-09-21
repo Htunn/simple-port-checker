@@ -100,6 +100,7 @@ jobs:
 
   integration-test:
     runs-on: ubuntu-latest
+    environment: pypi
     needs: build
     if: github.event_name != 'pull_request'
     
@@ -166,6 +167,7 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
+    environment: pypi
     needs: [build, integration-test]
     if: github.event_name != 'pull_request'
     
