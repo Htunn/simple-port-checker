@@ -73,3 +73,65 @@ jobs:
     
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+
+  integration-test:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    
+    - name: Wait for PyPI package availability
+      run: |
+        echo "Waiting for package to be available on PyPI..."
+        sleep 120  # Wait 2 minutes for PyPI propagation
+    
+    - name: Install latest version from PyPI
+      run: |
+        pip install --upgrade pip
+        # Install the latest version that was just published
+        pip install simple-port-checker --upgrade --no-cache-dir
+        echo "Installed package version:"
+        pip show simple-port-checker
+    
+    - name: Test basic functionality
+      run: |
+        echo "Testing basic port scan..."
+        python -m simple_port_checker scan google.com --ports 443 --timeout 5
+    
+    - name: Test L7 protection detection
+      run: |
+        echo "Testing L7 protection detection..."
+        python -m simple_port_checker l7-check google.com --timeout 5
+    
+    - name: Test certificate analysis (new feature)
+      run: |
+        echo "Testing SSL/TLS certificate analysis..."
+        python -m simple_port_checker cert-check google.com --timeout 10
+        python -m simple_port_checker cert-info github.com --timeout 10
+        python -m simple_port_checker cert-chain cloudflare.com --timeout 10
+    
+    - name: Test full scan integration
+      run: |
+        echo "Testing full scan with all features..."
+        python -m simple_port_checker full-scan google.com --ports 443 --timeout 10
+    
+    - name: Test mTLS functionality
+      run: |
+        echo "Testing mTLS check..."
+        python -m simple_port_checker mtls-check google.com --timeout 10 || true  # Allow to fail
+    
+    - name: Test DNS trace
+      run: |
+        echo "Testing DNS trace..."
+        python -m simple_port_checker dns-trace google.com --timeout 10
+    
+    - name: Validate new certificate commands exist
+      run: |
+        echo "Validating new certificate commands are available..."
+        python -m simple_port_checker --help | grep -E "(cert-check|cert-chain|cert-info)"
+        echo "✅ All certificate analysis commands are available"

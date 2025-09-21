@@ -10,13 +10,16 @@ A comprehensive Python tool for checking firewall ports, detecting L7 protection
 - ✅ **Port Scanning**: Check well-known firewall ports and services
 - 🛡️ **L7 Protection Detection**: Identify WAF/CDN services (F5, AWS WAF, Azure, Cloudflare, etc.)
 - 🔐 **mTLS Authentication**: Check mutual TLS support and certificate requirements
+- 🔒 **SSL/TLS Certificate Analysis**: Comprehensive certificate chain analysis and validation
+- 🏛️ **Certificate Authority Identification**: "Who signed my cert?" functionality with trust chain visualization
+- ⚠️ **Missing Intermediate Detection**: Identify incomplete certificate chains affecting browser compatibility
 - 🌐 **DNS Trace**: Advanced DNS CNAME chain analysis and IP protection detection
 - 🚀 **Async Support**: High-performance concurrent scanning
-- 📊 **Rich Output**: Beautiful terminal output with progress bars
+- 📊 **Rich Output**: Beautiful terminal output with progress bars and certificate analysis tables
 - 🔧 **Unified CLI**: All functionality accessible through a single command interface
 - 📦 **Pip Installable**: Available on PyPI
-- � **Docker Ready**: Pre-built Docker images on Docker Hub
-- �🐍 **Type Hints**: Full type hint support for better IDE integration
+- 🐳 **Docker Ready**: Pre-built Docker images on Docker Hub
+- 🐍 **Type Hints**: Full type hint support for better IDE integration
 - 🏗️ **Production Ready**: Follows Python packaging best practices
 
 ## 📊 PyPI Statistics
@@ -51,10 +54,13 @@ Docker images are available on [Docker Hub](https://hub.docker.com/r/htunnthuthu
 docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.4.2 example.com --ports 80,443
+docker run --rm htunnthuthu/simple-port-checker:v0.5.0 example.com --ports 80,443
 
 # Run L7 protection check
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
+
+# Run SSL/TLS certificate analysis
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com
 
 # Run full scan with all features
 docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
@@ -62,7 +68,7 @@ docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 # Use latest tag for most recent features
 docker pull htunnthuthu/simple-port-checker:latest
 
-# Available tags: latest, v0.4.2, v0.4.1, v0.4.0, v0.3.0, and other version tags
+# Available tags: latest, v0.5.0, v0.4.2, v0.4.1, v0.4.0, v0.3.0, and other version tags
 ```
 
 **Docker Image Features:**
@@ -92,6 +98,11 @@ port-checker scan example.com --ports 80,443,8080
 
 # Check L7 protection
 port-checker l7-check example.com
+
+# SSL/TLS Certificate Analysis (NEW!)
+port-checker cert-check example.com
+port-checker cert-chain github.com  
+port-checker cert-info google.com
 
 # DNS trace analysis
 port-checker dns-trace example.com
@@ -136,6 +147,11 @@ docker run --rm htunnthuthu/simple-port-checker:latest scan example.com --ports 
 # L7 protection detection
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com --trace-dns
 
+# SSL/TLS Certificate Analysis
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check github.com
+docker run --rm htunnthuthu/simple-port-checker:latest cert-chain google.com
+docker run --rm htunnthuthu/simple-port-checker:latest cert-info example.com
+
 # Full comprehensive scan
 docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 
@@ -146,14 +162,14 @@ docker run --rm htunnthuthu/simple-port-checker:latest mtls-check example.com
 docker run --rm -v $(pwd):/app/output htunnthuthu/simple-port-checker:latest scan example.com --output /app/output/results.json
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.4.2 scan example.com
+docker run --rm htunnthuthu/simple-port-checker:v0.5.0 scan example.com
 ```
 
 ### Python API Usage
 
 ```python
 import asyncio
-from simple_port_checker import PortChecker, L7Detector
+from simple_port_checker import PortChecker, L7Detector, CertificateAnalyzer
 
 # Initialize scanner
 scanner = PortChecker()
@@ -172,6 +188,14 @@ async def main():
         print(f"L7 Protection: {service} ({confidence:.0%})")
     else:
         print("No L7 protection detected")
+    
+    # Analyze SSL/TLS certificate
+    cert_analyzer = CertificateAnalyzer()
+    cert_chain = await cert_analyzer.analyze_certificate_chain("blog.htunnthuthu.tech", 443)
+    print(f"Certificate Subject: {cert_chain.server_cert.subject}")
+    print(f"Issuer: {cert_chain.server_cert.issuer}")
+    print(f"Valid: {cert_chain.server_cert.is_valid_now}")
+    print(f"Chain Complete: {cert_chain.chain_complete}")
 
 # Run the async function
 asyncio.run(main())
@@ -634,6 +658,127 @@ sequenceDiagram
 | 995 | POP3S | POP3 over SSL |
 | 587 | SMTP-MSA | SMTP Message Submission |
 
+## 🔒 SSL/TLS Certificate Analysis
+
+Simple Port Checker now includes comprehensive SSL/TLS certificate chain analysis capabilities, following best practices from DigiCert and Red Hat security guidelines. The certificate analysis features help you understand "Who signed my cert?" and identify potential trust issues.
+
+### Key Certificate Analysis Features
+
+- **🔍 Certificate Chain Analysis**: Complete validation of server, intermediate, and root certificates
+- **🏛️ Certificate Authority Identification**: Shows who signed each certificate in the chain
+- **⚠️ Missing Intermediate Detection**: Identifies incomplete certificate chains that could cause browser compatibility issues
+- **🔗 Chain of Trust Validation**: Verifies signature validity throughout the certificate chain
+- **🛡️ Security Analysis**: Hostname verification, expiration checking, and key algorithm analysis
+- **📋 Certificate Information**: Detailed certificate metadata, fingerprints, and extensions
+- **🔄 Revocation Infrastructure**: OCSP and CRL URL extraction for validation
+
+### Certificate Analysis Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as Simple Port Checker
+    participant OpenSSL as OpenSSL Client
+    participant Server as Target Server
+    participant CA as Certificate Authority
+    
+    User->>CLI: cert-check example.com
+    CLI->>OpenSSL: Extract certificate chain
+    OpenSSL->>Server: TLS handshake
+    Server-->>OpenSSL: Certificate chain
+    OpenSSL-->>CLI: Raw certificates
+    
+    CLI->>CLI: Parse server certificate
+    CLI->>CLI: Parse intermediate certificates
+    CLI->>CLI: Validate chain of trust
+    
+    alt Missing Intermediates
+        CLI->>CA: Fetch missing certificates
+        CA-->>CLI: Intermediate certificates
+    end
+    
+    CLI->>CLI: Hostname validation
+    CLI->>CLI: Expiration checking
+    CLI->>CLI: Extract OCSP/CRL URLs
+    
+    CLI-->>User: Rich certificate analysis
+    Note over User,CLI: Shows: Chain validity, Trust issues,<br/>Missing intermediates, CA hierarchy
+```
+
+### Certificate Commands
+
+#### `cert-check` - Basic Certificate Analysis
+Analyze SSL/TLS certificate chain for a target host.
+
+```bash
+# Basic certificate analysis
+port-checker cert-check github.com
+
+# Disable hostname verification
+port-checker cert-check example.com --no-verify-hostname
+
+# Save results to JSON
+port-checker cert-check google.com --output cert_analysis.json
+```
+
+#### `cert-chain` - Complete Chain Analysis  
+Analyze complete certificate chain and trust path.
+
+```bash
+# Full chain analysis
+port-checker cert-chain github.com
+
+# Enable revocation checking
+port-checker cert-chain example.com --check-revocation
+
+# Verbose output with detailed chain information
+port-checker cert-chain google.com --verbose
+```
+
+#### `cert-info` - Detailed Certificate Information
+Show detailed certificate information and signing hierarchy.
+
+```bash
+# Certificate signing information
+port-checker cert-info github.com
+
+# Show certificate in PEM format
+port-checker cert-info example.com --show-pem
+
+# Export certificate details to JSON
+port-checker cert-info google.com --output cert_details.json
+```
+
+### Example Certificate Analysis Output
+
+```
+🔒 SSL/TLS Certificate Analysis - github.com
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Property            ┃ Value                                          ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Certificate Status  │ Valid                                          │
+│ Hostname Match      │ ✅ Valid                                       │
+│ Subject             │ CN=github.com                                  │
+│ Issuer              │ C=GB, ST=Greater Manchester, L=Salford,        │
+│                     │ O=Sectigo Limited, CN=Sectigo ECC Domain       │
+│                     │ Validation Secure Server CA                    │
+│ Valid From          │ 2025-02-05 00:00:00 UTC                        │
+│ Valid Until         │ 2026-02-05 23:59:59 UTC                        │
+└─────────────────────┴────────────────────────────────────────────────┘
+
+🏗️ Certificate Hierarchy (Chain of Trust)
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Level             ┃ Certificate   ┃ Signed By    ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ 🖥️ Server          │ CN=github.com │ C=GB         │
+│ 🏢 Intermediate 1 │ C=GB          │ C=US         │
+│ 🏢 Intermediate 2 │ C=US          │ Unknown Root │
+└───────────────────┴───────────────┴──────────────┘
+
+⚠️ Missing Intermediate Certificates:
+  • Missing root certificate or additional intermediates after C=US
+```
+
 ## CLI Commands
 
 ### `port-checker scan`
@@ -711,6 +856,50 @@ port-checker mtls-validate-cert CERT_FILE KEY_FILE [OPTIONS]
 
 Options:
   --verbose          Enable verbose output
+```
+
+### `port-checker cert-check` 
+Analyze SSL/TLS certificate chain for a target host.
+
+```bash
+port-checker cert-check TARGET [OPTIONS]
+
+Options:
+  -p, --port INTEGER              Target port (default: 443)
+  -t, --timeout INTEGER           Connection timeout in seconds
+  -o, --output TEXT               Output file for results (JSON)
+  --verify-hostname / --no-verify-hostname
+                                  Verify hostname against certificate
+  -v, --verbose                   Enable verbose output
+```
+
+### `port-checker cert-chain`
+Analyze complete certificate chain and trust path.
+
+```bash
+port-checker cert-chain TARGET [OPTIONS]
+
+Options:
+  -p, --port INTEGER              Target port (default: 443)
+  -t, --timeout INTEGER           Connection timeout in seconds  
+  -o, --output TEXT               Output file for results (JSON)
+  --check-revocation / --no-check-revocation
+                                  Check certificate revocation status
+  -v, --verbose                   Enable verbose output
+```
+
+### `port-checker cert-info`
+Show detailed certificate information and who signed it.
+
+```bash
+port-checker cert-info TARGET [OPTIONS]
+
+Options:
+  -p, --port INTEGER              Target port (default: 443)
+  -t, --timeout INTEGER           Connection timeout in seconds
+  -o, --output TEXT               Output file for results (JSON)
+  --show-pem / --no-show-pem      Show certificate in PEM format
+  -v, --verbose                   Enable verbose output
 ```
 
 ## Configuration

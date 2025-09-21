@@ -3,7 +3,8 @@ FROM python:3.12-slim-bookworm
 
 # Set metadata
 LABEL maintainer="htunn <htunnthuthu.linux@gmail.com>"
-LABEL description="A comprehensive tool for checking firewall ports and L7 protection services"
+LABEL description="A comprehensive tool for checking firewall ports, L7 protection services, and SSL/TLS certificate analysis"
+LABEL version="0.5.0"
 LABEL org.opencontainers.image.source="https://github.com/htunn/simple-port-checker"
 LABEL org.opencontainers.image.documentation="https://github.com/htunn/simple-port-checker#readme"
 LABEL org.opencontainers.image.licenses="MIT"

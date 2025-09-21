@@ -29,6 +29,7 @@ from rich.text import Text
 from .core.port_scanner import PortChecker, ScanConfig
 from .core.l7_detector import L7Detector
 from .core.mtls_checker import MTLSChecker
+from .core.cert_analyzer import CertificateAnalyzer
 from .models.scan_result import ScanResult, BatchScanResult
 from .models.l7_result import L7Result, BatchL7Result
 from .models.mtls_result import MTLSResult, BatchMTLSResult
@@ -884,6 +885,638 @@ def _display_service_info(target: str, port: int, service_info: dict):
 
     console.print(table)
     console.print()
+
+
+@main.command()
+@click.argument("target")
+@click.option("--port", "-p", type=int, default=443, help="Target port (default: 443)")
+@click.option("--timeout", "-t", type=int, default=10, help="Connection timeout in seconds")
+@click.option("--output", "-o", type=str, help="Output file for results (JSON)")
+@click.option("--verify-hostname/--no-verify-hostname", default=True, help="Verify hostname against certificate")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def cert_check(target, port, timeout, output, verify_hostname, verbose):
+    """Analyze SSL/TLS certificate chain for a target host."""
+    
+    console.print(f"[blue]🔒 Analyzing SSL/TLS certificate chain for {target}:{port}[/blue]")
+    
+    if verbose:
+        console.print(f"[yellow]Configuration:[/yellow]")
+        console.print(f"  Target: {target}:{port}")
+        console.print(f"  Timeout: {timeout}s")
+        console.print(f"  Hostname verification: {'enabled' if verify_hostname else 'disabled'}")
+    
+    asyncio.run(_run_certificate_analysis(target, port, timeout, output, verify_hostname, verbose))
+
+
+@main.command() 
+@click.argument("target")
+@click.option("--port", "-p", type=int, default=443, help="Target port (default: 443)")
+@click.option("--timeout", "-t", type=int, default=10, help="Connection timeout in seconds")
+@click.option("--output", "-o", type=str, help="Output file for results (JSON)")
+@click.option("--check-revocation/--no-check-revocation", default=False, help="Check certificate revocation status")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def cert_chain(target, port, timeout, output, check_revocation, verbose):
+    """Analyze complete certificate chain and trust path."""
+    
+    console.print(f"[blue]🔗 Analyzing certificate chain and trust path for {target}:{port}[/blue]")
+    
+    if verbose:
+        console.print(f"[yellow]Configuration:[/yellow]")
+        console.print(f"  Target: {target}:{port}")
+        console.print(f"  Timeout: {timeout}s")
+        console.print(f"  Revocation check: {'enabled' if check_revocation else 'disabled'}")
+    
+    asyncio.run(_run_certificate_chain_analysis(target, port, timeout, output, check_revocation, verbose))
+
+
+@main.command()
+@click.argument("target")
+@click.option("--port", "-p", type=int, default=443, help="Target port (default: 443)")
+@click.option("--timeout", "-t", type=int, default=10, help="Connection timeout in seconds")
+@click.option("--output", "-o", type=str, help="Output file for results (JSON)")
+@click.option("--show-pem/--no-show-pem", default=False, help="Show certificate in PEM format")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def cert_info(target, port, timeout, output, show_pem, verbose):
+    """Show detailed certificate information and who signed it."""
+    
+    console.print(f"[blue]📋 Retrieving certificate information for {target}:{port}[/blue]")
+    
+    if verbose:
+        console.print(f"[yellow]Configuration:[/yellow]")
+        console.print(f"  Target: {target}:{port}")
+        console.print(f"  Timeout: {timeout}s")
+        console.print(f"  Show PEM: {'yes' if show_pem else 'no'}")
+    
+    asyncio.run(_run_certificate_info_analysis(target, port, timeout, output, show_pem, verbose))
+
+
+async def _run_certificate_analysis(target: str, port: int, timeout: int, output: Optional[str], 
+                                   verify_hostname: bool, verbose: bool):
+    """Run certificate analysis."""
+    
+    try:
+        analyzer = CertificateAnalyzer(timeout=timeout)
+        
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+        ) as progress:
+            task = progress.add_task("Analyzing certificate...", total=100)
+            
+            # Get certificate chain
+            progress.update(task, advance=30)
+            cert_chain = await analyzer.analyze_certificate_chain(target, port)
+            progress.update(task, advance=40)
+            
+            # Validate hostname if requested
+            hostname_valid = True
+            if verify_hostname:
+                hostname_valid = analyzer.validate_hostname(cert_chain.server_cert.raw_cert, target)
+                progress.update(task, advance=20)
+            
+            progress.update(task, advance=10, description="Analysis complete")
+        
+        # Display results
+        _display_certificate_analysis(cert_chain, target, hostname_valid, verify_hostname, verbose)
+        
+        # Save to file if requested
+        if output:
+            await _save_certificate_results(cert_chain, output, hostname_valid)
+            console.print(f"[green]Results saved to {output}[/green]")
+            
+    except Exception as e:
+        console.print(f"[red]Certificate analysis failed: {e}[/red]")
+        if verbose:
+            import traceback
+            console.print(f"[red]{traceback.format_exc()}[/red]")
+
+
+async def _run_certificate_chain_analysis(target: str, port: int, timeout: int, output: Optional[str],
+                                         check_revocation: bool, verbose: bool):
+    """Run certificate chain analysis."""
+    
+    try:
+        analyzer = CertificateAnalyzer(timeout=timeout)
+        
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(), 
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+        ) as progress:
+            task = progress.add_task("Analyzing certificate chain...", total=100)
+            
+            cert_chain = await analyzer.analyze_certificate_chain(target, port)
+            progress.update(task, advance=80)
+            
+            # Check revocation if requested
+            revocation_results = {}
+            if check_revocation and cert_chain.ocsp_urls:
+                progress.update(task, description="Checking revocation status...")
+                # This would be implemented when OCSP checking is fully available
+                revocation_results = {"status": "not_implemented"}
+                progress.update(task, advance=20)
+            else:
+                progress.update(task, advance=20)
+        
+        # Display chain analysis
+        _display_certificate_chain_analysis(cert_chain, revocation_results, verbose)
+        
+        # Save to file if requested
+        if output:
+            await _save_certificate_chain_results(cert_chain, revocation_results, output)
+            console.print(f"[green]Results saved to {output}[/green]")
+            
+    except Exception as e:
+        console.print(f"[red]Certificate chain analysis failed: {e}[/red]")
+        if verbose:
+            import traceback
+            console.print(f"[red]{traceback.format_exc()}[/red]")
+
+
+async def _run_certificate_info_analysis(target: str, port: int, timeout: int, output: Optional[str],
+                                        show_pem: bool, verbose: bool):
+    """Run certificate information analysis."""
+    
+    try:
+        analyzer = CertificateAnalyzer(timeout=timeout)
+        
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+        ) as progress:
+            task = progress.add_task("Retrieving certificate info...", total=100)
+            
+            cert_chain = await analyzer.analyze_certificate_chain(target, port)
+            progress.update(task, advance=100, description="Analysis complete")
+        
+        # Display certificate information
+        _display_certificate_info(cert_chain, show_pem, verbose)
+        
+        # Save to file if requested
+        if output:
+            await _save_certificate_info_results(cert_chain, output, show_pem)
+            console.print(f"[green]Results saved to {output}[/green]")
+            
+    except Exception as e:
+        console.print(f"[red]Certificate information retrieval failed: {e}[/red]")
+        if verbose:
+            import traceback
+            console.print(f"[red]{traceback.format_exc()}[/red]")
+
+
+def _display_certificate_analysis(cert_chain, target: str, hostname_valid: bool, 
+                                 verify_hostname: bool, verbose: bool):
+    """Display certificate analysis results."""
+    
+    # Server certificate summary
+    server_cert = cert_chain.server_cert
+    
+    # Create main certificate table
+    cert_table = Table(title=f"🔒 SSL/TLS Certificate Analysis - {target}")
+    cert_table.add_column("Property", style="cyan")
+    cert_table.add_column("Value", style="yellow")
+    
+    # Certificate status
+    status_color = "green" if server_cert.is_valid_now else "red"
+    cert_table.add_row("Certificate Status", f"[{status_color}]{'Valid' if server_cert.is_valid_now else 'Invalid/Expired'}[/{status_color}]")
+    
+    # Hostname validation
+    if verify_hostname:
+        hostname_color = "green" if hostname_valid else "red"
+        cert_table.add_row("Hostname Match", f"[{hostname_color}]{'✅ Valid' if hostname_valid else '❌ Invalid'}[/{hostname_color}]")
+    
+    # Basic certificate info
+    cert_table.add_row("Subject", server_cert.subject)
+    cert_table.add_row("Issuer", server_cert.issuer)
+    cert_table.add_row("Serial Number", server_cert.serial_number)
+    cert_table.add_row("Valid From", server_cert.not_before.strftime("%Y-%m-%d %H:%M:%S UTC"))
+    cert_table.add_row("Valid Until", server_cert.not_after.strftime("%Y-%m-%d %H:%M:%S UTC"))
+    
+    # Security details
+    cert_table.add_row("Key Algorithm", f"{server_cert.public_key_algorithm} ({server_cert.key_size} bits)")
+    cert_table.add_row("Signature Algorithm", server_cert.signature_algorithm)
+    
+    # Certificate type
+    cert_type = "CA Certificate" if server_cert.is_ca else "Server Certificate"
+    if server_cert.is_self_signed:
+        cert_type += " (Self-Signed)"
+    cert_table.add_row("Certificate Type", cert_type)
+    
+    console.print(cert_table)
+    console.print()
+    
+    # SAN domains
+    if server_cert.san_domains:
+        san_table = Table(title="📋 Subject Alternative Names")
+        san_table.add_column("Domain", style="green")
+        for domain in server_cert.san_domains:
+            san_table.add_row(domain)
+        console.print(san_table)
+        console.print()
+    
+    # Chain information
+    chain_table = Table(title="🔗 Certificate Chain Information")
+    chain_table.add_column("Property", style="cyan")
+    chain_table.add_column("Value", style="yellow")
+    
+    chain_status_color = "green" if cert_chain.chain_valid else "red"
+    chain_table.add_row("Chain Valid", f"[{chain_status_color}]{'✅ Yes' if cert_chain.chain_valid else '❌ No'}[/{chain_status_color}]")
+    
+    complete_color = "green" if cert_chain.chain_complete else "orange"
+    chain_table.add_row("Chain Complete", f"[{complete_color}]{'✅ Yes' if cert_chain.chain_complete else '⚠️ No'}[/{complete_color}]")
+    
+    chain_table.add_row("Intermediate Certificates", str(len(cert_chain.intermediate_certs)))
+    chain_table.add_row("Root Certificate", "✅ Found" if cert_chain.root_cert else "❌ Not found")
+    
+    console.print(chain_table)
+    console.print()
+    
+    # Missing intermediates warning
+    if cert_chain.missing_intermediates:
+        console.print("[orange]⚠️ Missing Intermediate Certificates:[/orange]")
+        for missing in cert_chain.missing_intermediates:
+            console.print(f"[orange]  • {missing}[/orange]")
+        console.print()
+    
+    # Trust issues
+    if cert_chain.trust_issues:
+        console.print("[red]❌ Trust Issues Found:[/red]")
+        for issue in cert_chain.trust_issues:
+            console.print(f"[red]  • {issue}[/red]")
+        console.print()
+    
+    # Fingerprints (if verbose)
+    if verbose:
+        fingerprint_table = Table(title="🔐 Certificate Fingerprints")
+        fingerprint_table.add_column("Type", style="cyan")
+        fingerprint_table.add_column("Fingerprint", style="yellow")
+        fingerprint_table.add_row("SHA-1", server_cert.fingerprint_sha1)
+        fingerprint_table.add_row("SHA-256", server_cert.fingerprint_sha256)
+        console.print(fingerprint_table)
+        console.print()
+
+
+def _display_certificate_chain_analysis(cert_chain, revocation_results: dict, verbose: bool):
+    """Display detailed certificate chain analysis."""
+    
+    console.print("[bold]🔗 Certificate Chain Analysis[/bold]")
+    console.print()
+    
+    # Chain overview
+    overview_table = Table(title="Chain Overview")
+    overview_table.add_column("Level", style="cyan")
+    overview_table.add_column("Certificate", style="yellow")
+    overview_table.add_column("Type", style="green")
+    overview_table.add_column("Valid", style="magenta")
+    
+    # Server certificate
+    server_cert = cert_chain.server_cert
+    valid_icon = "✅" if server_cert.is_valid_now else "❌"
+    overview_table.add_row("0", server_cert.subject.split(',')[0], "Server", f"{valid_icon} {server_cert.is_valid_now}")
+    
+    # Intermediate certificates
+    for i, intermediate in enumerate(cert_chain.intermediate_certs, 1):
+        valid_icon = "✅" if intermediate.is_valid_now else "❌"
+        overview_table.add_row(str(i), intermediate.subject.split(',')[0], "Intermediate CA", f"{valid_icon} {intermediate.is_valid_now}")
+    
+    # Root certificate
+    if cert_chain.root_cert:
+        valid_icon = "✅" if cert_chain.root_cert.is_valid_now else "❌"
+        overview_table.add_row(str(len(cert_chain.intermediate_certs) + 1), 
+                              cert_chain.root_cert.subject.split(',')[0], 
+                              "Root CA", 
+                              f"{valid_icon} {cert_chain.root_cert.is_valid_now}")
+    
+    console.print(overview_table)
+    console.print()
+    
+    # Chain validation details
+    validation_table = Table(title="🔍 Chain Validation Details")
+    validation_table.add_column("Check", style="cyan")
+    validation_table.add_column("Status", style="yellow")
+    validation_table.add_column("Details", style="white")
+    
+    # Chain completeness
+    complete_status = "✅ Pass" if cert_chain.chain_complete else "⚠️ Warning"
+    complete_details = "Complete chain to root CA" if cert_chain.chain_complete else "Missing certificates in chain"
+    validation_table.add_row("Chain Completeness", complete_status, complete_details)
+    
+    # Chain validity
+    valid_status = "✅ Pass" if cert_chain.chain_valid else "❌ Fail"
+    valid_details = "All signatures valid" if cert_chain.chain_valid else f"{len(cert_chain.trust_issues)} issues found"
+    validation_table.add_row("Chain Validity", valid_status, valid_details)
+    
+    # Certificate expiration
+    all_valid = all([server_cert.is_valid_now] + [cert.is_valid_now for cert in cert_chain.intermediate_certs])
+    if cert_chain.root_cert:
+        all_valid = all_valid and cert_chain.root_cert.is_valid_now
+    
+    exp_status = "✅ Pass" if all_valid else "❌ Fail"
+    exp_details = "All certificates valid" if all_valid else "One or more certificates expired"
+    validation_table.add_row("Expiration Check", exp_status, exp_details)
+    
+    console.print(validation_table)
+    console.print()
+    
+    # Missing intermediates
+    if cert_chain.missing_intermediates:
+        console.print("[orange]⚠️ Missing Intermediate Certificates:[/orange]")
+        for missing in cert_chain.missing_intermediates:
+            console.print(f"[orange]  • {missing}[/orange]")
+        console.print("[orange]This may cause compatibility issues with some browsers/clients.[/orange]")
+        console.print()
+    
+    # Revocation information
+    if cert_chain.ocsp_urls or cert_chain.crl_urls:
+        revocation_table = Table(title="🔄 Certificate Revocation Information")
+        revocation_table.add_column("Type", style="cyan")
+        revocation_table.add_column("URLs", style="yellow")
+        
+        if cert_chain.ocsp_urls:
+            revocation_table.add_row("OCSP", "\n".join(cert_chain.ocsp_urls))
+        
+        if cert_chain.crl_urls:
+            revocation_table.add_row("CRL", "\n".join(cert_chain.crl_urls))
+        
+        console.print(revocation_table)
+        console.print()
+    
+    # Detailed certificate information (if verbose)
+    if verbose:
+        console.print("[bold]📋 Detailed Certificate Information[/bold]")
+        console.print()
+        
+        for i, cert in enumerate([server_cert] + cert_chain.intermediate_certs):
+            level = "Server" if i == 0 else f"Intermediate {i}"
+            console.print(f"[bold]{level} Certificate:[/bold]")
+            
+            detail_table = Table()
+            detail_table.add_column("Property", style="cyan")
+            detail_table.add_column("Value", style="yellow")
+            
+            detail_table.add_row("Subject", cert.subject)
+            detail_table.add_row("Issuer", cert.issuer)
+            detail_table.add_row("Serial", cert.serial_number)
+            detail_table.add_row("Valid From", cert.not_before.strftime("%Y-%m-%d %H:%M:%S UTC"))
+            detail_table.add_row("Valid Until", cert.not_after.strftime("%Y-%m-%d %H:%M:%S UTC"))
+            detail_table.add_row("Key Algorithm", f"{cert.public_key_algorithm} ({cert.key_size} bits)")
+            detail_table.add_row("Signature", cert.signature_algorithm)
+            detail_table.add_row("SHA-1 Fingerprint", cert.fingerprint_sha1)
+            detail_table.add_row("SHA-256 Fingerprint", cert.fingerprint_sha256)
+            
+            console.print(detail_table)
+            console.print()
+
+
+def _display_certificate_info(cert_chain, show_pem: bool, verbose: bool):
+    """Display certificate information and signing details."""
+    
+    server_cert = cert_chain.server_cert
+    
+    console.print("[bold]📋 Certificate Information[/bold]")
+    console.print()
+    
+    # Who signed this certificate
+    signing_table = Table(title="🔏 Certificate Signing Information")
+    signing_table.add_column("Property", style="cyan")
+    signing_table.add_column("Value", style="yellow")
+    
+    signing_table.add_row("Certificate Subject", server_cert.subject)
+    signing_table.add_row("Signed By (Issuer)", server_cert.issuer)
+    signing_table.add_row("Self-Signed", "✅ Yes" if server_cert.is_self_signed else "❌ No")
+    signing_table.add_row("Certificate Authority", "✅ Yes" if server_cert.is_ca else "❌ No")
+    signing_table.add_row("Signature Algorithm", server_cert.signature_algorithm)
+    
+    console.print(signing_table)
+    console.print()
+    
+    # Certificate hierarchy
+    if not server_cert.is_self_signed:
+        console.print("[bold]🏗️ Certificate Hierarchy (Chain of Trust)[/bold]")
+        hierarchy_table = Table()
+        hierarchy_table.add_column("Level", style="cyan")
+        hierarchy_table.add_column("Certificate", style="yellow")
+        hierarchy_table.add_column("Signed By", style="green")
+        
+        # Server certificate
+        first_issuer = cert_chain.intermediate_certs[0].subject if cert_chain.intermediate_certs else "Unknown"
+        hierarchy_table.add_row("🖥️ Server", server_cert.subject.split(',')[0], first_issuer.split(',')[0])
+        
+        # Intermediate certificates
+        for i, intermediate in enumerate(cert_chain.intermediate_certs):
+            next_issuer = cert_chain.intermediate_certs[i+1].subject if i+1 < len(cert_chain.intermediate_certs) else (
+                cert_chain.root_cert.subject if cert_chain.root_cert else "Unknown Root"
+            )
+            hierarchy_table.add_row(f"🏢 Intermediate {i+1}", intermediate.subject.split(',')[0], next_issuer.split(',')[0])
+        
+        # Root certificate
+        if cert_chain.root_cert:
+            hierarchy_table.add_row("🏛️ Root CA", cert_chain.root_cert.subject.split(',')[0], "Self-signed")
+        
+        console.print(hierarchy_table)
+        console.print()
+    
+    # Certificate details
+    details_table = Table(title="🔍 Certificate Details")
+    details_table.add_column("Property", style="cyan")
+    details_table.add_column("Value", style="yellow")
+    
+    details_table.add_row("Serial Number", server_cert.serial_number)
+    details_table.add_row("Valid From", server_cert.not_before.strftime("%Y-%m-%d %H:%M:%S UTC"))
+    details_table.add_row("Valid Until", server_cert.not_after.strftime("%Y-%m-%d %H:%M:%S UTC"))
+    
+    # Calculate days until expiration
+    from datetime import datetime
+    now = datetime.utcnow()
+    days_until_expiry = (server_cert.not_after - now).days
+    expiry_color = "green" if days_until_expiry > 30 else "orange" if days_until_expiry > 7 else "red"
+    details_table.add_row("Days Until Expiry", f"[{expiry_color}]{days_until_expiry}[/{expiry_color}]")
+    
+    details_table.add_row("Public Key", f"{server_cert.public_key_algorithm} ({server_cert.key_size} bits)")
+    details_table.add_row("Key Usage", ", ".join(server_cert.extensions.get("keyUsage", [])))
+    
+    console.print(details_table)
+    console.print()
+    
+    # Subject Alternative Names
+    if server_cert.san_domains:
+        san_table = Table(title="🌐 Subject Alternative Names (SAN)")
+        san_table.add_column("Domain", style="green")
+        for domain in server_cert.san_domains:
+            san_table.add_row(domain)
+        console.print(san_table)
+        console.print()
+    
+    # Extensions (if verbose)
+    if verbose and server_cert.extensions:
+        ext_table = Table(title="🔧 Certificate Extensions")
+        ext_table.add_column("Extension", style="cyan")
+        ext_table.add_column("Value", style="yellow")
+        
+        for ext_name, ext_value in server_cert.extensions.items():
+            if isinstance(ext_value, list):
+                ext_value = ", ".join(str(v) for v in ext_value)
+            elif isinstance(ext_value, dict):
+                ext_value = str(ext_value)
+            ext_table.add_row(ext_name, str(ext_value)[:100])
+        
+        console.print(ext_table)
+        console.print()
+    
+    # PEM certificate (if requested)
+    if show_pem:
+        console.print("[bold]📄 Certificate in PEM Format[/bold]")
+        console.print()
+        console.print("[green]" + server_cert.pem_data + "[/green]")
+
+
+async def _save_certificate_results(cert_chain, output_file: str, hostname_valid: bool):
+    """Save certificate analysis results to file."""
+    result = {
+        "server_certificate": {
+            "subject": cert_chain.server_cert.subject,
+            "issuer": cert_chain.server_cert.issuer,
+            "serial_number": cert_chain.server_cert.serial_number,
+            "valid_from": cert_chain.server_cert.not_before.isoformat(),
+            "valid_until": cert_chain.server_cert.not_after.isoformat(),
+            "is_valid": cert_chain.server_cert.is_valid_now,
+            "is_expired": cert_chain.server_cert.is_expired,
+            "fingerprint_sha256": cert_chain.server_cert.fingerprint_sha256,
+            "key_algorithm": cert_chain.server_cert.public_key_algorithm,
+            "key_size": cert_chain.server_cert.key_size,
+            "signature_algorithm": cert_chain.server_cert.signature_algorithm,
+            "san_domains": cert_chain.server_cert.san_domains
+        },
+        "chain_analysis": {
+            "chain_valid": cert_chain.chain_valid,
+            "chain_complete": cert_chain.chain_complete,
+            "intermediate_count": len(cert_chain.intermediate_certs),
+            "has_root": cert_chain.root_cert is not None,
+            "missing_intermediates": cert_chain.missing_intermediates,
+            "trust_issues": cert_chain.trust_issues
+        },
+        "hostname_validation": {
+            "hostname_valid": hostname_valid
+        },
+        "revocation_info": {
+            "ocsp_urls": cert_chain.ocsp_urls,
+            "crl_urls": cert_chain.crl_urls
+        }
+    }
+    
+    with open(output_file, 'w') as f:
+        json.dump(result, f, indent=2)
+
+
+async def _save_certificate_chain_results(cert_chain, revocation_results: dict, output_file: str):
+    """Save certificate chain analysis results to file."""
+    result = {
+        "chain_analysis": {
+            "valid": cert_chain.chain_valid,
+            "complete": cert_chain.chain_complete,
+            "missing_intermediates": cert_chain.missing_intermediates,
+            "trust_issues": cert_chain.trust_issues
+        },
+        "certificates": [],
+        "revocation_check": revocation_results
+    }
+    
+    # Add server certificate
+    result["certificates"].append({
+        "type": "server",
+        "subject": cert_chain.server_cert.subject,
+        "issuer": cert_chain.server_cert.issuer,
+        "serial_number": cert_chain.server_cert.serial_number,
+        "valid_from": cert_chain.server_cert.not_before.isoformat(),
+        "valid_until": cert_chain.server_cert.not_after.isoformat(),
+        "is_valid": cert_chain.server_cert.is_valid_now,
+        "fingerprint_sha256": cert_chain.server_cert.fingerprint_sha256
+    })
+    
+    # Add intermediate certificates
+    for cert in cert_chain.intermediate_certs:
+        result["certificates"].append({
+            "type": "intermediate",
+            "subject": cert.subject,
+            "issuer": cert.issuer,
+            "serial_number": cert.serial_number,
+            "valid_from": cert.not_before.isoformat(),
+            "valid_until": cert.not_after.isoformat(),
+            "is_valid": cert.is_valid_now,
+            "fingerprint_sha256": cert.fingerprint_sha256
+        })
+    
+    # Add root certificate if found
+    if cert_chain.root_cert:
+        result["certificates"].append({
+            "type": "root",
+            "subject": cert_chain.root_cert.subject,
+            "issuer": cert_chain.root_cert.issuer,
+            "serial_number": cert_chain.root_cert.serial_number,
+            "valid_from": cert_chain.root_cert.not_before.isoformat(),
+            "valid_until": cert_chain.root_cert.not_after.isoformat(),
+            "is_valid": cert_chain.root_cert.is_valid_now,
+            "fingerprint_sha256": cert_chain.root_cert.fingerprint_sha256
+        })
+    
+    with open(output_file, 'w') as f:
+        json.dump(result, f, indent=2)
+
+
+async def _save_certificate_info_results(cert_chain, output_file: str, include_pem: bool):
+    """Save certificate information results to file."""
+    result = {
+        "certificate_info": {
+            "subject": cert_chain.server_cert.subject,
+            "issuer": cert_chain.server_cert.issuer,
+            "serial_number": cert_chain.server_cert.serial_number,
+            "valid_from": cert_chain.server_cert.not_before.isoformat(),
+            "valid_until": cert_chain.server_cert.not_after.isoformat(),
+            "is_self_signed": cert_chain.server_cert.is_self_signed,
+            "is_ca": cert_chain.server_cert.is_ca,
+            "fingerprint_sha1": cert_chain.server_cert.fingerprint_sha1,
+            "fingerprint_sha256": cert_chain.server_cert.fingerprint_sha256,
+            "signature_algorithm": cert_chain.server_cert.signature_algorithm,
+            "public_key_algorithm": cert_chain.server_cert.public_key_algorithm,
+            "key_size": cert_chain.server_cert.key_size,
+            "san_domains": cert_chain.server_cert.san_domains,
+            "extensions": cert_chain.server_cert.extensions
+        },
+        "signing_hierarchy": []
+    }
+    
+    # Add signing hierarchy
+    if not cert_chain.server_cert.is_self_signed:
+        result["signing_hierarchy"].append({
+            "level": "server",
+            "certificate": cert_chain.server_cert.subject,
+            "signed_by": cert_chain.server_cert.issuer
+        })
+        
+        for i, intermediate in enumerate(cert_chain.intermediate_certs):
+            result["signing_hierarchy"].append({
+                "level": f"intermediate_{i+1}",
+                "certificate": intermediate.subject,
+                "signed_by": intermediate.issuer
+            })
+        
+        if cert_chain.root_cert:
+            result["signing_hierarchy"].append({
+                "level": "root",
+                "certificate": cert_chain.root_cert.subject,
+                "signed_by": "self-signed"
+            })
+    
+    if include_pem:
+        result["certificate_info"]["pem_data"] = cert_chain.server_cert.pem_data
+    
+    with open(output_file, 'w') as f:
+        json.dump(result, f, indent=2)
 
 
 def _display_dns_trace(result: L7Result):

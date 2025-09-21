@@ -12,7 +12,7 @@ pip install simple-port-checker
 
 ```python
 import asyncio
-from simple_port_checker import PortChecker, L7Detector
+from simple_port_checker import PortChecker, L7Detector, CertificateAnalyzer, MTLSChecker
 
 async def main():
     # Basic port scanning
@@ -25,6 +25,14 @@ async def main():
     l7_result = await detector.detect("example.com")
     if l7_result.is_protected:
         print(f"Protected by: {l7_result.primary_protection.service.value}")
+    
+    # SSL/TLS certificate analysis
+    cert_analyzer = CertificateAnalyzer()
+    cert_chain = await cert_analyzer.analyze_certificate_chain("example.com", 443)
+    print(f"Certificate Subject: {cert_chain.server_cert.subject}")
+    print(f"Issuer: {cert_chain.server_cert.issuer}")
+    print(f"Valid: {cert_chain.server_cert.is_valid_now}")
+    print(f"Chain Complete: {cert_chain.chain_complete}")
 
 asyncio.run(main())
 ```
@@ -276,6 +284,102 @@ for result in results:
     print(f"{result.target}:{result.port} - mTLS: {result.supports_mtls}")
 ```
 
+### CertificateAnalyzer
+
+The CertificateAnalyzer class provides comprehensive SSL/TLS certificate chain analysis and validation capabilities.
+
+#### Constructor
+
+```python
+from simple_port_checker import CertificateAnalyzer
+
+# Default configuration
+analyzer = CertificateAnalyzer()
+
+# Custom timeout
+analyzer = CertificateAnalyzer(timeout=15.0)
+```
+
+**Parameters:**
+- `timeout` (float): Connection timeout in seconds (default: 10.0)
+
+#### Methods
+
+##### `analyze_certificate_chain(host, port=443)`
+
+Analyze the complete SSL/TLS certificate chain for a target host.
+
+**Parameters:**
+- `host` (str): Target hostname
+- `port` (int): Target port (default: 443)
+
+**Returns:** `CertificateChain` object
+
+**Example:**
+```python
+# Basic certificate chain analysis
+cert_chain = await analyzer.analyze_certificate_chain("github.com")
+
+# Custom port
+cert_chain = await analyzer.analyze_certificate_chain("example.com", 8443)
+
+# Check results
+print(f"Chain valid: {cert_chain.chain_valid}")
+print(f"Chain complete: {cert_chain.chain_complete}")
+print(f"Server cert subject: {cert_chain.server_cert.subject}")
+print(f"Intermediate certs: {len(cert_chain.intermediate_certs)}")
+
+if cert_chain.missing_intermediates:
+    print("Missing intermediates:")
+    for missing in cert_chain.missing_intermediates:
+        print(f"  - {missing}")
+```
+
+##### `validate_hostname(cert, hostname)`
+
+Validate if a certificate is valid for the given hostname (including wildcard support).
+
+**Parameters:**
+- `cert` (x509.Certificate): Certificate object to validate
+- `hostname` (str): Hostname to validate against
+
+**Returns:** `bool`
+
+**Example:**
+```python
+# Get certificate chain first
+cert_chain = await analyzer.analyze_certificate_chain("github.com")
+server_cert = cert_chain.server_cert.raw_cert
+
+# Validate hostname
+is_valid = analyzer.validate_hostname(server_cert, "github.com")
+print(f"Hostname valid: {is_valid}")
+
+# Test with different hostname
+is_valid_www = analyzer.validate_hostname(server_cert, "www.github.com")
+print(f"www.github.com valid: {is_valid_www}")
+```
+
+##### `check_certificate_revocation(ocsp_url)`
+
+Check certificate revocation status using OCSP (placeholder implementation).
+
+**Parameters:**
+- `ocsp_url` (str): OCSP URL to check
+
+**Returns:** `Dict[str, Any]` with revocation status information
+
+**Example:**
+```python
+# Get OCSP URLs from certificate chain
+cert_chain = await analyzer.analyze_certificate_chain("example.com")
+ocsp_urls = cert_chain.ocsp_urls
+
+if ocsp_urls:
+    revocation_status = analyzer.check_certificate_revocation(ocsp_urls[0])
+    print(f"Revocation status: {revocation_status['status']}")
+```
+
 ## Data Models
 
 ### ScanResult
@@ -394,6 +498,93 @@ Contains the results of mTLS authentication checks.
 - `tls_version` (str, optional): TLS version used
 - `verification_mode` (str, optional): Certificate verification mode
 - `ca_bundle_path` (str, optional): Path to CA bundle used
+
+### CertificateInfo
+
+Contains detailed information about a single SSL/TLS certificate.
+
+**Attributes:**
+- `subject` (str): Certificate subject (Distinguished Name)
+- `issuer` (str): Certificate issuer (Distinguished Name)
+- `serial_number` (str): Certificate serial number
+- `fingerprint_sha1` (str): SHA-1 fingerprint of the certificate
+- `fingerprint_sha256` (str): SHA-256 fingerprint of the certificate
+- `not_before` (datetime): Certificate validity start date
+- `not_after` (datetime): Certificate validity end date
+- `is_ca` (bool): Whether this is a Certificate Authority certificate
+- `is_self_signed` (bool): Whether the certificate is self-signed
+- `is_expired` (bool): Whether the certificate is expired
+- `is_valid_now` (bool): Whether the certificate is currently valid
+- `key_size` (int): Public key size in bits
+- `signature_algorithm` (str): Signature algorithm used
+- `public_key_algorithm` (str): Public key algorithm
+- `san_domains` (List[str]): Subject Alternative Names (domains)
+- `extensions` (Dict[str, Any]): Certificate extensions
+- `pem_data` (str): Certificate in PEM format
+- `raw_cert` (x509.Certificate): Raw cryptography certificate object
+
+**Example:**
+```python
+cert_chain = await analyzer.analyze_certificate_chain("github.com")
+server_cert = cert_chain.server_cert
+
+print(f"Subject: {server_cert.subject}")
+print(f"Issuer: {server_cert.issuer}")
+print(f"Valid from: {server_cert.not_before}")
+print(f"Valid until: {server_cert.not_after}")
+print(f"Key size: {server_cert.key_size} bits")
+print(f"SAN domains: {server_cert.san_domains}")
+print(f"Is CA: {server_cert.is_ca}")
+print(f"Self-signed: {server_cert.is_self_signed}")
+```
+
+### CertificateChain
+
+Contains the complete SSL/TLS certificate chain analysis results.
+
+**Attributes:**
+- `server_cert` (CertificateInfo): Server (end-entity) certificate
+- `intermediate_certs` (List[CertificateInfo]): Intermediate CA certificates
+- `root_cert` (CertificateInfo, optional): Root CA certificate (if available)
+- `chain_valid` (bool): Whether the certificate chain is valid
+- `chain_complete` (bool): Whether the certificate chain is complete
+- `missing_intermediates` (List[str]): List of missing intermediate certificates
+- `trust_issues` (List[str]): List of trust validation issues
+- `ocsp_urls` (List[str]): OCSP URLs extracted from certificates
+- `crl_urls` (List[str]): CRL URLs extracted from certificates
+
+**Example:**
+```python
+cert_chain = await analyzer.analyze_certificate_chain("example.com")
+
+# Chain validation
+print(f"Chain valid: {cert_chain.chain_valid}")
+print(f"Chain complete: {cert_chain.chain_complete}")
+
+# Certificate hierarchy
+print(f"Server cert: {cert_chain.server_cert.subject}")
+print(f"Intermediate certs: {len(cert_chain.intermediate_certs)}")
+for i, cert in enumerate(cert_chain.intermediate_certs):
+    print(f"  Intermediate {i+1}: {cert.subject}")
+
+if cert_chain.root_cert:
+    print(f"Root cert: {cert_chain.root_cert.subject}")
+
+# Issues and warnings
+if cert_chain.missing_intermediates:
+    print("Missing intermediates:")
+    for missing in cert_chain.missing_intermediates:
+        print(f"  - {missing}")
+
+if cert_chain.trust_issues:
+    print("Trust issues:")
+    for issue in cert_chain.trust_issues:
+        print(f"  - {issue}")
+
+# Revocation information
+print(f"OCSP URLs: {cert_chain.ocsp_urls}")
+print(f"CRL URLs: {cert_chain.crl_urls}")
+```
 - `timestamp` (str): Timestamp of the check
 
 **Example:**
@@ -637,6 +828,205 @@ async def test_with_client_certs(target):
 - Consider rate limiting for large-scale scans
 - Use `trace_dns=True` only when needed as it adds overhead
 
+## Usage Examples
+
+### Complete Certificate Chain Analysis
+
+```python
+import asyncio
+from simple_port_checker import CertificateAnalyzer
+
+async def analyze_website_certificates():
+    analyzer = CertificateAnalyzer(timeout=15.0)
+    
+    # Analyze multiple websites
+    websites = ["github.com", "google.com", "stackoverflow.com"]
+    
+    for site in websites:
+        print(f"\n=== Analyzing {site} ===")
+        try:
+            cert_chain = await analyzer.analyze_certificate_chain(site)
+            
+            # Basic certificate info
+            server_cert = cert_chain.server_cert
+            print(f"Subject: {server_cert.subject}")
+            print(f"Issuer: {server_cert.issuer}")
+            print(f"Valid: {server_cert.not_before} to {server_cert.not_after}")
+            print(f"Key Algorithm: {server_cert.public_key_algorithm} ({server_cert.key_size} bits)")
+            print(f"Signature Algorithm: {server_cert.signature_algorithm}")
+            
+            # Certificate status
+            print(f"Currently Valid: {server_cert.is_valid_now}")
+            print(f"Expired: {server_cert.is_expired}")
+            print(f"Self-Signed: {server_cert.is_self_signed}")
+            print(f"Is CA: {server_cert.is_ca}")
+            
+            # SAN domains
+            if server_cert.san_domains:
+                print(f"SAN Domains: {', '.join(server_cert.san_domains[:5])}")
+                if len(server_cert.san_domains) > 5:
+                    print(f"  ... and {len(server_cert.san_domains) - 5} more")
+            
+            # Chain analysis
+            print(f"\nChain Analysis:")
+            print(f"  Chain Valid: {cert_chain.chain_valid}")
+            print(f"  Chain Complete: {cert_chain.chain_complete}")
+            print(f"  Intermediate Certs: {len(cert_chain.intermediate_certs)}")
+            print(f"  Has Root Cert: {'Yes' if cert_chain.root_cert else 'No'}")
+            
+            # Show certificate hierarchy
+            print(f"\nCertificate Hierarchy:")
+            print(f"  Server: {server_cert.subject}")
+            for i, intermediate in enumerate(cert_chain.intermediate_certs):
+                print(f"  Intermediate {i+1}: {intermediate.subject}")
+            if cert_chain.root_cert:
+                print(f"  Root: {cert_chain.root_cert.subject}")
+            
+            # Trust issues
+            if cert_chain.trust_issues:
+                print(f"\nTrust Issues:")
+                for issue in cert_chain.trust_issues:
+                    print(f"  - {issue}")
+            
+            # Missing intermediates
+            if cert_chain.missing_intermediates:
+                print(f"\nMissing Intermediates:")
+                for missing in cert_chain.missing_intermediates:
+                    print(f"  - {missing}")
+            
+            # Revocation information
+            if cert_chain.ocsp_urls:
+                print(f"\nOCSP URLs: {', '.join(cert_chain.ocsp_urls[:3])}")
+            if cert_chain.crl_urls:
+                print(f"CRL URLs: {', '.join(cert_chain.crl_urls[:3])}")
+                
+        except Exception as e:
+            print(f"Error analyzing {site}: {e}")
+
+asyncio.run(analyze_website_certificates())
+```
+
+### Certificate Validation and Hostname Checking
+
+```python
+import asyncio
+from simple_port_checker import CertificateAnalyzer
+
+async def validate_certificate_hostname():
+    analyzer = CertificateAnalyzer()
+    
+    # Test hostname validation
+    cert_chain = await analyzer.analyze_certificate_chain("github.com")
+    server_cert_raw = cert_chain.server_cert.raw_cert
+    
+    # Test various hostnames
+    test_hostnames = [
+        "github.com",          # Should be valid
+        "www.github.com",      # Should be valid (SAN)
+        "api.github.com",      # May be valid (SAN)
+        "invalid.github.com",  # Should be invalid
+        "example.com"          # Should be invalid
+    ]
+    
+    print("Hostname Validation Results:")
+    for hostname in test_hostnames:
+        is_valid = analyzer.validate_hostname(server_cert_raw, hostname)
+        status = "✅ VALID" if is_valid else "❌ INVALID"
+        print(f"  {hostname}: {status}")
+    
+    # Show certificate SAN domains for reference
+    print(f"\nCertificate covers these domains:")
+    for domain in cert_chain.server_cert.san_domains[:10]:
+        print(f"  - {domain}")
+
+asyncio.run(validate_certificate_hostname())
+```
+
+### Combined Security Analysis
+
+```python
+import asyncio
+from simple_port_checker import PortChecker, L7Detector, CertificateAnalyzer, MTLSChecker
+
+async def comprehensive_security_analysis(target):
+    """Perform comprehensive security analysis including ports, L7 protection, and certificates."""
+    
+    print(f"🔍 Comprehensive Security Analysis for {target}")
+    print("=" * 60)
+    
+    # 1. Port Scanning
+    print("\n📡 Port Scanning...")
+    scanner = PortChecker()
+    scan_result = await scanner.scan_host(target, [80, 443, 8080, 8443])
+    
+    open_ports = [p.port for p in scan_result.ports if p.is_open]
+    print(f"Open ports: {open_ports}")
+    
+    # 2. L7 Protection Detection
+    print("\n🛡️ L7 Protection Detection...")
+    l7_detector = L7Detector()
+    l7_result = await l7_detector.detect(target)
+    
+    if l7_result.primary_protection:
+        service = l7_result.primary_protection.service.value
+        confidence = l7_result.primary_protection.confidence
+        print(f"Protected by: {service} (confidence: {confidence:.1%})")
+        print(f"Detection indicators: {', '.join(l7_result.primary_protection.indicators[:3])}")
+    else:
+        print("No L7 protection detected")
+    
+    # 3. SSL/TLS Certificate Analysis
+    if 443 in open_ports:
+        print("\n🔒 SSL/TLS Certificate Analysis...")
+        cert_analyzer = CertificateAnalyzer()
+        try:
+            cert_chain = await cert_analyzer.analyze_certificate_chain(target, 443)
+            server_cert = cert_chain.server_cert
+            
+            print(f"Certificate Subject: {server_cert.subject}")
+            print(f"Issuer: {server_cert.issuer}")
+            print(f"Valid until: {server_cert.not_after}")
+            print(f"Chain valid: {cert_chain.chain_valid}")
+            print(f"Chain complete: {cert_chain.chain_complete}")
+            
+            # Security indicators
+            print(f"Key strength: {server_cert.key_size} bits ({server_cert.public_key_algorithm})")
+            print(f"Signature algorithm: {server_cert.signature_algorithm}")
+            
+            # Hostname validation
+            hostname_valid = cert_analyzer.validate_hostname(server_cert.raw_cert, target)
+            print(f"Hostname valid: {'✅ Yes' if hostname_valid else '❌ No'}")
+            
+            # Warnings
+            if cert_chain.missing_intermediates:
+                print("⚠️ Missing intermediate certificates detected")
+            if not cert_chain.chain_complete:
+                print("⚠️ Certificate chain incomplete")
+            if cert_chain.trust_issues:
+                print(f"⚠️ Trust issues: {', '.join(cert_chain.trust_issues)}")
+                
+        except Exception as e:
+            print(f"Certificate analysis failed: {e}")
+    
+    # 4. mTLS Support Check
+    if 443 in open_ports:
+        print("\n🔐 mTLS Support Check...")
+        mtls_checker = MTLSChecker()
+        try:
+            mtls_result = await mtls_checker.check_mtls(target, 443)
+            print(f"Supports mTLS: {'✅ Yes' if mtls_result.supports_mtls else '❌ No'}")
+            print(f"Requires client cert: {'✅ Yes' if mtls_result.requires_client_cert else '❌ No'}")
+            if mtls_result.tls_version:
+                print(f"TLS version: {mtls_result.tls_version}")
+        except Exception as e:
+            print(f"mTLS check failed: {e}")
+    
+    print(f"\n✅ Analysis complete for {target}")
+
+# Run comprehensive analysis
+asyncio.run(comprehensive_security_analysis("github.com"))
+```
+
 ## Best Practices
 
 1. **Always use async/await context**:
@@ -675,6 +1065,36 @@ async def test_with_client_certs(target):
    # Instead of scanning all common ports
    web_ports = [80, 443, 8080, 8443]
    result = await scanner.scan_host("example.com", web_ports)
+   ```
+
+6. **Certificate analysis best practices**:
+   ```python
+   # Use appropriate timeouts for certificate analysis
+   analyzer = CertificateAnalyzer(timeout=15.0)
+   
+   # Always check for errors
+   try:
+       cert_chain = await analyzer.analyze_certificate_chain("example.com")
+       if not cert_chain.chain_valid:
+           print("Certificate chain validation failed")
+   except Exception as e:
+       print(f"Certificate analysis error: {e}")
+   ```
+
+7. **Validate certificate hostname matches**:
+   ```python
+   cert_chain = await analyzer.analyze_certificate_chain("example.com")
+   hostname_valid = analyzer.validate_hostname(cert_chain.server_cert.raw_cert, "example.com")
+   if not hostname_valid:
+       print("Certificate hostname validation failed")
+   ```
+
+8. **Check for certificate chain completeness**:
+   ```python
+   if not cert_chain.chain_complete:
+       print("Warning: Certificate chain incomplete - may cause browser compatibility issues")
+       if cert_chain.missing_intermediates:
+           print(f"Missing: {', '.join(cert_chain.missing_intermediates)}")
    ```
 
 ## Legal and Ethical Considerations

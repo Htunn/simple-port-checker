@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simple-port-checker"
-version = "0.4.2"
-description = "A comprehensive tool for checking firewall ports and L7 protection services"
+version = "0.5.0"
+description = "A comprehensive tool for checking firewall ports, L7 protection services, and SSL/TLS certificate analysis"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -15,7 +15,7 @@ authors = [
 maintainers = [
     {name = "htunn", email = "htunnthuthu.linux@gmail.com"}
 ]
-keywords = ["firewall", "port-scanner", "l7-protection", "waf", "network", "security"]
+keywords = ["firewall", "port-scanner", "l7-protection", "waf", "network", "security", "ssl", "tls", "certificate", "certificate-analysis", "pki"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

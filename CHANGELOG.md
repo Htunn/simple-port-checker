@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-09-21
+
+### Added
+- **🔒 SSL/TLS Certificate Analysis**: Comprehensive certificate chain analysis and validation
+  - **`cert-check`**: Analyze SSL/TLS certificate chain for target hosts
+  - **`cert-chain`**: Complete certificate chain and trust path analysis  
+  - **`cert-info`**: Detailed certificate information and signing hierarchy
+- **🏛️ Certificate Authority Identification**: "Who signed my cert?" functionality
+  - Certificate signing chain visualization
+  - Intermediate CA detection and validation
+  - Root CA identification and trust validation
+- **⚠️ Missing Intermediate Detection**: Identify incomplete certificate chains
+  - Browser compatibility warnings
+  - Missing intermediate certificate alerts
+  - Chain completeness validation
+- **🔗 Chain of Trust Validation**: Complete trust path verification
+  - Signature validation throughout the chain
+  - Certificate hierarchy analysis
+  - Trust issue identification
+- **🛡️ Security Analysis Features**:
+  - Hostname verification against certificates (including wildcards)
+  - Certificate expiration checking
+  - Key algorithm and signature algorithm analysis
+  - Subject Alternative Names (SAN) extraction
+- **📋 Certificate Information Extraction**:
+  - Certificate fingerprints (SHA-1, SHA-256)
+  - Serial numbers and validity periods
+  - Key usage and extended key usage details
+  - Certificate extensions analysis
+- **🔄 Revocation Infrastructure**: OCSP and CRL URL extraction for future validation
+- **📊 Rich Output**: Beautiful certificate analysis tables with status indicators
+- **💾 Export Capabilities**: JSON output support for programmatic integration
+
+### Enhanced
+- **CLI Interface**: Added three new certificate analysis commands to main CLI
+- **Documentation**: Integrated best practices from DigiCert and Red Hat security guidelines
+- **Error Handling**: Robust certificate parsing with multiple fallback methods
+- **Async Support**: Asynchronous certificate chain analysis for better performance
+
+### Technical
+- **Certificate Parser**: Built on cryptography library for robust certificate handling
+- **Chain Extraction**: Uses OpenSSL for comprehensive certificate chain retrieval
+- **Timezone Handling**: Proper UTC datetime handling for certificate validity
+- **Security Context**: Appropriate SSL context configuration for certificate analysis
+
 ## [0.4.2] - 2025-09-19
 
 ### Fixed
