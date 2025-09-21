@@ -62,6 +62,11 @@ jobs:
       with:
         python-version: "3.12"
     
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openssl
+    
     - name: Wait for PyPI package availability
       run: |
         echo "Waiting for package to be available on PyPI..."

@@ -39,6 +39,7 @@ dependencies = [
     "python-nmap>=0.7.1",
     "asyncio-throttle>=1.0.2",
     "brotli>=1.0.9",
+    "cryptography>=41.0.0",
 ]
 
 [project.optional-dependencies]
