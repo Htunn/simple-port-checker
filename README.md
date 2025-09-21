@@ -54,7 +54,7 @@ Docker images are available on [Docker Hub](https://hub.docker.com/r/htunnthuthu
 docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.5.0 example.com --ports 80,443
+docker run --rm htunnthuthu/simple-port-checker:v0.5.1 example.com --ports 80,443
 
 # Run L7 protection check
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
@@ -68,7 +68,7 @@ docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 # Use latest tag for most recent features
 docker pull htunnthuthu/simple-port-checker:latest
 
-# Available tags: latest, v0.5.0, v0.4.2, v0.4.1, v0.4.0, v0.3.0, and other version tags
+# Available tags: latest, v0.5.1, v0.5.0, v0.4.2, v0.4.1, v0.4.0, v0.3.0, and other version tags
 ```
 
 **Docker Image Features:**
@@ -162,7 +162,7 @@ docker run --rm htunnthuthu/simple-port-checker:latest mtls-check example.com
 docker run --rm -v $(pwd):/app/output htunnthuthu/simple-port-checker:latest scan example.com --output /app/output/results.json
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.5.0 scan example.com
+docker run --rm htunnthuthu/simple-port-checker:v0.5.1 scan example.com
 ```
 
 ### Python API Usage
