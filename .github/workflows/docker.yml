@@ -175,8 +175,13 @@ jobs:
     environment: pypi
     needs: [build, integration-test]
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
