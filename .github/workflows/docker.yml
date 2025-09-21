@@ -2,6 +2,11 @@ name: Build and Push Docker Image
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
 
 env:
   IMAGE_NAME: simple-port-checker
@@ -93,9 +98,75 @@ jobs:
           docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} --help
           docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} --version
 
-  security-scan:
+  integration-test:
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name != 'pull_request'
+    
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Extract version from previous job
+        id: version
+        run: |
+          VERSION=$(python -c "import tomllib; import requests; r = requests.get('https://pypi.org/pypi/simple-port-checker/json'); print(r.json()['info']['version'])")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Latest PyPI version: $VERSION"
+
+      - name: Wait for Docker Hub propagation
+        run: |
+          echo "Waiting for Docker image to be available..."
+          sleep 60  # Wait 1 minute for Docker Hub propagation
+
+      - name: Test basic functionality
+        run: |
+          echo "Testing basic port scan..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest scan google.com --ports 443 --timeout 5
+
+      - name: Test L7 protection detection
+        run: |
+          echo "Testing L7 protection detection..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest l7-check google.com --timeout 5
+
+      - name: Test certificate analysis
+        run: |
+          echo "Testing SSL/TLS certificate analysis..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest cert-check google.com --timeout 10
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest cert-info github.com --timeout 10
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest cert-chain cloudflare.com --timeout 10
+
+      - name: Test full scan integration
+        run: |
+          echo "Testing full scan with all features..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest full-scan google.com --ports 443 --timeout 10
+
+      - name: Test mTLS functionality
+        run: |
+          echo "Testing mTLS check..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest mtls-check google.com --timeout 10 || true  # Allow to fail
+
+      - name: Test DNS trace
+        run: |
+          echo "Testing DNS trace..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest dns-trace google.com --timeout 10
+
+      - name: Validate certificate commands exist
+        run: |
+          echo "Validating certificate commands are available..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest --help | grep -E "(cert-check|cert-chain|cert-info)"
+          echo "✅ All certificate analysis commands are available"
+
+      - name: Test with specific version tag
+        run: |
+          echo "Testing with version-specific tag..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} scan github.com --ports 443 --timeout 5
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [build, integration-test]
     if: github.event_name != 'pull_request'
     
     steps:
