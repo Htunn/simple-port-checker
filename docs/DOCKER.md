@@ -1,13 +1,19 @@
-# Simple Port Checker| Tag | Description | Size | Architectures |
-|-----|-------------|------|---------------|
-| `latest` | Latest stable release | ~50MB | `linux/amd64`, `linux/arm64` |
-| `v0.4.1` | Version 0.4.1 | ~50MB | `linux/amd64`, `linux/arm64` |
-| `v0.4.0` | Version 0.4.0 | ~50MB | `linux/amd64`, `linux/arm64` |
-| `v0.3.0` | Version 0.3.0 | ~50MB | `linux/amd64`, `linux/arm64` |cker Documentation
+# Simple Port Checker - Docker Documentation
 
 🐳 **Official Docker Hub Repository**: [htunnthuthu/simple-port-checker](https://hub.docker.com/r/htunnthuthu/simple-port-checker)
 
-A comprehensive, lightweight Docker container for network security testing, port scanning, L7 protection detection, and mTLS authentication testing. Perfect for DevSecOps pipelines, security assessments, and network troubleshooting.
+A comprehensive, lightweight Docker container for network secu## 🔒 Certificate Analy## 🔧 Configuration & Environmentis Featuresity testing, port scanning, L7 protection detection, SSL/TLS certificate analysis, and mTLS authentication testing. Perfect for DevSecOps pipelines, security assessments, and network troubleshooting.
+
+## 📦 Available Tags
+
+| Tag | Description | Size | Architectures |
+|-----|-------------|------|---------------|
+| `latest` | Latest stable release with certificate analysis | ~55MB | `linux/amd64`, `linux/arm64` |
+| `v0.4.1` | Version 0.4.1 with SSL/TLS certificate analysis | ~55MB | `linux/amd64`, `linux/arm64` |
+| `v0.4.0` | Version 0.4.0 | ~50MB | `linux/amd64`, `linux/arm64` |
+| `v0.3.0` | Version 0.3.0 | ~48MB | `linux/amd64`, `linux/arm64` |
+
+**Recommendation**: Use `latest` for the most recent features, or pin to specific version tags for production deployments.
 
 ## 🚀 Quick Start
 
@@ -18,21 +24,14 @@ docker run --rm htunnthuthu/simple-port-checker:latest scan example.com
 # Check for L7 protection (WAF/CDN)
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
 
+# Analyze SSL/TLS certificate chain
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com
+
 # Full security scan with all features
 docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com
 ```
 
-## 📦 Available Tags
-
-| Tag | Description | Size | Architectures |
-|-----|-------------|------|---------------|
-| `latest` | Latest stable release | ~50MB | `linux/amd64`, `linux/arm64` |
-| `v0.4.0` | Version 0.4.0 | ~50MB | `linux/amd64`, `linux/arm64` |
-| `v0.3.0` | Version 0.3.0 | ~48MB | `linux/amd64`, `linux/arm64` |
-
-**Recommendation**: Use `latest` for the most recent features, or pin to specific version tags for production deployments.
-
-## 🛠️ Usage Examples
+## ️ Usage Examples
 
 ### Basic Port Scanning
 ```bash
@@ -56,6 +55,32 @@ docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com --tr
 
 # Check multiple sites for protection
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check site1.com site2.com
+```
+
+### Certificate Chain Analysis
+```bash
+# Basic certificate analysis
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check github.com
+
+# Complete certificate chain analysis
+docker run --rm htunnthuthu/simple-port-checker:latest cert-chain example.com
+
+# Detailed certificate information with PEM format
+docker run --rm htunnthuthu/simple-port-checker:latest cert-info example.com --show-pem
+
+# Certificate analysis with custom port
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com --port 8443
+
+# Save certificate analysis results
+docker run --rm -v $(pwd)/results:/app/output \
+  htunnthuthu/simple-port-checker:latest cert-chain example.com \
+  --output /app/output/cert-analysis.json
+
+# Verify hostname against certificate
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com --no-verify-hostname
+
+# Enable revocation checking (OCSP/CRL)
+docker run --rm htunnthuthu/simple-port-checker:latest cert-chain example.com --check-revocation
 ```
 
 ### mTLS Authentication Testing
@@ -99,6 +124,12 @@ docker run --rm htunnthuthu/simple-port-checker:latest full-scan example.com --v
     docker run --rm -v ${{ github.workspace }}/reports:/app/output \
       htunnthuthu/simple-port-checker:latest full-scan ${{ env.TARGET_HOST }} \
       --output /app/output/security-scan.json
+
+- name: Certificate Analysis
+  run: |
+    docker run --rm -v ${{ github.workspace }}/reports:/app/output \
+      htunnthuthu/simple-port-checker:latest cert-chain ${{ env.TARGET_HOST }} \
+      --output /app/output/cert-analysis.json --check-revocation
 ```
 
 #### GitLab CI
@@ -109,10 +140,14 @@ security_scan:
     - docker run --rm -v $PWD/reports:/app/output 
         htunnthuthu/simple-port-checker:latest full-scan $TARGET_HOST 
         --output /app/output/security-scan.json
+    - docker run --rm -v $PWD/reports:/app/output
+        htunnthuthu/simple-port-checker:latest cert-chain $TARGET_HOST
+        --output /app/output/cert-analysis.json
   artifacts:
     reports:
       paths:
         - reports/security-scan.json
+        - reports/cert-analysis.json
 ```
 
 #### Jenkins Pipeline
@@ -126,6 +161,11 @@ pipeline {
                     docker run --rm -v $WORKSPACE/reports:/app/output \
                       htunnthuthu/simple-port-checker:latest full-scan $TARGET_HOST \
                       --output /app/output/security-scan.json
+                '''
+                sh '''
+                    docker run --rm -v $WORKSPACE/reports:/app/output \
+                      htunnthuthu/simple-port-checker:latest cert-chain $TARGET_HOST \
+                      --output /app/output/cert-analysis.json --verbose
                 '''
                 archiveArtifacts artifacts: 'reports/*.json'
             }
@@ -143,6 +183,14 @@ services:
     command: full-scan example.com --output /app/output/results.json
     volumes:
       - ./scan-results:/app/output
+    environment:
+      - TARGET_HOST=example.com
+      
+  cert-analyzer:
+    image: htunnthuthu/simple-port-checker:latest
+    command: cert-chain example.com --output /app/output/cert-analysis.json --check-revocation
+    volumes:
+      - ./cert-results:/app/output
     environment:
       - TARGET_HOST=example.com
 ```
@@ -168,9 +216,52 @@ spec:
         persistentVolumeClaim:
           claimName: scan-results-pvc
       restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: certificate-analysis
+spec:
+  template:
+    spec:
+      containers:
+      - name: cert-analyzer
+        image: htunnthuthu/simple-port-checker:latest
+        command: ["port-checker", "cert-chain", "example.com", "--output", "/app/output/cert-analysis.json"]
+        volumeMounts:
+        - name: cert-volume
+          mountPath: /app/output
+      volumes:
+      - name: cert-volume
+        persistentVolumeClaim:
+          claimName: cert-results-pvc
+      restartPolicy: Never
 ```
 
-## 🔧 Configuration & Environment
+## � Certificate Analysis Features
+
+### Certificate Chain Analysis
+- ✅ Complete SSL/TLS certificate chain extraction
+- ✅ Certificate validation and trust path verification  
+- ✅ Missing intermediate certificate detection
+- ✅ Certificate expiration and validity checking
+- ✅ Hostname validation against certificate SAN/CN
+
+### Certificate Information
+- ✅ Certificate subject and issuer details
+- ✅ Public key algorithm and key size analysis
+- ✅ Digital signature algorithm identification
+- ✅ Certificate extensions parsing (Key Usage, EKU, etc.)
+- ✅ Subject Alternative Names (SAN) extraction
+
+### Trust and Security Analysis
+- ✅ Chain of trust validation
+- ✅ Self-signed certificate detection
+- ✅ CA certificate identification
+- ✅ OCSP and CRL URL extraction for revocation checking
+- ✅ Certificate fingerprint generation (SHA-1, SHA-256)
+
+## �🔧 Configuration & Environment
 
 ### Environment Variables
 ```bash
@@ -179,6 +270,9 @@ docker run --rm -e TIMEOUT=30 htunnthuthu/simple-port-checker:latest scan exampl
 
 # Enable debug logging
 docker run --rm -e DEBUG=1 htunnthuthu/simple-port-checker:latest l7-check example.com
+
+# Certificate analysis timeout
+docker run --rm -e CERT_TIMEOUT=15 htunnthuthu/simple-port-checker:latest cert-chain example.com
 ```
 
 ### Volume Mounts
@@ -228,12 +322,15 @@ docker run --rm -v /host/certs:/app/certs \
 - ✅ Python runtime and required dependencies
 - ✅ SSL/TLS libraries for certificate handling
 - ✅ DNS resolution utilities
+- ✅ OpenSSL for certificate chain extraction
+- ✅ Cryptography libraries for certificate analysis
 
 ### Performance
-- **Image Size**: ~50MB compressed
+- **Image Size**: ~55MB compressed (with certificate analysis tools)
 - **Startup Time**: <2 seconds
-- **Memory Usage**: <100MB typical
+- **Memory Usage**: <100MB typical, <150MB with certificate analysis
 - **CPU Usage**: Optimized for concurrent operations
+- **Certificate Analysis**: <5 seconds for typical certificate chains
 
 ## 📊 Output Formats
 
@@ -244,6 +341,9 @@ docker run --rm htunnthuthu/simple-port-checker:latest scan example.com --format
 
 # Pretty printed JSON
 docker run --rm htunnthuthu/simple-port-checker:latest scan example.com --format json --pretty
+
+# Certificate analysis in JSON format
+docker run --rm htunnthuthu/simple-port-checker:latest cert-chain example.com --output cert-results.json
 ```
 
 ### Text Output
@@ -285,10 +385,17 @@ docker run --rm --network host \
 
 #### Certificate Issues
 ```bash
-# Verify certificate files are readable
-docker run --rm -v /path/to/certs:/certs \
-  htunnthuthu/simple-port-checker:latest mtls-validate-cert \
-  /certs/client.crt /certs/client.key
+# Debug certificate chain retrieval
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com --verbose
+
+# Disable hostname verification for testing
+docker run --rm htunnthuthu/simple-port-checker:latest cert-check example.com --no-verify-hostname
+
+# Test certificate with custom port
+docker run --rm htunnthuthu/simple-port-checker:latest cert-info example.com --port 8443
+
+# Show certificate in PEM format for inspection
+docker run --rm htunnthuthu/simple-port-checker:latest cert-info example.com --show-pem
 ```
 
 ### Debug Mode
@@ -343,5 +450,5 @@ We welcome contributions! Please see our [Contributing Guide](https://github.com
 ---
 
 **Maintainer**: [htunnthuthu](https://github.com/Htunn) (htunnthuthu.linux@gmail.com)  
-**Last Updated**: September 19, 2025  
+**Last Updated**: September 22, 2025  
 **Docker Hub**: [htunnthuthu/simple-port-checker](https://hub.docker.com/r/htunnthuthu/simple-port-checker)

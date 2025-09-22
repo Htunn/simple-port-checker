@@ -22,22 +22,6 @@ A comprehensive Python tool for checking firewall ports, detecting L7 protection
 - 🐍 **Type Hints**: Full type hint support for better IDE integration
 - 🏗️ **Production Ready**: Follows Python packaging best practices
 
-## 📊 PyPI Statistics
-
-[![PyPI Download Stats](https://pypistats.org/api/packages/simple-port-checker/badge.svg?period=total)](https://pypistats.org/packages/simple-port-checker)
-
-**Package Information:**
-- 📦 **PyPI Package**: [simple-port-checker](https://pypi.org/project/simple-port-checker/)
-- 📈 **Download Statistics**: [PyPI Stats Dashboard](https://pypistats.org/packages/simple-port-checker)
-- 🐍 **Python Versions**: 3.12+
-- 📋 **License**: MIT
-- 🏷️ **Current Version**: ![PyPI Version](https://img.shields.io/pypi/v/simple-port-checker)
-
-**Quick Stats:**
-- ![Monthly Downloads](https://img.shields.io/pypi/dm/simple-port-checker?label=Monthly%20Downloads)
-- ![Total Downloads](https://img.shields.io/pepy/dt/simple-port-checker?label=Total%20Downloads)
-- ![Package Status](https://img.shields.io/pypi/status/simple-port-checker)
-
 ## Installation
 
 ### From PyPI (recommended)
