@@ -38,7 +38,7 @@ Docker images are available on [Docker Hub](https://hub.docker.com/r/htunnthuthu
 docker run --rm htunnthuthu/simple-port-checker:latest google.com 443
 
 # Use specific version
-docker run --rm htunnthuthu/simple-port-checker:v0.5.1 example.com --ports 80,443
+docker run --rm htunnthuthu/simple-port-checker:v0.5.3 example.com --ports 80,443
 
 # Run L7 protection check
 docker run --rm htunnthuthu/simple-port-checker:latest l7-check example.com
@@ -1404,7 +1404,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-### v0.4.2 (Latest)
+### v0.5.3 (Latest)
+- **Enhanced F5 Big-IP Detection**: Comprehensive F5 Big-IP detection improvements
+  - Advanced cookie pattern recognition (BIGipServer*, f5avr*_session_, TS* cookies)
+  - Improved banking domain support with intelligent fallback methods
+  - Enhanced detection for enterprise F5 deployments with custom configurations
+- **Certificate Chain Analysis Improvements**: Major SSL/TLS certificate analysis enhancements
+  - Fixed certificate chain completeness logic for trusted intermediate CAs
+  - Comprehensive trusted root CA database (Amazon, Google, GlobalSign, Let's Encrypt, etc.)
+  - Support for Let's Encrypt E1-E9 intermediate certificates
+  - Resolved cryptography library deprecation warnings
+  - Smart recognition of trusted intermediates leading to known roots
+- **Accuracy Improvements**: Refined L7 detection patterns to eliminate false positives
+- **Code Quality**: Updated deprecated datetime properties for modern cryptography library
+
+### v0.4.2
 - **Documentation Enhancement**: Added PyPI statistics and download badges to README
 - **Privacy Improvements**: Removed specific site references from documentation
 - **Professional Standards**: Enhanced documentation quality and consistency

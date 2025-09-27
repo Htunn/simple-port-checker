@@ -286,7 +286,7 @@ for result in results:
 
 ### CertificateAnalyzer
 
-The CertificateAnalyzer class provides comprehensive SSL/TLS certificate chain analysis and validation capabilities.
+The CertificateAnalyzer class provides comprehensive SSL/TLS certificate chain analysis and validation capabilities with enhanced trusted root CA database (Amazon Trust Services, Let's Encrypt, GlobalSign, Google Trust Services, etc.).
 
 #### Constructor
 
@@ -466,7 +466,7 @@ Enumeration of supported L7 protection services.
 - `CLOUDFLARE`: Cloudflare WAF and DDoS Protection
 - `AWS_WAF`: Amazon Web Application Firewall
 - `AZURE_WAF`: Microsoft Azure Web Application Firewall
-- `F5_BIG_IP`: F5 Application Security Manager
+- `F5_BIG_IP`: F5 Application Security Manager (Enhanced detection for banking/enterprise F5 deployments)
 - `AKAMAI`: Akamai Web Application Protector
 - `IMPERVA`: Imperva SecureSphere WAF
 - `SUCURI`: Sucuri Website Firewall

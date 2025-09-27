@@ -103,12 +103,13 @@ class L7Detector:
         # Educational and government domains often have large headers
         educational_patterns = ["univ", "college", "school", "academy", "institute"]
         corporate_patterns = ["corp", "inc", "cloud", "cdn", "hosting", "tech"]
+        banking_patterns = ["bank", "ibanking", "ebanking", "onlinebanking", "netbanking"]  # Banking domains often use F5 with redirects
         
         # Check for TLD patterns
         is_problematic_tld = any(host.lower().endswith(tld) for tld in problematic_tlds)
         
-        # Check for educational/corporate patterns
-        is_problematic_pattern = any(pattern in host.lower() for pattern in educational_patterns + corporate_patterns)
+        # Check for educational/corporate/banking patterns
+        is_problematic_pattern = any(pattern in host.lower() for pattern in educational_patterns + corporate_patterns + banking_patterns)
         
         # Check for large/popular sites known to use complex CDNs
         is_major_site = len(host.split('.')[0]) <= 5 and host.count('.') <= 2
@@ -432,7 +433,7 @@ class L7Detector:
                         indicators.append(f"F5 pattern in header {header_name}")
                         
                 # Check for specific F5 headers by name pattern
-                f5_specific_headers = ["x-envoy-upstream-service-time", "ts"]
+                f5_specific_headers = ["x-envoy-upstream-service-time"]
                 for h in f5_specific_headers:
                     if h in headers:
                         confidence += 0.3
@@ -936,7 +937,6 @@ class L7Detector:
             "x-envoy-upstream-service-time",
             "bigipserverpool", 
             "f5-fullsupport-id",
-            "ts",  # Common F5 timestamp header
             # Note: "via" header is checked separately for content, not just presence
         ]
         

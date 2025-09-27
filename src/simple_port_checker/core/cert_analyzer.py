@@ -101,7 +101,11 @@ class CertificateAnalyzer:
             missing_intermediates = self._check_missing_intermediates(cert_chain)
             
             # Check if chain is complete
-            chain_complete = len(missing_intermediates) == 0 and root_cert is not None
+            # A chain is complete if either:
+            # 1. We have no missing intermediates AND we found a root certificate, OR
+            # 2. We have no missing intermediates AND the last cert is a trusted root/intermediate
+            has_trusted_endpoint = root_cert is not None or self._is_trusted_root_or_intermediate(cert_chain)
+            chain_complete = len(missing_intermediates) == 0 and has_trusted_endpoint
             
             # Extract OCSP and CRL URLs
             ocsp_urls, crl_urls = self._extract_revocation_urls(cert_chain)
@@ -233,9 +237,9 @@ class CertificateAnalyzer:
         fingerprint_sha256 = hashlib.sha256(cert_der).hexdigest().upper()
         
         # Validity dates
-        not_before = cert.not_valid_before
-        not_after = cert.not_valid_after
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)  # Make naive for comparison
+        not_before = cert.not_valid_before_utc
+        not_after = cert.not_valid_after_utc
+        now = datetime.datetime.now(datetime.timezone.utc)  # Keep timezone-aware for comparison
         is_expired = now > not_after
         is_valid_now = not_before <= now <= not_after
         
@@ -297,6 +301,22 @@ class CertificateAnalyzer:
                 components.append(f"ST={attribute.value}")
             elif attribute.oid == NameOID.LOCALITY_NAME:
                 components.append(f"L={attribute.value}")
+            elif attribute.oid == NameOID.STREET_ADDRESS:
+                components.append(f"street={attribute.value}")
+            elif attribute.oid == NameOID.SERIAL_NUMBER:
+                components.append(f"serialNumber={attribute.value}")
+            elif attribute.oid.dotted_string == "1.3.6.1.4.1.311.60.2.1.3":  # jurisdictionC
+                components.append(f"jurisdictionC={attribute.value}")
+            elif attribute.oid.dotted_string == "2.5.4.15":  # businessCategory
+                components.append(f"businessCategory={attribute.value}")
+            else:
+                # Handle any other OIDs that might be present
+                try:
+                    oid_name = attribute.oid._name if hasattr(attribute.oid, '_name') else f"OID.{attribute.oid.dotted_string}"
+                    components.append(f"{oid_name}={attribute.value}")
+                except Exception:
+                    # Fallback for unknown OIDs
+                    components.append(f"OID.{attribute.oid.dotted_string}={attribute.value}")
         return ", ".join(components)
 
     def _is_ca_certificate(self, cert: x509.Certificate) -> bool:
@@ -460,14 +480,119 @@ class CertificateAnalyzer:
         missing = []
         
         if len(cert_chain) < 2:
-            missing.append("No intermediate certificates found in chain")
+            # Only one certificate in chain - check if it's self-signed
+            if len(cert_chain) == 1:
+                server_cert = cert_chain[0]
+                server_subject = self._format_name(server_cert.subject)
+                server_issuer = self._format_name(server_cert.issuer)
+                
+                if server_subject != server_issuer:
+                    # Server certificate is not self-signed, so missing intermediate
+                    # Extract just the issuer CN for a cleaner message
+                    import re
+                    issuer_cn_match = re.search(r'CN=([^,]+)', server_issuer)
+                    if issuer_cn_match:
+                        issuer_cn = issuer_cn_match.group(1).strip()
+                        missing.append(f"Missing intermediate certificate: {issuer_cn}")
+                    else:
+                        missing.append(f"Missing intermediate certificates issued by: {server_issuer}")
+                    missing.append("Server configuration issue: Not providing complete certificate chain")
+            else:
+                missing.append("No certificates found in chain")
             return missing
         
         # Check if we need to fetch additional intermediates
         last_cert = cert_chain[-1]
-        if self._format_name(last_cert.subject) != self._format_name(last_cert.issuer):
-            # Last cert is not self-signed, so we're missing the root or more intermediates
-            missing.append(f"Missing root certificate or additional intermediates after {self._format_name(last_cert.subject)}")
+        last_cert_subject = self._format_name(last_cert.subject)
+        last_cert_issuer = self._format_name(last_cert.issuer)
+        
+        # Well-known trusted root certificates that don't need to be self-signed
+        trusted_roots = [
+            # Amazon Trust Services
+            "CN=Amazon Root CA 1", "CN=Amazon Root CA 2", "CN=Amazon Root CA 3", "CN=Amazon Root CA 4",
+            "CN=Amazon RSA 2048 M01", "CN=Amazon RSA 2048 M02", "CN=Amazon RSA 2048 M03", "CN=Amazon RSA 2048 M04",
+            "CN=Starfield Services Root Certificate Authority - G2", "CN=Starfield Class 2 Certification Authority",
+            
+            # Google Trust Services
+            "CN=GTS Root R1", "CN=GTS Root R2", "CN=GTS Root R3", "CN=GTS Root R4",
+            "CN=GTS CA 1C3", "CN=GTS CA 1O1", "CN=GTS CA 1D4", "CN=GTS CA 2D2",
+            
+            # GlobalSign (including intermediates that are widely trusted)
+            "CN=GlobalSign", "CN=GlobalSign Root CA", "CN=GlobalSign Root CA - R2", "CN=GlobalSign Root CA - R3", 
+            "CN=GlobalSign Root CA - R6", "CN=GlobalSign Root R46", "CN=GlobalSign ECC Root CA - R4", "CN=GlobalSign ECC Root CA - R5",
+            "CN=GlobalSign Extended Validation CA - SHA256 - G2", "CN=GlobalSign Extended Validation CA - SHA256 - G3",
+            "CN=GlobalSign Organization Validation CA - SHA256 - G2", "CN=GlobalSign Organization Validation CA - SHA256 - G3",
+            "CN=GlobalSign Domain Validation CA - SHA256 - G2", "CN=GlobalSign Domain Validation CA - SHA256 - G3",
+            
+            # DigiCert
+            "CN=DigiCert Global Root CA", "CN=DigiCert Global Root G2", "CN=DigiCert Global Root G3",
+            "CN=DigiCert High Assurance EV Root CA", "CN=DigiCert Assured ID Root CA", "CN=DigiCert Assured ID Root G2",
+            "CN=DigiCert Trusted Root G4", "CN=DigiCert TLS RSA SHA256 2020 CA1", "CN=DigiCert SHA2 Extended Validation Server CA",
+            "CN=DigiCert Global G2 TLS RSA SHA256 2020 CA1",  # Modern DigiCert intermediate
+            "CN=DigiCert EV RSA CA G2",  # DigiCert Extended Validation RSA CA G2
+            
+            # Let's Encrypt
+            "CN=ISRG Root X1", "CN=ISRG Root X2", "CN=Let's Encrypt Authority X3", "CN=Let's Encrypt Authority X4",
+            "CN=E1", "CN=E2", "CN=E3", "CN=E4", "CN=E5", "CN=E6", "CN=E7", "CN=E8", "CN=E9",  # Let's Encrypt intermediate CAs
+            "CN=R3", "CN=E1", "CN=R10", "CN=E5",  # Let's Encrypt intermediate CAs
+            
+            # Cloudflare
+            "CN=Cloudflare Inc ECC CA-3", "CN=Cloudflare Inc RSA CA-1", "CN=Cloudflare Origin CA ECC Root",
+            
+            # VeriSign/Symantec/Norton
+            "CN=VeriSign Class 3 Public Primary Certification Authority - G5",
+            "CN=Symantec Class 3 EV SSL CA - G3", "CN=Symantec Class 3 Secure Server CA - G4",
+            "CN=Norton Secured SSL CA G2", "CN=GeoTrust Global CA", "CN=GeoTrust Primary Certification Authority",
+            
+            # Entrust
+            "CN=Entrust Root Certification Authority", "CN=Entrust Root Certification Authority - G2",
+            "CN=Entrust Root Certification Authority - EC1", "CN=Entrust.net Certification Authority (2048)",
+            
+            # Comodo/Sectigo
+            "CN=COMODO RSA Certification Authority", "CN=COMODO ECC Certification Authority",
+            "CN=Sectigo RSA Domain Validation Secure Server CA", "CN=Sectigo RSA Organization Validation Secure Server CA",
+            "CN=USERTrust RSA Certification Authority", "CN=USERTrust ECC Certification Authority",
+            
+            # Microsoft
+            "CN=Microsoft RSA Root Certificate Authority 2017", "CN=Microsoft ECC Root Certificate Authority 2017",
+            
+            # Other major CAs
+            "CN=Baltimore CyberTrust Root", "CN=AddTrust External CA Root", "CN=COMODO CA Limited",
+            "CN=Go Daddy Root Certificate Authority - G2", "CN=Go Daddy Secure Certificate Authority - G2"
+        ]
+        
+        is_self_signed = last_cert_subject == last_cert_issuer
+        
+        # Improved trusted root matching - check if any of the trusted CN values appear in the subject
+        is_trusted_root = False
+        for trusted_root in trusted_roots:
+            if trusted_root in last_cert_subject:
+                is_trusted_root = True
+                break
+        
+        # Additional check: extract just the CN part and match more precisely
+        if not is_trusted_root:
+            # Try to extract CN from subject and match against trusted roots
+            try:
+                import re
+                cn_match = re.search(r'CN=([^,]+)', last_cert_subject)
+                if cn_match:
+                    cn_value = cn_match.group(1).strip()
+                    for trusted_root in trusted_roots:
+                        trusted_cn = trusted_root.replace('CN=', '')
+                        if cn_value == trusted_cn:
+                            is_trusted_root = True
+                            break
+            except Exception:
+                pass  # If regex fails, continue with original logic
+        
+        if not is_self_signed and not is_trusted_root:
+            # Last cert is not self-signed and not a known trusted root
+            missing.append(f"Missing root certificate or additional intermediates after {last_cert_subject}")
+        elif not is_self_signed and is_trusted_root:
+            # This is a trusted root but not self-signed - this is normal and acceptable
+            # No need to report as missing
+            pass
         
         return missing
 
@@ -553,4 +678,44 @@ class CertificateAnalyzer:
             if hostname.endswith("." + domain_part):
                 return True
         
+        return False
+
+    def _is_trusted_root_or_intermediate(self, cert_chain: List[x509.Certificate]) -> bool:
+        """Check if the last certificate in the chain is a trusted root or intermediate CA."""
+        if not cert_chain:
+            return False
+            
+        last_cert = cert_chain[-1]
+        last_cert_subject = self._format_name(last_cert.subject)
+        
+        # Well-known trusted root and intermediate certificates
+        trusted_roots = [
+            # Amazon Trust Services
+            "CN=Amazon Root CA 1", "CN=Amazon Root CA 2", "CN=Amazon Root CA 3", "CN=Amazon Root CA 4",
+            "CN=Amazon RSA 2048 M01", "CN=Amazon RSA 2048 M02", "CN=Amazon RSA 2048 M03", "CN=Amazon RSA 2048 M04",
+            
+            # GlobalSign (including widely trusted intermediates)
+            "CN=GlobalSign", "CN=GlobalSign Root CA", "CN=GlobalSign Root CA - R2", "CN=GlobalSign Root CA - R3",
+            "CN=GlobalSign Extended Validation CA - SHA256 - G2", "CN=GlobalSign Extended Validation CA - SHA256 - G3",
+            
+            # Let's Encrypt
+            "CN=ISRG Root X1", "CN=ISRG Root X2",
+            "CN=E1", "CN=E2", "CN=E3", "CN=E4", "CN=E5", "CN=E6", "CN=E7", "CN=E8", "CN=E9",
+            
+            # Google Trust Services
+            "CN=GTS Root R1", "CN=GTS Root R2", "CN=GTS Root R3", "CN=GTS Root R4",
+            
+            # DigiCert
+            "CN=DigiCert Global Root CA", "CN=DigiCert High Assurance EV Root CA",
+            "CN=DigiCert Global Root G2", "CN=DigiCert Global Root G3", "CN=DigiCert Assured ID Root CA",
+            "CN=DigiCert Trusted Root G4", "CN=DigiCert TLS RSA SHA256 2020 CA1", 
+            "CN=DigiCert SHA2 Extended Validation Server CA", "CN=DigiCert Global G2 TLS RSA SHA256 2020 CA1",
+            "CN=DigiCert EV RSA CA G2",  # DigiCert Extended Validation RSA CA G2
+        ]
+        
+        # Check if any trusted root pattern matches
+        for trusted_root in trusted_roots:
+            if trusted_root in last_cert_subject:
+                return True
+                
         return False

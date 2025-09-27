@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simple-port-checker"
-version = "0.5.1"
+version = "0.5.3"
 description = "A comprehensive tool for checking firewall ports, L7 protection services, and SSL/TLS certificate analysis"
 readme = "README.md"
 requires-python = ">=3.12"
