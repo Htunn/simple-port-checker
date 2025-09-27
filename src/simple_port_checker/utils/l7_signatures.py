@@ -101,8 +101,8 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
             "X-WA-Info": [r".*"],
             "BigipServerPool": [r".*"],
             "F5-FullSupport-Id": [r".*"],
-            "Set-Cookie": [r"BIGipServer", r"F5_fullSupport", r"LastMRH_Session", r"[0-9]{6}="],
-            "Server": [r"BigIP", r"F5", r"BIG-IP", r"volt-adc"],
+            "Set-Cookie": [r"BIGipServer", r"F5_fullSupport", r"LastMRH_Session", r"[0-9]{6}=", r"BIGipServer.*=", r"f5avr.*_session_", r"TS[0-9a-f]{8}="],
+            "Server": [r"BigIP", r"F5", r"BIG-IP", r"volt-adc", r"^BigIP$", r"^F5$"],
             "X-envoy-upstream-service-time": [r".*"],
             "TS": [r".*"],
             "X-TS": [r".*"],
@@ -111,9 +111,11 @@ L7_SIGNATURES: Dict[L7Protection, Dict[str, Any]] = {
             "X-F5": [r".*"],
             "X-Backend-Server": [r".*"],
             "X-Cnection": [r"close"],
-            "Pragma": [r"no-cache"]
+            "Pragma": [r"no-cache"],
+            "X-Forwarded-For": [r".*"],  # Often present with F5
+            "Connection": [r"Keep-Alive", r"close"]  # F5 specific connection patterns
         },
-        "server": [r"BigIP", r"F5", r"BIG-IP", r"volt-adc", r"f5server"],
+        "server": [r"BigIP", r"F5", r"BIG-IP", r"volt-adc", r"f5server", r"^BigIP$", r"^F5$"],
         "body": [
             r"The requested URL was rejected\. Please consult with your administrator",
             r"Your support ID is",

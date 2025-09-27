@@ -401,12 +401,29 @@ class L7Detector:
             
             # Special check for F5 BIG-IP cookie patterns (numeric-only cookies)
             if protection_type == L7Protection.F5_BIG_IP:
-                # Check for F5 cookies
+                # Check for F5 cookies with multiple patterns
                 if "set-cookie" in headers:
                     cookie_value = headers.get("set-cookie", "")
+                    
+                    # Original numeric pattern
                     if re.search(r'(^|;)\s*\d{6}=', cookie_value):
                         confidence += 0.4
                         indicators.append(f"F5 numeric cookie pattern detected: {cookie_value[:20]}...")
+                        
+                    # F5 BIG-IP server pool cookies
+                    if re.search(r'BIGipServer[^=]*=', cookie_value):
+                        confidence += 0.5
+                        indicators.append("F5 BIG-IP server pool cookie detected")
+                        
+                    # F5 AVR session cookies
+                    if re.search(r'f5avr[^=]*_session_=', cookie_value):
+                        confidence += 0.5
+                        indicators.append("F5 AVR session cookie detected")
+                        
+                    # F5 timestamp cookies
+                    if re.search(r'TS[0-9a-f]{8}=', cookie_value):
+                        confidence += 0.4
+                        indicators.append("F5 timestamp cookie detected")
                 
                 # Check for other F5-specific headers with any name
                 for header_name, header_value in headers.items():
@@ -933,12 +950,24 @@ class L7Detector:
             if isinstance(value, str) and any(pattern in value.lower() for pattern in ["bigip", "f5", "volt"]):
                 f5_indicators.append(f"F5 pattern in header: {header_name}")
         
-        # Check for F5 numeric cookie pattern (very specific to F5)
+        # Check for F5 numeric cookie pattern (6-digit cookies) and other F5-specific cookies
         if "set-cookie" in headers_lower:
             cookie_value = headers_lower["set-cookie"]
-            # F5 uses numeric-only cookies with 6 digits
+            # Original F5 numeric pattern
             if re.search(r'(^|;)\s*\d{6}=', cookie_value):
-                f5_indicators.append(f"F5 numeric cookie pattern detected")
+                f5_indicators.append("F5 numeric cookie pattern detected")
+            
+            # F5 BIG-IP server pool cookies
+            if re.search(r'BIGipServer[^=]*=', cookie_value):
+                f5_indicators.append("F5 BIG-IP server pool cookie detected")
+                
+            # F5 AVR (Application Visibility and Reporting) cookies
+            if re.search(r'f5avr[^=]*_session_=', cookie_value):
+                f5_indicators.append("F5 AVR session cookie detected")
+                
+            # F5 timestamp cookies
+            if re.search(r'TS[0-9a-f]{8}=', cookie_value):
+                f5_indicators.append("F5 timestamp cookie detected")
         
         # Check via header specifically for F5 content (not just presence)
         if "via" in headers_lower:
