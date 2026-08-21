@@ -5,7 +5,7 @@
  ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
  ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
   ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
-  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Red-Team
+  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Red-Team
 ```
 
 <p align="center">
@@ -27,11 +27,22 @@
 
 `offsec-ai` is a Python library and CLI that combines classic network reconnaissance with modern AI/LLM security testing. It probes live AI/LLM endpoints for the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/), scans and actively attacks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers for known CVEs, and performs full-stack infrastructure security assessments.
 
-> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
+> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
 
 ---
 
 ## Features
+
+### New in v2.7.0 — Postman Collection Security Scanner & Attacker
+
+| Feature | Description |
+|---------|-------------|
+| 📬 **Postman Scanner** | Parses Postman Collection v2.x exports, resolves `{{variables}}` from environment files, probes every endpoint, and runs static analysis: missing auth on sensitive routes, unresolved variables, verbose error disclosure, secrets in responses, wildcard CORS |
+| 🔑 **Secret Detection** | 10 regex patterns scan response bodies for leaked credentials — AWS keys, OpenAI keys, GitHub PATs, JWTs, generic bearer tokens, Slack webhooks, and more |
+| ⚔️ **Postman Attacker** | Authorization-gated active OWASP API Top 10 testing: **safe mode** (auth bypass only) and **deep mode** (auth bypass + BOLA/IDOR + mass assignment + injection + SSRF) against every endpoint in the collection |
+| 🧩 **Variable Resolution** | `{{baseUrl}}`, `{{token}}`, and custom variables resolved from both collection-level and environment file; unresolved placeholders flagged as `PM-ADV-CFG-001` |
+| 🎯 **Target Override** | `--target/-T` rewrites the host/scheme of every endpoint so a single collection can be aimed at any environment (dev / staging / prod) |
+| 🤖 **LLM Judge Integration** | Optional judge enriches LOW/MEDIUM findings with provider reasoning and synthesises an `exploit_chain_summary` across all triggered attacks |
 
 ### New in v2.6.0 — A2A (Agent-to-Agent) Protocol Security
 
@@ -143,12 +154,18 @@ docker run --rm ghcr.io/htunn/offsec-ai:latest --help
  ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
  ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
   ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
-  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Red-Team
+  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Red-Team
 ```
 
 ### CLI
 
 ```bash
+# Postman collection security
+offsec-ai postman-scan collection.json -T https://api.example.com
+offsec-ai postman-scan collection.json -e env.json --llm-judge --output report.json
+offsec-ai postman-attack collection.json --i-have-authorization -T https://api.example.com
+offsec-ai postman-attack collection.json --i-have-authorization --mode deep -e env.json --llm-judge
+
 # A2A (Agent-to-Agent) protocol security
 offsec-ai a2a-scan https://agent.example.com
 offsec-ai a2a-scan https://agent.example.com --llm-judge
@@ -201,8 +218,18 @@ import asyncio
 from offsec_ai import LLMOwaspScanner, MCPScanner, MCPAttacker, AuthorizationRequired
 from offsec_ai import AuthScanner, AuthAttacker, AuthProtocol
 from offsec_ai import A2AScanner, A2AAttacker
+from offsec_ai import PostmanScanner, PostmanAttacker
 
 async def main():
+    # Postman collection security scan
+    pm = PostmanScanner(
+        collection_path="collection.json",
+        environment_path="env.json",
+        target_override="https://api.example.com",
+    )
+    pm_result = await pm.scan()
+    print(f"Endpoints: {pm_result.endpoints_scanned}  Vulns: {len(pm_result.all_vulns)}  Critical: {pm_result.has_critical}")
+
     # A2A agent security scan
     a2a = A2AScanner("https://agent.example.com")
     a2a_result = await a2a.scan()
@@ -386,6 +413,126 @@ async def main():
             print(f"  [{r.severity.value}] {r.attack_id} ({r.attack_type}): {r.title}")
             if r.evidence:
                 print(f"    Evidence: {r.evidence[:80]}")
+    except AuthorizationRequired:
+        print("Pass authorized=True to unlock attack mode")
+
+asyncio.run(main())
+```
+
+---
+
+## Postman Collection Security
+
+Scans and actively attacks every API endpoint defined in a [Postman Collection v2.x](https://learning.postman.com/collection-format/) export. Supports variable resolution from Postman environment files, target override for cross-environment testing, and optional LLM judge enrichment.
+
+### Security Checks Performed
+
+| Check ID | Severity | Description |
+|----------|----------|-------------|
+| PM-ADV-AUTH-001 | **High** | No auth header/scheme on a sensitive endpoint (admin, user, payment, …) |
+| PM-ADV-CFG-001 | Medium | Unresolved `{{variable}}` placeholders in URL or headers |
+| PM-ADV-MISC-001 | Medium | Verbose error disclosure in response (Python traceback, SQL error, Java stack trace) |
+| PM-ADV-SEC-001 | **High** | Secret / credential found in response body (AWS key, OpenAI key, GitHub PAT, JWT, …) |
+| PM-ADV-MISC-002 | Medium | Wildcard CORS (`Access-Control-Allow-Origin: *`) on an authenticated endpoint |
+
+### Attack Suite
+
+| Attack | Safe Mode | Deep Mode | Description |
+|--------|-----------|-----------|-------------|
+| Auth Bypass | ✅ | ✅ | Strip auth header, null Bearer, empty Bearer, JWT alg=none, invalid token |
+| BOLA / IDOR | ❌ | ✅ | Mutate numeric path segments (`/users/42` → `/users/43`, `/users/41`, `/users/1`) |
+| Mass Assignment | ❌ | ✅ | Inject privileged fields into JSON body (`role: admin`, `isAdmin: true`, `is_staff: true`) |
+| Injection | ❌ | ✅ | SQLi, NoSQLi, command injection, path traversal, XSS in query parameters |
+| SSRF | ❌ | ✅ | Replace URL-like fields with cloud IMDS, Redis, and `file://` payloads |
+
+### CLI Usage
+
+```bash
+# Passive scan — probe every endpoint in the collection
+offsec-ai postman-scan collection.json
+
+# Point the collection at a specific environment
+offsec-ai postman-scan collection.json -T https://api.example.com
+
+# Use a Postman environment file for variable resolution
+offsec-ai postman-scan collection.json -e env.json -T https://api.example.com
+
+# Add custom auth header
+offsec-ai postman-scan collection.json \
+  -T https://api.example.com \
+  --header 'Authorization: Bearer <token>'
+
+# LLM judge enrichment
+offsec-ai postman-scan collection.json -T https://api.example.com --llm-judge
+
+# JSON output
+offsec-ai postman-scan collection.json -T https://api.example.com \
+  --format json --output postman-scan.json
+
+# Authorized active attack — safe mode (auth bypass only)
+offsec-ai postman-attack collection.json --i-have-authorization \
+  -T https://api.example.com
+
+# Deep mode — all 5 OWASP API attack categories
+offsec-ai postman-attack collection.json \
+  --i-have-authorization --mode deep \
+  -T https://api.example.com -e env.json --llm-judge
+
+# Export attack report
+offsec-ai postman-attack collection.json \
+  --i-have-authorization --mode deep \
+  --format json --output postman-attack.json
+```
+
+### Python API
+
+```python
+import asyncio
+from offsec_ai import PostmanScanner, PostmanAttacker, PostmanVulnSeverity
+from offsec_ai.core.llm_judge import LLMJudge
+from offsec_ai.exceptions import AuthorizationRequired
+
+async def main():
+    judge = LLMJudge.from_env()   # reads GEMINI_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY
+
+    # Passive scan
+    scanner = PostmanScanner(
+        collection_path="collection.json",
+        environment_path="env.json",   # optional
+        target_override="https://api.example.com",
+        headers={"X-Custom-Header": "value"},
+        timeout=10.0,
+        verify_tls=True,
+        max_endpoints=50,
+        judge=judge,
+    )
+    result = await scanner.scan()
+
+    print(f"Collection      : {result.collection_name}")
+    print(f"Endpoints scanned: {result.endpoints_scanned}")
+    print(f"Vulnerabilities : {len(result.all_vulns)}  Critical: {result.has_critical}")
+    for vuln in result.all_vulns:
+        print(f"  [{vuln.severity.value}] {vuln.check_id}: {vuln.title}")
+        if vuln.evidence:
+            print(f"    Evidence: {vuln.evidence[:80]}")
+        if vuln.llm_reasoning:
+            print(f"    LLM ({vuln.llm_confidence:.0%}): {vuln.llm_reasoning[:100]}")
+
+    # Authorized active attack
+    try:
+        attacker = PostmanAttacker(authorized=True, judge=judge)
+        report = await attacker.attack(
+            collection_path="collection.json",
+            environment_path="env.json",
+            target_override="https://api.example.com",
+            mode="deep",   # "safe" | "deep"
+        )
+        print(f"Attacks run     : {report.attacks_run}")
+        print(f"Attacks triggered: {len(report.successful_attacks)}")
+        if report.exploit_chain_summary:
+            print(f"Exploit chain   : {report.exploit_chain_summary}")
+        for r in report.successful_attacks:
+            print(f"  [{r.severity.value}] {r.attack_id} ({r.attack_type}): {r.title}")
     except AuthorizationRequired:
         print("Pass authorized=True to unlock attack mode")
 
@@ -1103,6 +1250,8 @@ Commands:
   k8s-attack          Authorized active red-team attack against Kubernetes components
   auth-scan           Passive OIDC / OAuth 2.0 / SAML auth protocol security scan
   auth-attack         Authorized active attack against auth/identity endpoints
+  postman-scan        Passively scan every API endpoint defined in a Postman Collection v2.x
+  postman-attack      Perform authorized active security testing against a Postman Collection
   scan                Scan target hosts for open ports
   l7-check            Check for L7 protection services (WAF, CDN, etc.)
   full-scan           Port scan + L7 protection detection
@@ -1136,11 +1285,18 @@ docker run --rm htunnthuthu/offsec-ai:latest mcp-scan https://mcp.example.com/mc
 docker run --rm htunnthuthu/offsec-ai:latest a2a-scan https://agent.example.com
 docker run --rm htunnthuthu/offsec-ai:latest scan example.com
 docker run --rm htunnthuthu/offsec-ai:latest owasp-scan example.com
+# Mount a local collection for postman-scan / postman-attack
+docker run --rm -v $(pwd):/work htunnthuthu/offsec-ai:latest \
+  postman-scan /work/collection.json -T https://api.example.com
+docker run --rm -v $(pwd):/work htunnthuthu/offsec-ai:latest \
+  postman-attack /work/collection.json --i-have-authorization --mode deep -T https://api.example.com
 
 # GitHub Container Registry (ghcr.io) — no Docker Hub account required
 docker run --rm ghcr.io/htunn/offsec-ai:latest ai-owasp-scan https://api.example.com/v1/chat/completions
 docker run --rm ghcr.io/htunn/offsec-ai:latest a2a-scan https://agent.example.com
 docker run --rm ghcr.io/htunn/offsec-ai:latest scan example.com
+docker run --rm -v $(pwd):/work ghcr.io/htunn/offsec-ai:latest \
+  postman-scan /work/collection.json -T https://api.example.com
 
 # Save output to host
 docker run --rm -v $(pwd):/app/output ghcr.io/htunn/offsec-ai:latest \

@@ -46,6 +46,8 @@ from .core.mcp_scanner import MCPScanner
 from .core.mcp_attacker import MCPAttacker
 from .core.a2a_scanner import A2AScanner
 from .core.a2a_attacker import A2AAttacker
+from .core.postman_scanner import PostmanScanner
+from .core.postman_attacker import PostmanAttacker
 from .core.llm_judge import LLMJudge
 from .exceptions import (
     AuthorizationRequired,
@@ -84,6 +86,14 @@ from .models.a2a_result import (
     A2AAttackReport,
     A2AAttackResult,
     A2AVulnSeverity,
+)
+from .models.postman_result import (
+    PostmanScanResult,
+    PostmanEndpoint,
+    PostmanVulnerability,
+    PostmanAttackReport,
+    PostmanAttackResult,
+    PostmanVulnSeverity,
 )
 from .core.k8s_scanner import K8sScanner
 from .core.k8s_attacker import K8sAttacker
@@ -128,6 +138,9 @@ __all__ = [
     # A2A (Agent-to-Agent) modules
     "A2AScanner",
     "A2AAttacker",
+    # Postman collection-driven API modules
+    "PostmanScanner",
+    "PostmanAttacker",
     # Exceptions
     "OffsecError",
     "ScanError",
@@ -175,6 +188,13 @@ __all__ = [
     "A2AAttackReport",
     "A2AAttackResult",
     "A2AVulnSeverity",
+    # Postman collection result models
+    "PostmanScanResult",
+    "PostmanEndpoint",
+    "PostmanVulnerability",
+    "PostmanAttackReport",
+    "PostmanAttackResult",
+    "PostmanVulnSeverity",
     # Kubernetes modules
     "K8sScanner",
     "K8sAttacker",

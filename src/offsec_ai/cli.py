@@ -39,6 +39,8 @@ from .core.mcp_scanner import MCPScanner
 from .core.mcp_attacker import MCPAttacker
 from .core.a2a_scanner import A2AScanner
 from .core.a2a_attacker import A2AAttacker
+from .core.postman_scanner import PostmanScanner
+from .core.postman_attacker import PostmanAttacker
 from .core.openclaw_scanner import OpenClawScanner
 from .core.openclaw_attacker import OpenClawAttacker
 from .core.llm_conversation_attacker import LLMConversationAttacker
@@ -56,6 +58,11 @@ from .models.owasp_result import OwaspScanResult, SeverityLevel
 from .models.ai_owasp_result import LLMScanResult, LLMScanMode, LLMSeverity
 from .models.mcp_result import MCPScanResult, MCPAttackReport, MCPVulnSeverity
 from .models.a2a_result import A2AScanResult, A2AAttackReport, A2AVulnSeverity
+from .models.postman_result import (
+    PostmanScanResult,
+    PostmanAttackReport,
+    PostmanVulnSeverity,
+)
 from .models.openclaw_result import (
     OpenClawScanResult,
     OpenClawAttackReport,
@@ -4506,5 +4513,316 @@ def _display_a2a_attack_report(report: A2AAttackReport, judge_provider: str | No
             )
             if r.evidence:
                 console.print(f"    [dim]Evidence: {r.evidence[:120]}[/dim]")
+    else:
+        console.print("\n[green]No attacks triggered. Target appears resilient to tested probes.[/green]")
+
+
+# ============================================================================
+# postman-scan — passive security analysis of a Postman collection
+# ============================================================================
+
+@main.command("postman-scan")
+@click.argument("collection", type=click.Path(exists=True))
+@click.option("--environment", "-e", type=click.Path(exists=True), default=None,
+              help="Postman Environment JSON export (for variable resolution).")
+@click.option("--target", "-T", "target_override", default=None,
+              help="Override scheme+host of every request (e.g. https://staging.api.example.com).")
+@click.option("--header", "extra_headers", multiple=True, metavar="KEY:VALUE",
+              help="Extra HTTP headers merged onto every request.")
+@click.option("--timeout", default=15.0, show_default=True, help="Per-request timeout (seconds).")
+@click.option("--no-tls-verify", "no_tls_verify", is_flag=True, default=False,
+              help="Disable TLS certificate verification.")
+@click.option("--max-endpoints", default=None, type=int,
+              help="Limit the number of endpoints tested (useful for large collections).")
+@click.option("--format", "output_format", type=click.Choice(["console", "json"]),
+              default="console", show_default=True)
+@click.option("--output", "-o", type=click.Path(), default=None, help="Save JSON result to file.")
+@click.option("--llm-judge", "use_judge", is_flag=True, default=False,
+              help="Use LLM judge (auto-detected provider) to triage MEDIUM/LOW findings.")
+def postman_scan(collection, environment, target_override, extra_headers, timeout,
+                 no_tls_verify, max_endpoints, output_format, output, use_judge):
+    """Passively scan every API endpoint defined in a Postman collection.
+
+    COLLECTION is the path to a Postman Collection v2.x JSON export.
+
+    The scanner probes each request, checks auth posture, detects verbose
+    errors, exposed secrets, permissive CORS, and unresolved Postman
+    variables. An LLM judge (--llm-judge) can triage ambiguous findings.
+
+    \b
+    Examples:
+        offsec-ai postman-scan my-api.postman_collection.json
+        offsec-ai postman-scan collection.json -e env.json -T https://staging.example.com
+        offsec-ai postman-scan collection.json --llm-judge --output report.json
+    """
+    judge_provider = asyncio.run(_run_postman_scan(
+        collection=collection, environment=environment,
+        target_override=target_override, extra_headers=list(extra_headers),
+        timeout=timeout, no_tls_verify=no_tls_verify, max_endpoints=max_endpoints,
+        output_format=output_format, output=output, use_judge=use_judge,
+    ))
+    if output_format == "console" and judge_provider:
+        console.print(f"[dim]LLM Judge powered by: [bold green]{judge_provider}[/bold green][/dim]")
+
+
+async def _run_postman_scan(collection, environment, target_override, extra_headers,
+                             timeout, no_tls_verify, max_endpoints, output_format, output,
+                             use_judge=False):
+    headers = {}
+    for h in extra_headers:
+        if ":" in h:
+            k, v = h.split(":", 1)
+            headers[k.strip()] = v.strip()
+
+    judge = None
+    judge_provider: str | None = None
+    if use_judge:
+        judge = LLMJudge.from_env()
+        if not judge.is_available():
+            console.print("[yellow]Warning: --llm-judge set but no provider found. "
+                          "Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY.[/yellow]")
+            judge = None
+        else:
+            judge_provider = judge.provider
+            console.print("[bold cyan]LLM judge enabled.[/bold cyan]")
+
+    scanner = PostmanScanner(
+        collection_path=collection,
+        environment_path=environment,
+        target_override=target_override,
+        headers=headers,
+        timeout=timeout,
+        verify_tls=not no_tls_verify,
+        max_endpoints=max_endpoints,
+        judge=judge,
+    )
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task(f"Scanning Postman collection {collection}...", total=None)
+        result: PostmanScanResult = await scanner.scan()
+        progress.stop_task(task)
+
+    if result.error:
+        console.print(f"[bold red]Error:[/bold red] {result.error}")
+        return judge_provider
+
+    if output_format == "json" or output:
+        data = result.model_dump(mode="json")
+        if output:
+            Path(output).write_text(json.dumps(data, indent=2, default=str))
+            console.print(f"[green]Results saved to {output}[/green]")
+        if output_format == "json":
+            console.print_json(json.dumps(data, default=str))
+        return judge_provider
+
+    _display_postman_scan_result(result, judge_provider=judge_provider)
+    return judge_provider
+
+
+def _display_postman_scan_result(result: PostmanScanResult, judge_provider: str | None = None) -> None:
+    critical = result.critical_vulns
+    high = result.high_vulns
+    panel_color = "red" if critical else ("yellow" if high else "green")
+
+    console.print(Panel(
+        f"[bold]Collection:[/bold] {result.collection_name}\n"
+        f"[bold]Target override:[/bold] {result.target_override or '(from collection)'}\n"
+        f"[bold]Endpoints total:[/bold] {result.endpoints_total}  "
+        f"[bold]Tested:[/bold] {result.endpoints_tested}\n"
+        f"[bold]Findings:[/bold] [red]{len(critical)} critical[/red]  "
+        f"[yellow]{len(high)} high[/yellow]  {len(result.vulnerabilities)} total\n"
+        f"[bold]LLM Judge:[/bold] {judge_provider if judge_provider else 'Disabled'}\n"
+        f"[bold]Duration:[/bold] {result.scan_duration:.1f}s",
+        title="[bold cyan]Postman Collection Scan Results[/bold cyan]",
+        border_style=panel_color,
+    ))
+
+    if result.vulnerabilities:
+        table = Table(title="Findings", show_header=True, header_style="bold blue")
+        table.add_column("Severity", justify="center", width=10)
+        table.add_column("ID", style="dim", width=18)
+        table.add_column("Endpoint")
+        table.add_column("Title")
+        for vuln in result.vulnerabilities:
+            sev_color = {
+                PostmanVulnSeverity.CRITICAL: "bold red",
+                PostmanVulnSeverity.HIGH: "red",
+                PostmanVulnSeverity.MEDIUM: "yellow",
+                PostmanVulnSeverity.LOW: "cyan",
+            }.get(vuln.severity, "white")
+            table.add_row(
+                f"[{sev_color}]{vuln.severity.value.upper()}[/{sev_color}]",
+                vuln.vuln_id,
+                vuln.endpoint[:60],
+                vuln.title[:80],
+            )
+            if vuln.llm_reasoning:
+                table.add_row("", "", "",
+                               f"  [magenta]LLM ({vuln.llm_confidence:.0%}): {vuln.llm_reasoning[:100]}[/magenta]")
+        console.print(table)
+    else:
+        console.print("\n[green]No vulnerabilities found.[/green]")
+
+
+# ============================================================================
+# postman-attack — active attack against Postman collection endpoints
+# ============================================================================
+
+@main.command("postman-attack")
+@click.argument("collection", type=click.Path(exists=True))
+@click.option("--i-have-authorization", "authorized", is_flag=True, default=False, required=True,
+              help="REQUIRED: Confirms you have explicit written authorization to test this target.")
+@click.option("--environment", "-e", type=click.Path(exists=True), default=None,
+              help="Postman Environment JSON export.")
+@click.option("--target", "-T", "target_override", default=None,
+              help="Override scheme+host of every request.")
+@click.option("--mode", type=click.Choice(["safe", "deep"]), default="safe", show_default=True,
+              help="safe: auth-bypass only. deep: full suite (BOLA, mass-assign, injection, SSRF).")
+@click.option("--header", "extra_headers", multiple=True, metavar="KEY:VALUE")
+@click.option("--timeout", default=15.0, show_default=True)
+@click.option("--no-tls-verify", "no_tls_verify", is_flag=True, default=False)
+@click.option("--max-endpoints", default=None, type=int,
+              help="Limit the number of endpoints attacked.")
+@click.option("--format", "output_format", type=click.Choice(["console", "json"]),
+              default="console", show_default=True)
+@click.option("--output", "-o", type=click.Path(), default=None)
+@click.option("--llm-judge", "use_judge", is_flag=True, default=False,
+              help="Use LLM judge to synthesize an exploit-chain narrative.")
+def postman_attack(collection, authorized, environment, target_override, mode, extra_headers,
+                   timeout, no_tls_verify, max_endpoints, output_format, output, use_judge):
+    """Perform authorized active security testing against Postman collection endpoints.
+
+    \b
+    ⚠  WARNING: This command sends active attack payloads to every endpoint.
+    Only run against systems you have EXPLICIT WRITTEN AUTHORIZATION to test.
+    Unauthorized use is illegal.
+
+    \b
+    Required flag: --i-have-authorization
+
+    \b
+    Run postman-scan first for passive reconnaissance:
+        offsec-ai postman-scan collection.json -T https://api.example.com
+        offsec-ai postman-attack collection.json --i-have-authorization --mode deep -T https://api.example.com
+    """
+    if not authorized:
+        console.print("[bold red]Error:[/bold red] --i-have-authorization flag is required. "
+                      "Only use this against systems you are authorized to test.")
+        raise SystemExit(1)
+
+    asyncio.run(_run_postman_attack(
+        collection=collection, environment=environment,
+        target_override=target_override, mode=mode,
+        extra_headers=list(extra_headers), timeout=timeout,
+        no_tls_verify=no_tls_verify, max_endpoints=max_endpoints,
+        output_format=output_format, output=output, use_judge=use_judge,
+    ))
+
+
+async def _run_postman_attack(collection, environment, target_override, mode,
+                               extra_headers, timeout, no_tls_verify, max_endpoints,
+                               output_format, output, use_judge=False):
+    headers = {}
+    for h in extra_headers:
+        if ":" in h:
+            k, v = h.split(":", 1)
+            headers[k.strip()] = v.strip()
+
+    judge = None
+    judge_provider: str | None = None
+    if use_judge:
+        judge = LLMJudge.from_env()
+        if not judge.is_available():
+            console.print("[yellow]Warning: --llm-judge set but no provider found.[/yellow]")
+            judge = None
+        else:
+            judge_provider = judge.provider
+            console.print("[bold cyan]LLM judge enabled.[/bold cyan]")
+
+    attacker = PostmanAttacker(authorized=True, judge=judge)
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task(
+            f"Attacking Postman collection {collection} ({mode} mode)...", total=None
+        )
+        report: PostmanAttackReport = await attacker.attack(
+            collection_path=collection,
+            environment_path=environment,
+            target_override=target_override,
+            mode=mode,
+            headers=headers,
+            timeout=timeout,
+            verify_tls=not no_tls_verify,
+            max_endpoints=max_endpoints,
+        )
+        progress.stop_task(task)
+
+    if output_format == "json" or output:
+        data = report.model_dump(mode="json")
+        if output:
+            Path(output).write_text(json.dumps(data, indent=2, default=str))
+            console.print(f"[green]Results saved to {output}[/green]")
+        if output_format == "json":
+            console.print_json(json.dumps(data, default=str))
+        return
+
+    _display_postman_attack_report(report, judge_provider=judge_provider)
+    if judge_provider:
+        console.print(f"[dim]LLM Judge powered by: [bold green]{judge_provider}[/bold green][/dim]")
+
+
+def _display_postman_attack_report(report: PostmanAttackReport, judge_provider: str | None = None) -> None:
+    triggered = report.successful_attacks
+    panel_color = "red" if triggered else "green"
+
+    console.print(Panel(
+        f"[bold]Collection:[/bold] {report.collection_name}\n"
+        f"[bold]Target:[/bold] {report.target_override or '(from collection)'}\n"
+        f"[bold]Attacks run:[/bold] {report.attacks_run}  "
+        f"[bold]Triggered:[/bold] [{'red' if triggered else 'green'}]{report.attacks_triggered}[/{'red' if triggered else 'green'}]\n"
+        f"[bold]LLM Judge:[/bold] {judge_provider if judge_provider else 'Disabled'}\n"
+        f"[bold]Duration:[/bold] {report.scan_duration:.1f}s\n"
+        f"[dim]{report.authorization_note}[/dim]",
+        title="[bold red]Postman Collection Attack Report[/bold red]",
+        border_style=panel_color,
+    ))
+
+    if report.exploit_chain_summary:
+        console.print(Panel(
+            f"[magenta]{report.exploit_chain_summary}[/magenta]",
+            title="[bold magenta]LLM Exploit-Chain Narrative[/bold magenta]",
+            border_style="magenta",
+        ))
+
+    if triggered:
+        table = Table(title="Triggered Attacks", show_header=True, header_style="bold red")
+        table.add_column("Severity", justify="center", width=10)
+        table.add_column("ID", style="dim", width=18)
+        table.add_column("Type", width=16)
+        table.add_column("Endpoint")
+        table.add_column("Title")
+        for r in triggered:
+            sev_color = {
+                PostmanVulnSeverity.CRITICAL: "bold red",
+                PostmanVulnSeverity.HIGH: "red",
+                PostmanVulnSeverity.MEDIUM: "yellow",
+            }.get(r.severity, "white")
+            table.add_row(
+                f"[{sev_color}]{r.severity.value.upper()}[/{sev_color}]",
+                r.attack_id, r.attack_type, r.endpoint[:50], r.title[:60],
+            )
+            if r.evidence:
+                table.add_row("", "", "", "", f"  [dim]{r.evidence[:100]}[/dim]")
+        console.print(table)
     else:
         console.print("\n[green]No attacks triggered. Target appears resilient to tested probes.[/green]")

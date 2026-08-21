@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-07-09
+
+### Added
+
+- **Postman Collection Security Scanner & Attacker** — full Postman Collection v2.x support:
+  - `PostmanScanner` — passive multi-phase assessment: parses collection, resolves `{{variables}}` from environment files, probes each endpoint, runs static analysis (missing auth on sensitive endpoints, unresolved variables, verbose error disclosure, secrets in responses, wildcard CORS), and optionally triages findings via LLM judge
+  - `PostmanAttacker` — authorization-gated active testing with **safe mode** (auth-bypass probes) and **deep mode** (auth bypass + BOLA/IDOR + mass assignment + injection + SSRF); LLM judge synthesises `exploit_chain_summary`
+  - `src/offsec_ai/models/postman_result.py` — Pydantic models: `PostmanScanResult`, `PostmanEndpoint`, `PostmanVulnerability`, `PostmanEndpointResult`, `PostmanAuthInfo`, `PostmanAttackReport`, `PostmanAttackResult`, `PostmanVulnSeverity`
+  - `src/offsec_ai/utils/postman_findings.py` — 10 secret-leak regex patterns (AWS keys, OpenAI keys, GitHub PATs, JWTs, etc.), sensitive endpoint keywords, verbose error signatures
+  - `src/offsec_ai/utils/postman_payloads.py` — attack payloads across 5 OWASP API Top 10 categories: auth bypass, BOLA ID mutations, mass assignment, injection, SSRF
+  - `src/offsec_ai/utils/postman_parser.py` — recursive Postman Collection v2.x folder flattening, variable resolution with unresolved-variable tracking, target override, body/query/header/path-param extraction
+  - `postman-scan` CLI command with `--environment`, `--target/-T`, `--header`, `--timeout`, `--no-tls-verify`, `--max-endpoints`, `--format`, `--output`, `--llm-judge` options
+  - `postman-attack` CLI command with `--i-have-authorization` (required), `--mode safe|deep`, and all scan options
+  - All Postman types exported from `offsec_ai` package `__all__`
+  - 63 new tests in `tests/test_postman.py` covering payloads, findings, parser, result models, scanner static analysis, HTTP-mocked integration, and attacker
+
 ## [2.6.0] - 2026-07-08
 
 ### Added

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "offsec-ai"
-version = "2.6.0"
-description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security"
+version = "2.7.0"
+description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security, Postman Collection API security scanning and attacking"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
