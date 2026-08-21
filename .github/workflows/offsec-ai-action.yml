@@ -43,7 +43,7 @@ jobs:
           echo "Report path: ${{ steps.owasp.outputs.report-path }}"
 
       - name: Upload OWASP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: owasp-report
           path: owasp-report.json
@@ -85,7 +85,7 @@ jobs:
           output-file: cert-report.json
 
       - name: Upload infrastructure reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: infra-reports
           path: "*.json"
@@ -115,7 +115,7 @@ jobs:
           exit 1
 
       - name: Upload MCP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mcp-report
           path: mcp-report.json
@@ -146,7 +146,7 @@ jobs:
           echo "Findings:       ${{ steps.ai-owasp.outputs.findings-count }}"
 
       - name: Upload AI OWASP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-owasp-report
           path: ai-owasp-report.json
@@ -178,7 +178,7 @@ jobs:
           fi
 
       - name: Upload full scan report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: full-scan-report
           path: full-report.json
