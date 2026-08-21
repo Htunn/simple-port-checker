@@ -572,15 +572,21 @@ class HybridIdentityChecker:
         
         return False
     
-    async def batch_check(self, fqdns: List[str]) -> List[HybridIdentityResult]:
+    async def batch_check(self, fqdns: List[str], max_concurrent: int = 10) -> List[HybridIdentityResult]:
         """
         Check multiple FQDNs for hybrid identity.
         
         Args:
             fqdns: List of FQDNs to check
+            max_concurrent: Maximum number of simultaneous identity checks
             
         Returns:
             List of HybridIdentityResult
         """
-        tasks = [self.check(fqdn) for fqdn in fqdns]
-        return await asyncio.gather(*tasks)
+        results: List[HybridIdentityResult] = []
+        # Process in chunks so pending-task count is bounded by max_concurrent
+        for i in range(0, len(fqdns), max_concurrent):
+            chunk = fqdns[i:i + max_concurrent]
+            chunk_results = await asyncio.gather(*[self.check(fqdn) for fqdn in chunk])
+            results.extend(chunk_results)
+        return results

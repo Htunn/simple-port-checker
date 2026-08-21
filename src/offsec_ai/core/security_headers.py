@@ -451,22 +451,15 @@ class SecurityHeaderChecker:
         Returns:
             List of HeaderAnalysisResult objects
         """
-        semaphore = asyncio.Semaphore(max_concurrent)
-        
-        async def check_with_semaphore(url: str) -> HeaderAnalysisResult:
-            async with semaphore:
-                return await self.check_headers(url)
-        
-        tasks = [check_with_semaphore(url) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Filter out exceptions, return valid results
-        valid_results = []
-        for result in results:
-            if isinstance(result, HeaderAnalysisResult):
-                valid_results.append(result)
-            elif isinstance(result, Exception):
-                # Could log error here
-                pass
-        
-        return valid_results
+        results: List[HeaderAnalysisResult] = []
+        # Process in chunks so pending-task count is bounded by max_concurrent
+        for i in range(0, len(urls), max_concurrent):
+            chunk = urls[i:i + max_concurrent]
+            chunk_results = await asyncio.gather(
+                *[self.check_headers(url) for url in chunk],
+                return_exceptions=True,
+            )
+            for r in chunk_results:
+                if isinstance(r, HeaderAnalysisResult):
+                    results.append(r)
+        return results

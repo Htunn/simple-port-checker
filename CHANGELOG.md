@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.1] - 2026-08-21
+
+### Fixed
+
+- **`HybridIdentityChecker.batch_check()`** — unbounded task fan-out: all identity checks were scheduled concurrently regardless of input size. Now processes FQDNs in chunks of `max_concurrent` (default 10), bounding both active and pending task count to that value.
+- **`SecurityHeaderChecker.batch_check()`** — the semaphore bounded active execution but all 512 `asyncio.Task` objects were still created upfront. Replaced semaphore+gather pattern with the same chunked approach, so pending tasks are bounded by `max_concurrent` (default 5).
+
 ## [2.7.0] - 2026-07-09
 
 ### Added
