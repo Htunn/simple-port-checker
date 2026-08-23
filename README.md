@@ -17,7 +17,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/offsec-ai/"><img src="https://img.shields.io/pypi/v/offsec-ai" alt="PyPI Version"/></a>
-  <a href="https://pypistats.org/packages/offsec-ai"><img src="https://img.shields.io/pypi/dm/offsec-ai" alt="PyPI Downloads"/></a>
+  <a href="https://pepy.tech/project/offsec-ai"><img src="https://static.pepy.tech/badge/offsec-ai" alt="PyPI Download"/></a>
   <a href="https://pypi.org/project/offsec-ai/"><img src="https://img.shields.io/pypi/pyversions/offsec-ai" alt="Python Version"/></a>
   <a href="https://hub.docker.com/r/htunnthuthu/offsec-ai"><img src="https://img.shields.io/docker/pulls/htunnthuthu/offsec-ai" alt="Docker Pulls"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
