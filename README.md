@@ -909,7 +909,7 @@ async def main():
 asyncio.run(main())
 ```
 
-See [docs/auth.md](docs/auth.md) for the full guide including CVE detail, remediation advice, and SAML testing tips.
+See [auth.md](https://github.com/Htunn/offsec-ai-docs/blob/main/auth.md) for the full guide including CVE detail, remediation advice, and SAML testing tips.
 
 ---
 
@@ -1012,7 +1012,7 @@ async def main():
 asyncio.run(main())
 ```
 
-See [docs/openclaw.md](docs/openclaw.md) for the full guide including remediation advice.
+See [openclaw.md](https://github.com/Htunn/offsec-ai-docs/blob/main/openclaw.md) for the full guide including remediation advice.
 
 ---
 
@@ -1143,7 +1143,7 @@ async def main():
 asyncio.run(main())
 ```
 
-See [docs/k8s.md](docs/k8s.md) for the full guide including OWASP K8s Top 10 mapping, CVE database, attack sequences, and remediation advice.
+See [k8s.md](https://github.com/Htunn/offsec-ai-docs/blob/main/k8s.md) for the full guide including OWASP K8s Top 10 mapping, CVE database, attack sequences, and remediation advice.
 
 ---
 
@@ -1317,7 +1317,7 @@ docker run --rm \
   ai-owasp-scan https://api.example.com/v1/chat/completions --llm-judge
 ```
 
-See [docs/DOCKER.md](docs/DOCKER.md) for the full Docker reference including CI/CD integration, Kubernetes jobs, Makefile publish targets, and troubleshooting.
+See [Docker documentation](https://github.com/Htunn/offsec-ai-docs/blob/main/README.md) for the full Docker reference including CI/CD integration, Kubernetes jobs, Makefile publish targets, and troubleshooting.
 
 ---
 
