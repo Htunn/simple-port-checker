@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from offsec_ai.core.security_headers import (
+from offensive_ai.core.security_headers import (
     CookieAnalysis,
     HeaderAnalysis,
     HeaderAnalysisResult,

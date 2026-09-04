@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from offsec_ai.core.llm_conversation_attacker import (
+from offensive_ai.core.llm_conversation_attacker import (
     ConversationTurn,
     LLMConversationAttacker,
     MultiTurnAttackReport,
@@ -17,7 +17,7 @@ from offsec_ai.core.llm_conversation_attacker import (
     _build_goal_hijack_turns,
     _build_many_shot_turns,
 )
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai.exceptions import AuthorizationRequired
 
 
 # ---------------------------------------------------------------------------
@@ -207,8 +207,8 @@ class TestLLMConversationAttackerAuth:
 # AuthAttacker coverage
 # ===========================================================================
 
-from offsec_ai.core.auth_attacker import AuthAttacker
-from offsec_ai.models.auth_result import AuthAttackReport, AuthAttackResult, AuthVulnSeverity
+from offensive_ai.core.auth_attacker import AuthAttacker
+from offensive_ai.models.auth_result import AuthAttackReport, AuthAttackResult, AuthVulnSeverity
 
 
 class TestAuthAttackerAuthGating:
@@ -236,7 +236,7 @@ class TestAuthAttackerHTTP:
     async def test_attack_safe_mode(self):
         import httpx
         import respx
-        from offsec_ai.models.auth_result import AuthAttackReport
+        from offensive_ai.models.auth_result import AuthAttackReport
 
         attacker = AuthAttacker(authorized=True)
         target = "http://mock-auth.test"
@@ -276,7 +276,7 @@ class TestAuthAttackerHTTP:
 
 class TestAuthAttackReport:
     def _make_report(self):
-        from offsec_ai.models.auth_result import AuthAttackReport
+        from offensive_ai.models.auth_result import AuthAttackReport
         return AuthAttackReport(target="https://auth.example.com")
 
     def test_empty_report(self):
@@ -286,7 +286,7 @@ class TestAuthAttackReport:
         assert report.results == []
 
     def test_triggered_results_property(self):
-        from offsec_ai.models.auth_result import AuthAttackReport, AuthAttackResult, AuthVulnSeverity
+        from offensive_ai.models.auth_result import AuthAttackReport, AuthAttackResult, AuthVulnSeverity
         report = self._make_report()
         report.results = [
             AuthAttackResult(

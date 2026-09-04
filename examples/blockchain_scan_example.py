@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.WARNING)
 
 async def blockchain_passive_scan():
     """Passive recon: fingerprint client/chain and check exposed RPC namespaces."""
-    from offsec_ai.core.blockchain_scanner import BlockchainScanner
+    from offensive_ai.core.blockchain_scanner import BlockchainScanner
 
     scanner = BlockchainScanner(
         target="node.example.com",
@@ -53,8 +53,8 @@ async def blockchain_passive_scan():
 
 async def blockchain_scan_with_llm_judge():
     """Passive scan with LLM judge enrichment of ambiguous findings."""
-    from offsec_ai.core.blockchain_scanner import BlockchainScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.blockchain_scanner import BlockchainScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env()
     if not judge.is_available():
@@ -76,7 +76,7 @@ async def blockchain_authorized_attack():
     Requires authorized=True — only run against nodes you own or have
     explicit written authorization to test.
     """
-    from offsec_ai.core.blockchain_attacker import BlockchainAttacker
+    from offensive_ai.core.blockchain_attacker import BlockchainAttacker
 
     attacker = BlockchainAttacker(authorized=True)
     report = await attacker.attack(target="node.example.com", port=8545, mode="safe")
@@ -95,8 +95,8 @@ async def blockchain_authorized_attack_deep():
 
     All payloads are non-destructive — see BlockchainAttacker's docstring.
     """
-    from offsec_ai.core.blockchain_scanner import BlockchainScanner
-    from offsec_ai.core.blockchain_attacker import BlockchainAttacker
+    from offensive_ai.core.blockchain_scanner import BlockchainScanner
+    from offensive_ai.core.blockchain_attacker import BlockchainAttacker
 
     scan_result = await BlockchainScanner(target="node.example.com", port=8545).scan()
 
@@ -111,7 +111,7 @@ async def blockchain_authorized_attack_deep():
 
 def smart_contract_audit_example():
     """Offline heuristic static analysis of a contract ABI and bytecode."""
-    from offsec_ai.core.blockchain_scanner import analyze_contract
+    from offensive_ai.core.blockchain_scanner import analyze_contract
 
     abi = [
         {"type": "function", "name": "withdraw", "inputs": [], "stateMutability": "nonpayable"},

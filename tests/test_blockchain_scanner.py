@@ -8,8 +8,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.blockchain_scanner import BlockchainScanner, analyze_contract
-from offsec_ai.models.blockchain_result import (
+from offensive_ai.core.blockchain_scanner import BlockchainScanner, analyze_contract
+from offensive_ai.models.blockchain_result import (
     BlockchainNodeInfo,
     BlockchainScanResult,
     BlockchainVulnerability,
@@ -17,13 +17,13 @@ from offsec_ai.models.blockchain_result import (
     ChainType,
     ContractAuditResult,
 )
-from offsec_ai.utils.blockchain_cve_db import (
+from offensive_ai.utils.blockchain_cve_db import (
     BLOCKCHAIN_CVE_DB,
     DANGEROUS_RPC_METHODS,
     fingerprint_chain,
     match_cves,
 )
-from offsec_ai.utils.blockchain_payloads import (
+from offensive_ai.utils.blockchain_payloads import (
     ADMIN_ABUSE_PAYLOADS,
     DEBUG_LEAK_PAYLOADS,
     DEBUG_PROBE_METHODS,
@@ -152,21 +152,21 @@ class TestBlockchainScannerAnalyzeSecurity:
         result = BlockchainScanResult(target=TARGET, admin_api_exposed=True, exposed_methods=["admin_peers"])
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-CHAIN-ADMIN-001" in ids
+        assert "OAI-CHAIN-ADMIN-001" in ids
 
     def test_wallet_disclosed_creates_critical_vuln(self):
         scanner = self._make_scanner()
         result = BlockchainScanResult(target=TARGET, wallet_addresses=["0xabc123"])
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-CHAIN-WALLET-001" in ids
+        assert "OAI-CHAIN-WALLET-001" in ids
 
     def test_debug_exposed_creates_high_vuln(self):
         scanner = self._make_scanner()
         result = BlockchainScanResult(target=TARGET, debug_api_exposed=True, exposed_methods=["debug_dumpBlock"])
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-CHAIN-DEBUG-001" in ids
+        assert "OAI-CHAIN-DEBUG-001" in ids
 
     def test_client_version_creates_medium_vuln(self):
         scanner = self._make_scanner()
@@ -174,7 +174,7 @@ class TestBlockchainScannerAnalyzeSecurity:
         result.node_info = BlockchainNodeInfo(client_version="Geth/v1.13.0")
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-CHAIN-FP-001" in ids
+        assert "OAI-CHAIN-FP-001" in ids
 
     def test_clean_result_no_vulns(self):
         scanner = self._make_scanner()
@@ -339,7 +339,7 @@ class TestBlockchainScannerIntegration:
             result = await scanner.scan()
         assert result.admin_api_exposed is True
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-CHAIN-ADMIN-001" in ids
+        assert "OAI-CHAIN-ADMIN-001" in ids
         cve_ids = {v.vuln_id for v in result.cve_matches}
         assert "CHAIN-ADV-2024-002" in cve_ids
 
@@ -354,7 +354,7 @@ class TestBlockchainScannerIntegration:
             result = await scanner.scan()
         assert result.wallet_addresses == ["0xdeadbeef00000000000000000000000000dead"]
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-CHAIN-WALLET-001" in ids
+        assert "OAI-CHAIN-WALLET-001" in ids
 
     async def test_scan_detects_debug_exposure(self):
         scanner = BlockchainScanner(target=TARGET)

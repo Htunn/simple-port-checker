@@ -11,8 +11,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.models.postman_result import (
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.models.postman_result import (
     PostmanAttackReport,
     PostmanAttackResult,
     PostmanEndpoint,
@@ -21,15 +21,15 @@ from offsec_ai.models.postman_result import (
     PostmanVulnerability,
     PostmanVulnSeverity,
 )
-from offsec_ai.utils.postman_parser import (
+from offensive_ai.utils.postman_parser import (
     apply_target_override,
     flatten_items,
     load_collection,
     load_environment,
     parse_collection,
 )
-from offsec_ai.utils.postman_findings import scan_for_secrets, SENSITIVE_ENDPOINT_KEYWORDS
-from offsec_ai.utils.postman_payloads import (
+from offensive_ai.utils.postman_findings import scan_for_secrets, SENSITIVE_ENDPOINT_KEYWORDS
+from offensive_ai.utils.postman_payloads import (
     AUTH_BYPASS_PAYLOADS,
     BOLA_ID_MUTATIONS,
     INJECTION_PAYLOADS,
@@ -37,8 +37,8 @@ from offsec_ai.utils.postman_payloads import (
     SSRF_PAYLOADS,
     SSRF_CANDIDATE_FIELD_NAMES,
 )
-from offsec_ai.core.postman_scanner import PostmanScanner
-from offsec_ai.core.postman_attacker import PostmanAttacker
+from offensive_ai.core.postman_scanner import PostmanScanner
+from offensive_ai.core.postman_attacker import PostmanAttacker
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +395,7 @@ class TestPostmanScannerStaticAnalysis:
     def _make_endpoint(self, name: str = "test", url: str = "https://api.example.com/users",
                        method: str = "GET", auth_type: str = "noauth",
                        unresolved: list | None = None) -> PostmanEndpoint:
-        from offsec_ai.models.postman_result import PostmanAuthInfo
+        from offensive_ai.models.postman_result import PostmanAuthInfo
         return PostmanEndpoint(
             name=name, url=url, method=method,
             auth=PostmanAuthInfo(type=auth_type),

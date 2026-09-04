@@ -8,9 +8,9 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.core.blockchain_attacker import BlockchainAttacker
-from offsec_ai.models.blockchain_result import BlockchainAttackReport, BlockchainScanResult
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.core.blockchain_attacker import BlockchainAttacker
+from offensive_ai.models.blockchain_result import BlockchainAttackReport, BlockchainScanResult
 
 TARGET_HOST = "node.example.com"
 TARGET_URL = f"http://{TARGET_HOST}:8545"
@@ -165,7 +165,7 @@ class TestBlockchainAttackerLLMEnrichment:
 
         attacker._judge = FakeJudge()
         report = BlockchainAttackReport(target=TARGET_HOST, attacks_run=1, attacks_triggered=1)
-        from offsec_ai.models.blockchain_result import BlockchainAttackResult
+        from offensive_ai.models.blockchain_result import BlockchainAttackResult
         report.results.append(BlockchainAttackResult(
             attack_id="CHAIN-ATK-ADMIN-001", target=TARGET_URL, triggered=True, title="Admin exposed",
         ))

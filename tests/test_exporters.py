@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pytest
 
-from offsec_ai.models.owasp_result import (
+from offensive_ai.models.owasp_result import (
     OwaspCategoryResult,
     OwaspFinding,
     OwaspScanResult,
     ScanMode,
     SeverityLevel,
 )
-from offsec_ai.utils.exporters import (
+from offensive_ai.utils.exporters import (
     OwaspPdfExporter,
     export_to_csv,
     export_to_json,

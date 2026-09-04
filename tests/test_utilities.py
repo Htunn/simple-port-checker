@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from offsec_ai.utils.common_ports import (
+from offensive_ai.utils.common_ports import (
     COMMON_PORTS,
     CRITICAL_PORTS,
     FIREWALL_PORTS,
@@ -228,7 +228,7 @@ class TestPortDataIntegrity:
 # OWASP Remediation tests
 # ===========================================================================
 
-from offsec_ai.utils.owasp_remediation import (
+from offensive_ai.utils.owasp_remediation import (
     OWASP_CATEGORIES,
     REMEDIATION_DB,
     get_category_info,
@@ -308,8 +308,8 @@ class TestGetRemediation:
 # L7 Signatures tests
 # ===========================================================================
 
-from offsec_ai.utils.l7_signatures import L7_SIGNATURES, get_signature_patterns
-from offsec_ai.models.l7_result import L7Protection
+from offensive_ai.utils.l7_signatures import L7_SIGNATURES, get_signature_patterns
+from offensive_ai.models.l7_result import L7Protection
 
 
 class TestL7Signatures:
@@ -351,12 +351,12 @@ class TestMainEntryPoint:
         import importlib
         import sys
         # Import the module directly to cover module-level code
-        spec = importlib.util.find_spec("offsec_ai.__main__")
+        spec = importlib.util.find_spec("offensive_ai.__main__")
         assert spec is not None
 
     def test_main_module_has_main_call(self):
         """Verify __main__.py references the CLI main() function."""
         import inspect
-        import offsec_ai.__main__ as m
+        import offensive_ai.__main__ as m
         source = inspect.getsource(m)
         assert "main" in source

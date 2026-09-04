@@ -7,20 +7,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
-from offsec_ai.models.ai_owasp_result import (
+from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
+from offensive_ai.models.ai_owasp_result import (
     BatchLLMScanResult,
     LLMFinding,
     LLMScanMode,
     LLMScanResult,
     LLMSeverity,
 )
-from offsec_ai.utils.ai_owasp_payloads import (
+from offensive_ai.utils.ai_owasp_payloads import (
     ALL_PAYLOADS,
     NOT_TESTABLE_CATEGORIES,
     get_payloads,
 )
-from offsec_ai.utils.ai_owasp_remediation import get_category_info, get_remediation
+from offensive_ai.utils.ai_owasp_remediation import get_category_info, get_remediation
 
 
 # ---------------------------------------------------------------------------

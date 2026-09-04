@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We provide security updates for the following versions of offsec-ai:
+We provide security updates for the following versions of offensive-ai:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -15,7 +15,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 
 ### How to Report
 
-1. **Email**: Send an email to `htunnthuthu.linux@gmail.com` with the subject line "Security Vulnerability in offsec-ai"
+1. **Email**: Send an email to `htunnthuthu.linux@gmail.com` with the subject line "Security Vulnerability in offensive-ai"
 2. **Include**: 
    - A description of the vulnerability
    - Steps to reproduce the issue
@@ -38,7 +38,7 @@ We practice responsible disclosure:
 
 ## Security Best Practices
 
-When using offsec-ai:
+When using offensive-ai:
 
 1. **Network Scanning**: Only scan networks you own or have explicit permission to test
 2. **Rate Limiting**: Use appropriate timeout and concurrency settings to avoid overwhelming target systems

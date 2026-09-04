@@ -9,7 +9,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_NAME: offsec-ai
+  IMAGE_NAME: offensive-ai
 
 jobs:
   build:
@@ -76,7 +76,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ steps.version.outputs.version }},enable={{is_default_branch}}
           labels: |
-            org.opencontainers.image.title=offsec-ai
+            org.opencontainers.image.title=offensive-ai
             org.opencontainers.image.description=Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10, AI/LLM OWASP Top 10 black-box probing, and MCP endpoint security scanning
             org.opencontainers.image.vendor=htunnthuthu
             org.opencontainers.image.licenses=MIT
@@ -132,7 +132,7 @@ jobs:
       - name: Extract version from previous job
         id: version
         run: |
-          VERSION=$(python -c "import tomllib; import requests; r = requests.get('https://pypi.org/pypi/offsec-ai/json'); print(r.json()['info']['version'])")
+          VERSION=$(python -c "import tomllib; import requests; r = requests.get('https://pypi.org/pypi/offensive-ai/json'); print(r.json()['info']['version'])")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Latest PyPI version: $VERSION"
 

@@ -12,8 +12,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.mcp_scanner import MCPScanner
-from offsec_ai.models.mcp_result import (
+from offensive_ai.core.mcp_scanner import MCPScanner
+from offensive_ai.models.mcp_result import (
     MCPAuthPosture,
     MCPPrompt,
     MCPResource,
@@ -131,12 +131,12 @@ class TestAnalyzeSecurity:
     def test_no_vulns_when_authenticated_and_safe(self):
         result = self._make_result(unauthenticated=False)
         vulns = self.scanner._analyze_security(result)
-        assert not any(v.vuln_id == "OFFSEC-MCP-AUTH-001" for v in vulns)
+        assert not any(v.vuln_id == "OAI-MCP-AUTH-001" for v in vulns)
 
     def test_auth_vuln_when_unauthenticated(self):
         result = self._make_result(unauthenticated=True)
         vulns = self.scanner._analyze_security(result)
-        auth_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-AUTH-001"]
+        auth_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-AUTH-001"]
         assert len(auth_vulns) == 1
         assert auth_vulns[0].severity == MCPVulnSeverity.HIGH
 
@@ -149,7 +149,7 @@ class TestAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = self.scanner._analyze_security(result)
-        ti_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-TI-001"]
+        ti_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-TI-001"]
         assert len(ti_vulns) == 1
 
     def test_shell_tool_generates_scope_vuln(self):
@@ -160,7 +160,7 @@ class TestAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = self.scanner._analyze_security(result)
-        scope_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-SCOPE-001"]
+        scope_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-SCOPE-001"]
         assert len(scope_vulns) == 1
         assert scope_vulns[0].severity == MCPVulnSeverity.CRITICAL
 
@@ -168,14 +168,14 @@ class TestAnalyzeSecurity:
         resource = MCPResource(uri="../../etc/passwd", name="config", description="Config file")
         result = self._make_result(resources=[resource])
         vulns = self.scanner._analyze_security(result)
-        pt_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-PT-001"]
+        pt_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-PT-001"]
         assert len(pt_vulns) == 1
 
     def test_absolute_resource_uri_detected(self):
         resource = MCPResource(uri="/etc/shadow", name="shadow", description="Shadow file")
         result = self._make_result(resources=[resource])
         vulns = self.scanner._analyze_security(result)
-        pt_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-PT-001"]
+        pt_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-PT-001"]
         assert len(pt_vulns) == 1
 
     def test_secret_in_tool_description(self):
@@ -186,7 +186,7 @@ class TestAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = self.scanner._analyze_security(result)
-        secret_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-SEC-001"]
+        secret_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-SEC-001"]
         # May or may not match depending on regex — just verify no crash
         assert isinstance(vulns, list)
 
@@ -212,7 +212,7 @@ class TestPhaseLlmTriage:
 
     def _make_vuln(self, severity: MCPVulnSeverity) -> MCPVulnerability:
         return MCPVulnerability(
-            vuln_id="OFFSEC-MCP-TEST-001",
+            vuln_id="OAI-MCP-TEST-001",
             severity=severity,
             title="Test Finding",
             description="Test vulnerability",
@@ -378,7 +378,7 @@ class TestMcpScannerHttpFlows:
 
         result = await scanner.scan()
         # The auth posture probe returns 200 → unauthenticated_access = True
-        auth_vulns = [v for v in result.vulnerabilities if v.vuln_id == "OFFSEC-MCP-AUTH-001"]
+        auth_vulns = [v for v in result.vulnerabilities if v.vuln_id == "OAI-MCP-AUTH-001"]
         # This depends on the auth probe result
         assert isinstance(result.vulnerabilities, list)
 

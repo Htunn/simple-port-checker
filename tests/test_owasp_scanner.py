@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.owasp_scanner import OwaspScanner, SAFE_MODE_CATEGORIES, ALL_CATEGORIES
-from offsec_ai.models.owasp_result import (
+from offensive_ai.core.owasp_scanner import OwaspScanner, SAFE_MODE_CATEGORIES, ALL_CATEGORIES
+from offensive_ai.models.owasp_result import (
     OwaspCategoryResult,
     OwaspFinding,
     OwaspScanResult,
@@ -28,7 +28,7 @@ def make_header_result(
     hsts_present=True,
     hsts_grade="A",
 ):
-    from offsec_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis, CookieAnalysis
+    from offensive_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis, CookieAnalysis
 
     # HSTS header
     hsts = HeaderAnalysis(
@@ -198,7 +198,7 @@ class TestCheckA02:
 
     async def test_insecure_cookie_creates_finding(self):
         scanner = OwaspScanner()
-        from offsec_ai.core.security_headers import CookieAnalysis
+        from offensive_ai.core.security_headers import CookieAnalysis
         cookie = CookieAnalysis(
             cookie_name="session",
             has_secure=False,
@@ -306,7 +306,7 @@ class TestOwaspScan:
 @pytest.mark.asyncio
 class TestBatchScan:
     async def test_batch_scan_returns_batch_result(self):
-        from offsec_ai.core.owasp_scanner import OwaspScanner
+        from offensive_ai.core.owasp_scanner import OwaspScanner
 
         scanner = OwaspScanner(mode="safe", categories=["A02"])
 
@@ -319,7 +319,7 @@ class TestBatchScan:
             )
 
         with patch.object(scanner, "scan", side_effect=mock_scan):
-            from offsec_ai.models.owasp_result import BatchOwaspResult
+            from offensive_ai.models.owasp_result import BatchOwaspResult
             targets = ["https://example.com", "https://test.com"]
             results = []
             for t in targets:
@@ -328,8 +328,8 @@ class TestBatchScan:
         assert len(results) == 2
 
     async def test_batch_scan_real(self):
-        from offsec_ai.core.owasp_scanner import OwaspScanner
-        from offsec_ai.models.owasp_result import BatchOwaspResult
+        from offensive_ai.core.owasp_scanner import OwaspScanner
+        from offensive_ai.models.owasp_result import BatchOwaspResult
 
         scanner = OwaspScanner(mode="safe", categories=["A02"])
 
@@ -343,7 +343,7 @@ class TestBatchScan:
         with patch.object(scanner, "scan", AsyncMock(return_value=mock_result)):
             batch = await scanner.batch_scan(["https://example.com", "https://test.com"])
 
-        from offsec_ai.models.owasp_result import BatchOwaspResult
+        from offensive_ai.models.owasp_result import BatchOwaspResult
         assert isinstance(batch, BatchOwaspResult)
         assert batch.total_targets == 2
 
@@ -408,7 +408,7 @@ class TestCheckA04:
 @pytest.mark.asyncio
 class TestCheckA05:
     async def test_missing_headers_creates_findings(self):
-        from offsec_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis
+        from offensive_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis
 
         scanner = OwaspScanner()
 
@@ -444,7 +444,7 @@ class TestCheckA05:
 @pytest.mark.asyncio
 class TestCheckA06:
     async def test_information_disclosure_creates_finding(self):
-        from offsec_ai.core.security_headers import HeaderAnalysisResult
+        from offensive_ai.core.security_headers import HeaderAnalysisResult
 
         scanner = OwaspScanner()
         mock_result = make_header_result()
@@ -481,7 +481,7 @@ class TestCheckA06:
 @pytest.mark.asyncio
 class TestCheckA07:
     async def test_insecure_cookie_creates_finding(self):
-        from offsec_ai.core.security_headers import CookieAnalysis
+        from offensive_ai.core.security_headers import CookieAnalysis
 
         scanner = OwaspScanner()
         # Cookie missing Secure and HttpOnly
@@ -504,7 +504,7 @@ class TestCheckA07:
         assert any("missing SameSite" in f.description for f in findings)
 
     async def test_secure_cookie_no_finding(self):
-        from offsec_ai.core.security_headers import CookieAnalysis
+        from offensive_ai.core.security_headers import CookieAnalysis
 
         scanner = OwaspScanner()
         cookie = CookieAnalysis(
@@ -625,7 +625,7 @@ class TestCheckA03SupplyChain:
 @pytest.mark.asyncio
 class TestCheckA10ExceptionHandling:
     async def test_server_header_disclosure_creates_finding(self):
-        from offsec_ai.core.security_headers import HeaderAnalysisResult
+        from offensive_ai.core.security_headers import HeaderAnalysisResult
         scanner = OwaspScanner()
 
         mock_header_result = HeaderAnalysisResult(url="https://example.com", status_code=200)
@@ -652,7 +652,7 @@ class TestCheckA10ExceptionHandling:
         assert any("Server Version" in t for t in titles)
 
     async def test_powered_by_disclosure_creates_finding(self):
-        from offsec_ai.core.security_headers import HeaderAnalysisResult
+        from offensive_ai.core.security_headers import HeaderAnalysisResult
         scanner = OwaspScanner()
 
         mock_header_result = HeaderAnalysisResult(url="https://example.com", status_code=200)
@@ -679,7 +679,7 @@ class TestCheckA10ExceptionHandling:
         assert any("Technology Stack" in t for t in titles)
 
     async def test_verbose_error_in_404_creates_finding(self):
-        from offsec_ai.core.security_headers import HeaderAnalysisResult
+        from offensive_ai.core.security_headers import HeaderAnalysisResult
         scanner = OwaspScanner()
 
         mock_header_result = HeaderAnalysisResult(url="https://example.com", status_code=200)

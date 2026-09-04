@@ -9,8 +9,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.models.a2a_result import (
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.models.a2a_result import (
     A2AAgentCard,
     A2AAttackReport,
     A2AAttackResult,
@@ -22,21 +22,21 @@ from offsec_ai.models.a2a_result import (
     A2AVulnerability,
     A2AVulnSeverity,
 )
-from offsec_ai.utils.a2a_cve_db import (
+from offensive_ai.utils.a2a_cve_db import (
     A2A_CVE_DB,
     match_cves,
     scan_for_dangerous_keywords,
     scan_for_secrets,
 )
-from offsec_ai.utils.a2a_payloads import (
+from offensive_ai.utils.a2a_payloads import (
     AUTH_BYPASS_PAYLOADS,
     JSONRPC_MANIPULATION_PAYLOADS,
     MESSAGE_INJECTION_PAYLOADS,
     SSRF_WEBHOOK_PAYLOADS,
     TASK_ENUM_PAYLOADS,
 )
-from offsec_ai.core.a2a_scanner import A2AScanner
-from offsec_ai.core.a2a_attacker import A2AAttacker
+from offensive_ai.core.a2a_scanner import A2AScanner
+from offensive_ai.core.a2a_attacker import A2AAttacker
 
 
 # ---------------------------------------------------------------------------
@@ -274,14 +274,14 @@ class TestA2AScannerAnalysis:
         result = self._make_result_with_card(security_schemes={})
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-AUTH-001" in ids
+        assert "OAI-A2A-AUTH-001" in ids
 
     def test_unsigned_card_flags_vuln(self):
         scanner = self._make_scanner()
         result = self._make_result_with_card(is_signed=False)
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-INT-001" in ids
+        assert "OAI-A2A-INT-001" in ids
 
     def test_signed_card_no_int_vuln(self):
         scanner = self._make_scanner()
@@ -292,7 +292,7 @@ class TestA2AScannerAnalysis:
         result.auth_posture.unauthenticated_access = False
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-INT-001" not in ids
+        assert "OAI-A2A-INT-001" not in ids
 
     def test_unauthenticated_access_flags_vuln(self):
         scanner = self._make_scanner()
@@ -300,7 +300,7 @@ class TestA2AScannerAnalysis:
         result.auth_posture.unauthenticated_access = True
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-AUTH-003" in ids
+        assert "OAI-A2A-AUTH-003" in ids
 
     def test_dangerous_skill_flags_vuln(self):
         scanner = self._make_scanner()
@@ -313,7 +313,7 @@ class TestA2AScannerAnalysis:
         result = self._make_result_with_card(skills=[skill])
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-SKILL-001" in ids
+        assert "OAI-A2A-SKILL-001" in ids
 
     def test_push_notifications_enabled_flags_ssrf_vuln(self):
         scanner = self._make_scanner()
@@ -321,7 +321,7 @@ class TestA2AScannerAnalysis:
         result = self._make_result_with_card(capabilities=caps)
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-SSRF-001" in ids
+        assert "OAI-A2A-SSRF-001" in ids
 
     def test_secret_in_card_description_flags_vuln(self):
         scanner = self._make_scanner()
@@ -330,7 +330,7 @@ class TestA2AScannerAnalysis:
         )
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-SEC-001" in ids
+        assert "OAI-A2A-SEC-001" in ids
 
     def test_http_endpoint_flags_tls_vuln(self):
         scanner = self._make_scanner()
@@ -339,7 +339,7 @@ class TestA2AScannerAnalysis:
         )
         vulns = scanner._check_transport_security(card)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-A2A-TLS-001" in ids
+        assert "OAI-A2A-TLS-001" in ids
 
     def test_https_only_no_tls_vuln(self):
         scanner = self._make_scanner()
@@ -425,8 +425,8 @@ class TestA2AScannerIntegration:
         result = await scanner.scan()
         assert result.auth_posture.unauthenticated_access is True
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-A2A-AUTH-001" in ids
-        assert "OFFSEC-A2A-AUTH-003" in ids
+        assert "OAI-A2A-AUTH-001" in ids
+        assert "OAI-A2A-AUTH-003" in ids
 
     @respx.mock
     @pytest.mark.asyncio
@@ -464,7 +464,7 @@ class TestA2AScannerIntegration:
         scanner = A2AScanner("https://agent.example.com", verify_tls=False)
         result = await scanner.scan()
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-A2A-SKILL-001" in ids
+        assert "OAI-A2A-SKILL-001" in ids
 
     @respx.mock
     @pytest.mark.asyncio
@@ -478,7 +478,7 @@ class TestA2AScannerIntegration:
         scanner = A2AScanner("https://agent.example.com", verify_tls=False)
         result = await scanner.scan()
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-A2A-INT-001" in ids
+        assert "OAI-A2A-INT-001" in ids
 
     @respx.mock
     @pytest.mark.asyncio
@@ -529,7 +529,7 @@ class TestA2AScannerIntegration:
         scanner = A2AScanner("https://agent.example.com", verify_tls=False)
         result = await scanner.scan()
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-A2A-SSRF-001" in ids
+        assert "OAI-A2A-SSRF-001" in ids
 
 
 # ---------------------------------------------------------------------------

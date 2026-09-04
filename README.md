@@ -1,31 +1,31 @@
 ```
-  ██████╗ ███████╗███████╗███████╗███████╗ ██████╗       █████╗ ██╗
- ██╔═══██╗██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝      ██╔══██╗██║
- ██║   ██║█████╗  █████╗  ███████╗█████╗  ██║     █████╗███████║██║
- ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
- ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
-  ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
+ ██████╗ ███████╗███████╗███████╗███╗   ██╗███████╗██╗██╗   ██╗███████╗
+██╔═══██╗██╔════╝██╔════╝██╔════╝████╗  ██║██╔════╝██║██║   ██║██╔════╝
+██║   ██║█████╗  █████╗  █████╗  ██╔██╗ ██║███████╗██║██║   ██║█████╗
+██║   ██║██╔══╝  ██╔══╝  ██╔══╝  ██║╚██╗██║╚════██║██║╚██╗ ██╔╝██╔══╝
+╚██████╔╝██║     ██║     ███████╗██║ ╚████║███████║██║ ╚████╔╝ ███████╗
+ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═══╝  ╚══════╝-AI
   Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Blockchain · Red-Team
 ```
 
 <p align="center">
-  <a href="https://github.com/Htunn/offsec-ai/actions/workflows/test.yml"><img src="https://github.com/Htunn/offsec-ai/actions/workflows/test.yml/badge.svg?branch=develop" alt="Test and Build"/></a>
-  <a href="https://github.com/Htunn/offsec-ai/actions/workflows/publish.yml"><img src="https://github.com/Htunn/offsec-ai/actions/workflows/publish.yml/badge.svg" alt="Publish to PyPI"/></a>
-  <a href="https://github.com/Htunn/offsec-ai/actions/workflows/docker.yml"><img src="https://github.com/Htunn/offsec-ai/actions/workflows/docker.yml/badge.svg" alt="Docker Build"/></a>
-  <a href="https://github.com/Htunn/offsec-ai/actions/workflows/codeql.yml"><img src="https://github.com/Htunn/offsec-ai/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"/></a>
+  <a href="https://github.com/Htunn/offensive-ai/actions/workflows/test.yml"><img src="https://github.com/Htunn/offensive-ai/actions/workflows/test.yml/badge.svg?branch=develop" alt="Test and Build"/></a>
+  <a href="https://github.com/Htunn/offensive-ai/actions/workflows/publish.yml"><img src="https://github.com/Htunn/offensive-ai/actions/workflows/publish.yml/badge.svg" alt="Publish to PyPI"/></a>
+  <a href="https://github.com/Htunn/offensive-ai/actions/workflows/docker.yml"><img src="https://github.com/Htunn/offensive-ai/actions/workflows/docker.yml/badge.svg" alt="Docker Build"/></a>
+  <a href="https://github.com/Htunn/offensive-ai/actions/workflows/codeql.yml"><img src="https://github.com/Htunn/offensive-ai/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"/></a>
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/offsec-ai/"><img src="https://img.shields.io/pypi/v/offsec-ai" alt="PyPI Version"/></a>
-  <a href="https://pepy.tech/project/offsec-ai"><img src="https://static.pepy.tech/badge/offsec-ai" alt="PyPI Download"/></a>
-  <a href="https://pypi.org/project/offsec-ai/"><img src="https://img.shields.io/pypi/pyversions/offsec-ai" alt="Python Version"/></a>
-  <a href="https://hub.docker.com/r/htunnthuthu/offsec-ai"><img src="https://img.shields.io/docker/pulls/htunnthuthu/offsec-ai" alt="Docker Pulls"/></a>
+  <a href="https://pypi.org/project/offensive-ai/"><img src="https://img.shields.io/pypi/v/offensive-ai" alt="PyPI Version"/></a>
+  <a href="https://pepy.tech/project/offensive-ai"><img src="https://static.pepy.tech/badge/offensive-ai" alt="PyPI Download"/></a>
+  <a href="https://pypi.org/project/offensive-ai/"><img src="https://img.shields.io/pypi/pyversions/offensive-ai" alt="Python Version"/></a>
+  <a href="https://hub.docker.com/r/htunnthuthu/offensive-ai"><img src="https://img.shields.io/docker/pulls/htunnthuthu/offensive-ai" alt="Docker Pulls"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
 </p>
 
 **Offensive-security toolkit for authorized red-team engagements.**
 
-`offsec-ai` is a Python library and CLI that combines classic network reconnaissance with modern AI/LLM security testing. It probes live AI/LLM endpoints for the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/), scans and actively attacks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers for known CVEs, and performs full-stack infrastructure security assessments.
+`offensive-ai` is a Python library and CLI that combines classic network reconnaissance with modern AI/LLM security testing. It probes live AI/LLM endpoints for the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/), scans and actively attacks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers for known CVEs, and performs full-stack infrastructure security assessments.
 
 > **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, `blockchain-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
 
@@ -48,7 +48,7 @@
 | Feature | Description |
 |---------|-------------|
 | 🧱 **Shared base classes** | `BaseScanner` / `BaseAttacker` (`core/_base.py`) centralise constructor boilerplate, the HTTP client factory, and the authorization guard previously duplicated across every protocol module (MCP, A2A, Auth, K8s, OpenClaw, Postman, multi-turn LLM) |
-| 🩹 **Dynamic `User-Agent`** | Fixed stale hardcoded version strings (`offsec-ai/2.0.1`, `offsec-ai/2.3.0`, `offsec-ai/2.7.0`) sent by MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers — all now send `offsec-ai/<installed-version>` |
+| 🩹 **Dynamic `User-Agent`** | Fixed stale hardcoded version strings (`offensive-ai/2.0.1`, `offensive-ai/2.3.0`, `offensive-ai/2.7.0`) sent by MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers — all now send `offensive-ai/<installed-version>` |
 | 🗂️ **Shared vulnerability model** | `VulnSeverity` and `BaseVulnerability` (`models/severity.py`, `models/vulnerability.py`) are now the single source of truth for severity levels and common finding fields across every protocol-specific vulnerability class |
 | 🔇 **Cleaner stdout** | Attacker authorization banners are now emitted once via structured logging instead of a mix of `print()` and `logger.warning()`, so piping JSON/report output to a file or another tool no longer gets polluted with banner text |
 
@@ -140,26 +140,26 @@
 
 ```bash
 # Core toolkit
-pip install offsec-ai
+pip install offensive-ai
 
 # With optional LLM judge (OpenAI / Anthropic / Gemini)
-pip install "offsec-ai[ai]"
+pip install "offensive-ai[ai]"
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/htunn/offsec-ai.git
-cd offsec-ai
+git clone https://github.com/htunn/offensive-ai.git
+cd offensive-ai
 pip install -e ".[dev]"
 ```
 
 ### Docker
 
 ```bash
-docker run --rm htunnthuthu/offsec-ai:latest --help
+docker run --rm htunnthuthu/offensive-ai:latest --help
 # or from GitHub Container Registry
-docker run --rm ghcr.io/htunn/offsec-ai:latest --help
+docker run --rm ghcr.io/htunn/offensive-ai:latest --help
 ```
 
 ---
@@ -167,12 +167,12 @@ docker run --rm ghcr.io/htunn/offsec-ai:latest --help
 ## Quick Start
 
 ```
-  ██████╗ ███████╗███████╗███████╗███████╗ ██████╗       █████╗ ██╗
- ██╔═══██╗██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝      ██╔══██╗██║
- ██║   ██║█████╗  █████╗  ███████╗█████╗  ██║     █████╗███████║██║
- ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
- ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
-  ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
+ ██████╗ ███████╗███████╗███████╗███╗   ██╗███████╗██╗██╗   ██╗███████╗
+██╔═══██╗██╔════╝██╔════╝██╔════╝████╗  ██║██╔════╝██║██║   ██║██╔════╝
+██║   ██║█████╗  █████╗  █████╗  ██╔██╗ ██║███████╗██║██║   ██║█████╗
+██║   ██║██╔══╝  ██╔══╝  ██╔══╝  ██║╚██╗██║╚════██║██║╚██╗ ██╔╝██╔══╝
+╚██████╔╝██║     ██║     ███████╗██║ ╚████║███████║██║ ╚████╔╝ ███████╗
+ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═══╝  ╚══════╝-AI
   Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Blockchain · Red-Team
 ```
 
@@ -180,70 +180,70 @@ docker run --rm ghcr.io/htunn/offsec-ai:latest --help
 
 ```bash
 # Blockchain JSON-RPC node security
-offsec-ai blockchain-scan node.example.com --port 8545
-offsec-ai blockchain-scan node.example.com --llm-judge
-offsec-ai blockchain-attack node.example.com --i-have-authorization --mode deep
-offsec-ai blockchain-contract-audit --abi ./MyToken.json --bytecode ./MyToken.bin
+offensive-ai blockchain-scan node.example.com --port 8545
+offensive-ai blockchain-scan node.example.com --llm-judge
+offensive-ai blockchain-attack node.example.com --i-have-authorization --mode deep
+offensive-ai blockchain-contract-audit --abi ./MyToken.json --bytecode ./MyToken.bin
 
 # Postman collection security
-offsec-ai postman-scan collection.json -T https://api.example.com
-offsec-ai postman-scan collection.json -e env.json --llm-judge --output report.json
-offsec-ai postman-attack collection.json --i-have-authorization -T https://api.example.com
-offsec-ai postman-attack collection.json --i-have-authorization --mode deep -e env.json --llm-judge
+offensive-ai postman-scan collection.json -T https://api.example.com
+offensive-ai postman-scan collection.json -e env.json --llm-judge --output report.json
+offensive-ai postman-attack collection.json --i-have-authorization -T https://api.example.com
+offensive-ai postman-attack collection.json --i-have-authorization --mode deep -e env.json --llm-judge
 
 # A2A (Agent-to-Agent) protocol security
-offsec-ai a2a-scan https://agent.example.com
-offsec-ai a2a-scan https://agent.example.com --llm-judge
-offsec-ai a2a-scan https://agent.example.com --format json --output a2a-report.json
-offsec-ai a2a-attack https://agent.example.com --i-have-authorization
-offsec-ai a2a-attack https://agent.example.com --i-have-authorization --mode deep --llm-judge
+offensive-ai a2a-scan https://agent.example.com
+offensive-ai a2a-scan https://agent.example.com --llm-judge
+offensive-ai a2a-scan https://agent.example.com --format json --output a2a-report.json
+offensive-ai a2a-attack https://agent.example.com --i-have-authorization
+offensive-ai a2a-attack https://agent.example.com --i-have-authorization --mode deep --llm-judge
 
 # Auth / identity protocol security
-offsec-ai auth-scan https://auth.example.com
-offsec-ai auth-scan https://idp.example.com --protocol saml
-offsec-ai auth-scan https://accounts.google.com --llm-judge
-offsec-ai auth-scan https://mocksaml.com/api/saml/metadata --protocol saml --llm-judge
-offsec-ai auth-attack https://auth.example.com --i-have-authorization
-offsec-ai auth-attack https://auth.example.com --i-have-authorization --mode deep --llm-judge
+offensive-ai auth-scan https://auth.example.com
+offensive-ai auth-scan https://idp.example.com --protocol saml
+offensive-ai auth-scan https://accounts.google.com --llm-judge
+offensive-ai auth-scan https://mocksaml.com/api/saml/metadata --protocol saml --llm-judge
+offensive-ai auth-attack https://auth.example.com --i-have-authorization
+offensive-ai auth-attack https://auth.example.com --i-have-authorization --mode deep --llm-judge
 
 # AI / LLM security
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions
-offsec-ai mcp-scan https://mcp.example.com/mcp
-offsec-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions
+offensive-ai mcp-scan https://mcp.example.com/mcp
+offensive-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization
 
 # OpenClaw gateway security
-offsec-ai openclaw-scan 192.168.1.10
-offsec-ai openclaw-scan gateway.example.com --port 18789 --tls
-offsec-ai openclaw-scan 192.168.1.10 --llm-judge
-offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep
-offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep --llm-judge
+offensive-ai openclaw-scan 192.168.1.10
+offensive-ai openclaw-scan gateway.example.com --port 18789 --tls
+offensive-ai openclaw-scan 192.168.1.10 --llm-judge
+offensive-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep
+offensive-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep --llm-judge
 
 # Kubernetes cluster security
-offsec-ai k8s-scan 192.168.1.100
-offsec-ai k8s-scan k8s.example.com --port 6443 --port 10250 --llm-judge
+offensive-ai k8s-scan 192.168.1.100
+offensive-ai k8s-scan k8s.example.com --port 6443 --port 10250 --llm-judge
 # kubectl proxy makes the API server reachable on plain HTTP locally:
-offsec-ai k8s-scan 127.0.0.1 --port 8001 --llm-judge
-offsec-ai k8s-attack 192.168.1.100 --i-have-authorization --mode deep
-offsec-ai k8s-attack 127.0.0.1 --port 8001 --i-have-authorization --llm-judge
+offensive-ai k8s-scan 127.0.0.1 --port 8001 --llm-judge
+offensive-ai k8s-attack 192.168.1.100 --i-have-authorization --mode deep
+offensive-ai k8s-attack 127.0.0.1 --port 8001 --i-have-authorization --llm-judge
 
 # Infrastructure
-offsec-ai scan example.com
-offsec-ai l7-check example.com
-offsec-ai cert-check example.com
-offsec-ai owasp-scan example.com
-offsec-ai owasp-scan example.com --llm-judge   # shows "LLM Judge: gemini" in panel + footer
-offsec-ai hybrid-identity example.com
-offsec-ai mtls-check example.com
+offensive-ai scan example.com
+offensive-ai l7-check example.com
+offensive-ai cert-check example.com
+offensive-ai owasp-scan example.com
+offensive-ai owasp-scan example.com --llm-judge   # shows "LLM Judge: gemini" in panel + footer
+offensive-ai hybrid-identity example.com
+offensive-ai mtls-check example.com
 ```
 
 ### Python API
 
 ```python
 import asyncio
-from offsec_ai import LLMOwaspScanner, MCPScanner, MCPAttacker, AuthorizationRequired
-from offsec_ai import AuthScanner, AuthAttacker, AuthProtocol
-from offsec_ai import A2AScanner, A2AAttacker
-from offsec_ai import PostmanScanner, PostmanAttacker
+from offensive_ai import LLMOwaspScanner, MCPScanner, MCPAttacker, AuthorizationRequired
+from offensive_ai import AuthScanner, AuthAttacker, AuthProtocol
+from offensive_ai import A2AScanner, A2AAttacker
+from offensive_ai import PostmanScanner, PostmanAttacker
 
 async def main():
     # Postman collection security scan
@@ -319,14 +319,14 @@ Scans and actively tests [A2A protocol](https://a2a-protocol.org) agent endpoint
 
 | Check ID | Severity | Description |
 |----------|----------|-------------|
-| OFFSEC-A2A-AUTH-001 | **High** | No `securitySchemes` declared in Agent Card |
-| OFFSEC-A2A-AUTH-003 | **High** | Unauthenticated `SendMessage` task accepted |
-| OFFSEC-A2A-INT-001 | Medium | Agent Card not cryptographically signed |
-| OFFSEC-A2A-SEC-001 | **Critical** | Secrets / API keys found in Agent Card JSON |
-| OFFSEC-A2A-SKILL-001 | **Critical** | Skill description contains dangerous execution keywords |
-| OFFSEC-A2A-SSRF-001 | **High** | Push-notification webhooks enabled — SSRF attack surface |
-| OFFSEC-A2A-TLS-001 | **High** | JSON-RPC endpoint served over plaintext HTTP |
-| OFFSEC-A2A-EXT-001 | **High** | Extended Agent Card accessible without authentication |
+| OAI-A2A-AUTH-001 | **High** | No `securitySchemes` declared in Agent Card |
+| OAI-A2A-AUTH-003 | **High** | Unauthenticated `SendMessage` task accepted |
+| OAI-A2A-INT-001 | Medium | Agent Card not cryptographically signed |
+| OAI-A2A-SEC-001 | **Critical** | Secrets / API keys found in Agent Card JSON |
+| OAI-A2A-SKILL-001 | **Critical** | Skill description contains dangerous execution keywords |
+| OAI-A2A-SSRF-001 | **High** | Push-notification webhooks enabled — SSRF attack surface |
+| OAI-A2A-TLS-001 | **High** | JSON-RPC endpoint served over plaintext HTTP |
+| OAI-A2A-EXT-001 | **High** | Extended Agent Card accessible without authentication |
 
 ### Advisory Database
 
@@ -347,30 +347,30 @@ Scans and actively tests [A2A protocol](https://a2a-protocol.org) agent endpoint
 
 ```bash
 # Passive scan — fetch Agent Card and analyze security posture
-offsec-ai a2a-scan https://agent.example.com
+offensive-ai a2a-scan https://agent.example.com
 
 # Non-standard port
-offsec-ai a2a-scan https://agent.example.com --port 8443
+offensive-ai a2a-scan https://agent.example.com --port 8443
 
 # With bearer token (authenticated scan)
-offsec-ai a2a-scan https://agent.example.com \
+offensive-ai a2a-scan https://agent.example.com \
   --header 'Authorization: Bearer <token>'
 
 # LLM judge enrichment (shows "LLM Judge: gemini" in output)
-offsec-ai a2a-scan https://agent.example.com --llm-judge
+offensive-ai a2a-scan https://agent.example.com --llm-judge
 
 # JSON output
-offsec-ai a2a-scan https://agent.example.com --format json --output a2a-scan.json
+offensive-ai a2a-scan https://agent.example.com --format json --output a2a-scan.json
 
 # Authorized active attack — safe mode (auth-bypass probes)
-offsec-ai a2a-attack https://agent.example.com --i-have-authorization
+offensive-ai a2a-attack https://agent.example.com --i-have-authorization
 
 # Deep mode — auth bypass + SSRF webhook + message injection + task enum + JSON-RPC
-offsec-ai a2a-attack https://agent.example.com \
+offensive-ai a2a-attack https://agent.example.com \
   --i-have-authorization --mode deep
 
 # With LLM judge and JSON output
-offsec-ai a2a-attack https://agent.example.com \
+offensive-ai a2a-attack https://agent.example.com \
   --i-have-authorization --mode deep --llm-judge \
   --format json --output a2a-attack.json
 ```
@@ -389,9 +389,9 @@ offsec-ai a2a-attack https://agent.example.com \
 
 ```python
 import asyncio
-from offsec_ai import A2AScanner, A2AAttacker, A2AVulnSeverity
-from offsec_ai.core.llm_judge import LLMJudge
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai import A2AScanner, A2AAttacker, A2AVulnSeverity
+from offensive_ai.core.llm_judge import LLMJudge
+from offensive_ai.exceptions import AuthorizationRequired
 
 async def main():
     # Optional LLM judge
@@ -474,37 +474,37 @@ Scans and actively attacks every API endpoint defined in a [Postman Collection v
 
 ```bash
 # Passive scan — probe every endpoint in the collection
-offsec-ai postman-scan collection.json
+offensive-ai postman-scan collection.json
 
 # Point the collection at a specific environment
-offsec-ai postman-scan collection.json -T https://api.example.com
+offensive-ai postman-scan collection.json -T https://api.example.com
 
 # Use a Postman environment file for variable resolution
-offsec-ai postman-scan collection.json -e env.json -T https://api.example.com
+offensive-ai postman-scan collection.json -e env.json -T https://api.example.com
 
 # Add custom auth header
-offsec-ai postman-scan collection.json \
+offensive-ai postman-scan collection.json \
   -T https://api.example.com \
   --header 'Authorization: Bearer <token>'
 
 # LLM judge enrichment
-offsec-ai postman-scan collection.json -T https://api.example.com --llm-judge
+offensive-ai postman-scan collection.json -T https://api.example.com --llm-judge
 
 # JSON output
-offsec-ai postman-scan collection.json -T https://api.example.com \
+offensive-ai postman-scan collection.json -T https://api.example.com \
   --format json --output postman-scan.json
 
 # Authorized active attack — safe mode (auth bypass only)
-offsec-ai postman-attack collection.json --i-have-authorization \
+offensive-ai postman-attack collection.json --i-have-authorization \
   -T https://api.example.com
 
 # Deep mode — all 5 OWASP API attack categories
-offsec-ai postman-attack collection.json \
+offensive-ai postman-attack collection.json \
   --i-have-authorization --mode deep \
   -T https://api.example.com -e env.json --llm-judge
 
 # Export attack report
-offsec-ai postman-attack collection.json \
+offensive-ai postman-attack collection.json \
   --i-have-authorization --mode deep \
   --format json --output postman-attack.json
 ```
@@ -513,9 +513,9 @@ offsec-ai postman-attack collection.json \
 
 ```python
 import asyncio
-from offsec_ai import PostmanScanner, PostmanAttacker, PostmanVulnSeverity
-from offsec_ai.core.llm_judge import LLMJudge
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai import PostmanScanner, PostmanAttacker, PostmanVulnSeverity
+from offensive_ai.core.llm_judge import LLMJudge
+from offensive_ai.exceptions import AuthorizationRequired
 
 async def main():
     judge = LLMJudge.from_env()   # reads GEMINI_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY
@@ -591,34 +591,34 @@ Probes a live LLM/chat endpoint for the [OWASP LLM Top 10](https://owasp.org/www
 
 ```bash
 # Basic scan (safe mode, OpenAI-compatible endpoint)
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions
 
 # Deep mode with all probes
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions --mode deep
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions --mode deep
 
 # Specific categories only
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions \
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions \
   --categories LLM01,LLM02,LLM07
 
 # Generic/custom API format (non-OpenAI)
-offsec-ai ai-owasp-scan https://chat.example.com/api/chat --api-format generic
+offensive-ai ai-owasp-scan https://chat.example.com/api/chat --api-format generic
 
 # With authentication header
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions \
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions \
   --header "Authorization: Bearer sk-..."
 
 # JSON output
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions --output results.json
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions --output results.json
 
 # Enable LLM judge (requires OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY env var)
-offsec-ai ai-owasp-scan https://api.example.com/v1/chat/completions --llm-judge
+offensive-ai ai-owasp-scan https://api.example.com/v1/chat/completions --llm-judge
 ```
 
 ### Python API
 
 ```python
 import asyncio
-from offsec_ai import LLMOwaspScanner, LLMScanMode, LLMJudge
+from offensive_ai import LLMOwaspScanner, LLMScanMode, LLMJudge
 
 async def main():
     # Optional: enable LLM judge for smarter detection
@@ -662,7 +662,7 @@ Grade: A (0–10), B (11–25), C (26–50), D (51–100), F (>100 or any CRITIC
 Install the `[ai]` extra and set an API key to enable smarter semantic detection:
 
 ```bash
-pip install "offsec-ai[ai]"
+pip install "offensive-ai[ai]"
 export GEMINI_API_KEY="AIza..."       # Google Gemini  (1st priority)
 export ANTHROPIC_API_KEY="sk-ant-..." # or Anthropic   (2nd priority)
 export OPENAI_API_KEY="sk-..."        # or OpenAI      (3rd priority)
@@ -694,28 +694,28 @@ Scans [Model Context Protocol](https://modelcontextprotocol.io) servers for secu
 
 ```bash
 # Scan HTTP/SSE MCP endpoint
-offsec-ai mcp-scan https://mcp.example.com/mcp
+offensive-ai mcp-scan https://mcp.example.com/mcp
 
 # Scan local stdio server
-offsec-ai mcp-scan --transport stdio --cmd "npx @example/mcp-server"
+offensive-ai mcp-scan --transport stdio --cmd "npx @example/mcp-server"
 
 # With authentication
-offsec-ai mcp-scan https://mcp.example.com/mcp \
+offensive-ai mcp-scan https://mcp.example.com/mcp \
   --header "Authorization: Bearer token"
 
 # JSON output
-offsec-ai mcp-scan https://mcp.example.com/mcp --output mcp-scan.json
+offensive-ai mcp-scan https://mcp.example.com/mcp --output mcp-scan.json
 
 # With LLM judge for enriched triage
-offsec-ai mcp-scan https://mcp.example.com/mcp --llm-judge
-offsec-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization --llm-judge
+offensive-ai mcp-scan https://mcp.example.com/mcp --llm-judge
+offensive-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization --llm-judge
 ```
 
 ### Python API
 
 ```python
 import asyncio
-from offsec_ai import MCPScanner, MCPTransport
+from offensive_ai import MCPScanner, MCPTransport
 
 async def main():
     # HTTP transport
@@ -764,14 +764,14 @@ Performs active security testing against MCP servers. **Requires explicit author
 
 ```bash
 # Safe mode (auth bypass only) — must provide --i-have-authorization
-offsec-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization
+offensive-ai mcp-attack https://mcp.example.com/mcp --i-have-authorization
 
 # Deep mode (all attacks)
-offsec-ai mcp-attack https://mcp.example.com/mcp \
+offensive-ai mcp-attack https://mcp.example.com/mcp \
   --i-have-authorization --mode deep
 
 # JSON output
-offsec-ai mcp-attack https://mcp.example.com/mcp \
+offensive-ai mcp-attack https://mcp.example.com/mcp \
   --i-have-authorization --output attack-report.json
 ```
 
@@ -779,7 +779,7 @@ offsec-ai mcp-attack https://mcp.example.com/mcp \
 
 ```python
 import asyncio
-from offsec_ai import MCPAttacker, MCPScanner, AuthorizationRequired
+from offensive_ai import MCPAttacker, MCPScanner, AuthorizationRequired
 
 async def main():
     # Authorization is enforced at instantiation
@@ -819,15 +819,15 @@ Passive scanner and authorized attacker for identity provider endpoints across O
 
 | Check ID | Protocol | Severity | Description |
 |----------|----------|----------|-------------|
-| OFFSEC-AUTH-PKCE-001 | OIDC/OAuth2 | HIGH | PKCE not supported |
-| OFFSEC-AUTH-PKCE-002 | OIDC/OAuth2 | MEDIUM | PKCE supported but not required |
-| OFFSEC-AUTH-IMPL-001 | OIDC/OAuth2 | HIGH | Implicit flow enabled |
-| OFFSEC-AUTH-JWTALGN-001 | OIDC | HIGH | alg=none accepted in JWKS |
-| OFFSEC-AUTH-STATE-001 | OIDC/OAuth2 | MEDIUM | State parameter not enforced |
-| OFFSEC-AUTH-JWKS-001 | OIDC | LOW | JWKS endpoint lacks cache-control |
-| OFFSEC-AUTH-SAML-NOSIG | SAML | HIGH | No signing certificate in metadata |
-| OFFSEC-AUTH-SAML-NOACS | SAML | MEDIUM | No AssertionConsumerService endpoint |
-| OFFSEC-AUTH-SAML-XSW | SAML | INFO | XML Signature Wrapping attack surface |
+| OAI-AUTH-PKCE-001 | OIDC/OAuth2 | HIGH | PKCE not supported |
+| OAI-AUTH-PKCE-002 | OIDC/OAuth2 | MEDIUM | PKCE supported but not required |
+| OAI-AUTH-IMPL-001 | OIDC/OAuth2 | HIGH | Implicit flow enabled |
+| OAI-AUTH-JWTALGN-001 | OIDC | HIGH | alg=none accepted in JWKS |
+| OAI-AUTH-STATE-001 | OIDC/OAuth2 | MEDIUM | State parameter not enforced |
+| OAI-AUTH-JWKS-001 | OIDC | LOW | JWKS endpoint lacks cache-control |
+| OAI-AUTH-SAML-NOSIG | SAML | HIGH | No signing certificate in metadata |
+| OAI-AUTH-SAML-NOACS | SAML | MEDIUM | No AssertionConsumerService endpoint |
+| OAI-AUTH-SAML-XSW | SAML | INFO | XML Signature Wrapping attack surface |
 
 ### CVE Database (sample)
 
@@ -846,33 +846,33 @@ Passive scanner and authorized attacker for identity provider endpoints across O
 
 ```bash
 # Auto-detect protocol (OIDC/OAuth2/SAML)
-offsec-ai auth-scan https://auth.example.com
+offensive-ai auth-scan https://auth.example.com
 
 # Explicitly probe SAML metadata
-offsec-ai auth-scan https://idp.example.com --protocol saml
+offensive-ai auth-scan https://idp.example.com --protocol saml
 
 # Use public test IdP
-offsec-ai auth-scan https://mocksaml.com/api/saml/metadata --protocol saml
+offensive-ai auth-scan https://mocksaml.com/api/saml/metadata --protocol saml
 
 # OIDC scan with LLM judge (shows "LLM Judge: gemini" in output)
-offsec-ai auth-scan https://accounts.google.com --llm-judge
+offensive-ai auth-scan https://accounts.google.com --llm-judge
 
 # Custom auth headers / TLS skip
-offsec-ai auth-scan https://internal-idp.corp.example.com \
+offensive-ai auth-scan https://internal-idp.corp.example.com \
   --header "Authorization: Bearer token" --no-tls-verify
 
 # JSON output
-offsec-ai auth-scan https://auth.example.com --format json --output auth-scan.json
+offensive-ai auth-scan https://auth.example.com --format json --output auth-scan.json
 
 # Active attack — safe mode (open redirect, state bypass, PKCE bypass)
-offsec-ai auth-attack https://auth.example.com --i-have-authorization
+offensive-ai auth-attack https://auth.example.com --i-have-authorization
 
 # Deep mode (adds JWT alg=none, scope escalation, token replay, SAML XSW, JWKS confusion)
-offsec-ai auth-attack https://auth.example.com \
+offensive-ai auth-attack https://auth.example.com \
   --i-have-authorization --mode deep --llm-judge
 
 # Export attack report
-offsec-ai auth-attack https://auth.example.com \
+offensive-ai auth-attack https://auth.example.com \
   --i-have-authorization --mode deep --format json --output auth-attack.json
 ```
 
@@ -880,8 +880,8 @@ offsec-ai auth-attack https://auth.example.com \
 
 ```python
 import asyncio
-from offsec_ai import AuthScanner, AuthAttacker, AuthProtocol, LLMJudge
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai import AuthScanner, AuthAttacker, AuthProtocol, LLMJudge
+from offensive_ai.exceptions import AuthorizationRequired
 
 async def main():
     # Optional LLM judge
@@ -973,26 +973,26 @@ Five-phase **passive** assessment — no exploitation:
 
 ```bash
 # Passive scan — fingerprint and report misconfigurations
-offsec-ai openclaw-scan 192.168.1.10
+offensive-ai openclaw-scan 192.168.1.10
 
 # Custom port / TLS
-offsec-ai openclaw-scan gateway.example.com --port 18789 --tls
+offensive-ai openclaw-scan gateway.example.com --port 18789 --tls
 
 # With bearer token (authenticated scan)
-offsec-ai openclaw-scan gateway.example.com \
+offensive-ai openclaw-scan gateway.example.com \
     --header "Authorization: Bearer <token>"
 
 # Export JSON report
-offsec-ai openclaw-scan 192.168.1.10 --format json --output report.json
+offensive-ai openclaw-scan 192.168.1.10 --format json --output report.json
 
 # Active attack (requires explicit authorization flag)
-offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization
+offensive-ai openclaw-attack 192.168.1.10 --i-have-authorization
 
 # Deep mode — message injection + WebSocket + SSRF probes
-offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep
+offensive-ai openclaw-attack 192.168.1.10 --i-have-authorization --mode deep
 
 # Export attack report
-offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization \
+offensive-ai openclaw-attack 192.168.1.10 --i-have-authorization \
     --mode deep --format json --output attack.json
 ```
 
@@ -1000,9 +1000,9 @@ offsec-ai openclaw-attack 192.168.1.10 --i-have-authorization \
 
 ```python
 import asyncio
-from offsec_ai.core.openclaw_scanner import OpenClawScanner
-from offsec_ai.core.openclaw_attacker import OpenClawAttacker
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai.core.openclaw_scanner import OpenClawScanner
+from offensive_ai.core.openclaw_attacker import OpenClawAttacker
+from offensive_ai.exceptions import AuthorizationRequired
 
 async def main():
     # Passive scan
@@ -1093,29 +1093,29 @@ Black-box scanning and authorized red-team testing of exposed Kubernetes cluster
 
 ```bash
 # Passive scan — probe all default K8s component ports
-offsec-ai k8s-scan 192.168.1.100
+offensive-ai k8s-scan 192.168.1.100
 
 # Target specific ports
-offsec-ai k8s-scan k8s.example.com --port 6443 --port 10250
+offensive-ai k8s-scan k8s.example.com --port 6443 --port 10250
 
 # With authentication header (semi-auth scan)
-offsec-ai k8s-scan k8s.example.com \
+offensive-ai k8s-scan k8s.example.com \
     --header "Authorization: Bearer <token>"
 
 # Enable LLM judge for finding triage and remediation advice
-offsec-ai k8s-scan 192.168.1.100 --llm-judge
+offensive-ai k8s-scan 192.168.1.100 --llm-judge
 
 # Export JSON report
-offsec-ai k8s-scan 192.168.1.100 --format json --output k8s-scan.json
+offensive-ai k8s-scan 192.168.1.100 --format json --output k8s-scan.json
 
 # Authorized active attack (safe mode — anon reads + RBAC review)
-offsec-ai k8s-attack 192.168.1.100 --i-have-authorization
+offensive-ai k8s-attack 192.168.1.100 --i-have-authorization
 
 # Deep mode — kubelet /exec, secret extraction, etcd dump, cloud IMDS SSRF
-offsec-ai k8s-attack 192.168.1.100 --i-have-authorization --mode deep
+offensive-ai k8s-attack 192.168.1.100 --i-have-authorization --mode deep
 
 # Export attack report
-offsec-ai k8s-attack 192.168.1.100 --i-have-authorization \
+offensive-ai k8s-attack 192.168.1.100 --i-have-authorization \
     --mode deep --format json --output k8s-attack.json
 ```
 
@@ -1123,10 +1123,10 @@ offsec-ai k8s-attack 192.168.1.100 --i-have-authorization \
 
 ```python
 import asyncio
-from offsec_ai.core.k8s_scanner import K8sScanner
-from offsec_ai.core.k8s_attacker import K8sAttacker
-from offsec_ai.core.llm_judge import LLMJudge
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai.core.k8s_scanner import K8sScanner
+from offensive_ai.core.k8s_attacker import K8sAttacker
+from offensive_ai.core.llm_judge import LLMJudge
+from offensive_ai.exceptions import AuthorizationRequired
 
 async def main():
     # Optional LLM judge — auto-detects OPENAI/ANTHROPIC/GEMINI key from env
@@ -1177,13 +1177,13 @@ See [k8s.md](https://docs.offensive-ai.org/k8s) for the full guide including OWA
 ### Port Scanner
 
 ```bash
-offsec-ai scan example.com
-offsec-ai scan example.com --ports 80,443,8080,8443
-offsec-ai scan example.com google.com --output results.json
+offensive-ai scan example.com
+offensive-ai scan example.com --ports 80,443,8080,8443
+offensive-ai scan example.com google.com --output results.json
 ```
 
 ```python
-from offsec_ai import PortChecker
+from offensive_ai import PortChecker
 import asyncio
 
 async def main():
@@ -1198,21 +1198,21 @@ asyncio.run(main())
 ### L7 Protection Detection
 
 ```bash
-offsec-ai l7-check example.com
-offsec-ai l7-check example.com --trace-dns
-offsec-ai full-scan example.com
+offensive-ai l7-check example.com
+offensive-ai l7-check example.com --trace-dns
+offensive-ai full-scan example.com
 ```
 
 ### SSL/TLS Certificate Analysis
 
 ```bash
-offsec-ai cert-check example.com
-offsec-ai cert-chain github.com
-offsec-ai cert-info google.com
+offensive-ai cert-check example.com
+offensive-ai cert-chain github.com
+offensive-ai cert-info google.com
 ```
 
 ```python
-from offsec_ai import CertificateAnalyzer
+from offensive_ai import CertificateAnalyzer
 import asyncio
 
 async def main():
@@ -1229,31 +1229,31 @@ asyncio.run(main())
 ### mTLS Checker
 
 ```bash
-offsec-ai mtls-check example.com
-offsec-ai mtls-check example.com --client-cert client.crt --client-key client.key
-offsec-ai mtls-gen-cert test-client.example.com
-offsec-ai mtls-validate-cert client.crt client.key
+offensive-ai mtls-check example.com
+offensive-ai mtls-check example.com --client-cert client.crt --client-key client.key
+offensive-ai mtls-gen-cert test-client.example.com
+offensive-ai mtls-validate-cert client.crt client.key
 ```
 
 ### OWASP Top 10 Web Scanner (2021 & 2025)
 
 ```bash
-offsec-ai owasp-scan example.com
-offsec-ai owasp-scan example.com --deep
-offsec-ai owasp-scan example.com -c A02,A05,A07 -t nginx --verbose
+offensive-ai owasp-scan example.com
+offensive-ai owasp-scan example.com --deep
+offensive-ai owasp-scan example.com -c A02,A05,A07 -t nginx --verbose
 
 # With LLM judge — enriches MEDIUM/LOW findings, shows "LLM Judge: gemini" in panel
-offsec-ai owasp-scan example.com --llm-judge
-offsec-ai owasp-scan example.com --deep --llm-judge --verbose
+offensive-ai owasp-scan example.com --llm-judge
+offensive-ai owasp-scan example.com --deep --llm-judge --verbose
 
-offsec-ai owasp-scan example.com -f pdf -o report.pdf
+offensive-ai owasp-scan example.com -f pdf -o report.pdf
 ```
 
 ### Hybrid Identity Detection
 
 ```bash
-offsec-ai hybrid-identity example.com
-offsec-ai hybrid-identity example.com --verbose --output results.json
+offensive-ai hybrid-identity example.com
+offensive-ai hybrid-identity example.com --verbose --output results.json
 ```
 
 ---
@@ -1261,7 +1261,7 @@ offsec-ai hybrid-identity example.com --verbose --output results.json
 ## All CLI Commands
 
 ```
-offsec-ai --help
+offensive-ai --help
 
 Commands:
   ai-owasp-scan       Probe a live LLM/AI endpoint for AI OWASP Top 10
@@ -1303,45 +1303,45 @@ The image is published to two registries on every version tag:
 
 | Registry | Image |
 |----------|-------|
-| Docker Hub | `htunnthuthu/offsec-ai` |
-| GitHub Container Registry | `ghcr.io/htunn/offsec-ai` |
+| Docker Hub | `htunnthuthu/offensive-ai` |
+| GitHub Container Registry | `ghcr.io/htunn/offensive-ai` |
 
 ```bash
 # Docker Hub
-docker run --rm htunnthuthu/offsec-ai:latest ai-owasp-scan https://api.example.com/v1/chat/completions
-docker run --rm htunnthuthu/offsec-ai:latest mcp-scan https://mcp.example.com/mcp
-docker run --rm htunnthuthu/offsec-ai:latest a2a-scan https://agent.example.com
-docker run --rm htunnthuthu/offsec-ai:latest scan example.com
-docker run --rm htunnthuthu/offsec-ai:latest owasp-scan example.com
+docker run --rm htunnthuthu/offensive-ai:latest ai-owasp-scan https://api.example.com/v1/chat/completions
+docker run --rm htunnthuthu/offensive-ai:latest mcp-scan https://mcp.example.com/mcp
+docker run --rm htunnthuthu/offensive-ai:latest a2a-scan https://agent.example.com
+docker run --rm htunnthuthu/offensive-ai:latest scan example.com
+docker run --rm htunnthuthu/offensive-ai:latest owasp-scan example.com
 # Mount a local collection for postman-scan / postman-attack
-docker run --rm -v $(pwd):/work htunnthuthu/offsec-ai:latest \
+docker run --rm -v $(pwd):/work htunnthuthu/offensive-ai:latest \
   postman-scan /work/collection.json -T https://api.example.com
-docker run --rm -v $(pwd):/work htunnthuthu/offsec-ai:latest \
+docker run --rm -v $(pwd):/work htunnthuthu/offensive-ai:latest \
   postman-attack /work/collection.json --i-have-authorization --mode deep -T https://api.example.com
 
 # GitHub Container Registry (ghcr.io) — no Docker Hub account required
-docker run --rm ghcr.io/htunn/offsec-ai:latest ai-owasp-scan https://api.example.com/v1/chat/completions
-docker run --rm ghcr.io/htunn/offsec-ai:latest a2a-scan https://agent.example.com
-docker run --rm ghcr.io/htunn/offsec-ai:latest scan example.com
-docker run --rm -v $(pwd):/work ghcr.io/htunn/offsec-ai:latest \
+docker run --rm ghcr.io/htunn/offensive-ai:latest ai-owasp-scan https://api.example.com/v1/chat/completions
+docker run --rm ghcr.io/htunn/offensive-ai:latest a2a-scan https://agent.example.com
+docker run --rm ghcr.io/htunn/offensive-ai:latest scan example.com
+docker run --rm -v $(pwd):/work ghcr.io/htunn/offensive-ai:latest \
   postman-scan /work/collection.json -T https://api.example.com
 
 # Save output to host
-docker run --rm -v $(pwd):/app/output ghcr.io/htunn/offsec-ai:latest \
+docker run --rm -v $(pwd):/app/output ghcr.io/htunn/offensive-ai:latest \
   ai-owasp-scan https://api.example.com/v1/chat/completions \
   --output /app/output/llm-report.json
 
 # LLM Judge — openai, anthropic, or gemini key auto-detected; no extra install needed
 docker run --rm \
   -e OPENAI_API_KEY=sk-... \
-  ghcr.io/htunn/offsec-ai:latest \
+  ghcr.io/htunn/offensive-ai:latest \
   ai-owasp-scan https://api.example.com/v1/chat/completions --llm-judge
 
 # Custom OpenAI-compatible backend (Ollama, LM Studio, Azure OpenAI…)
 docker run --rm \
-  -e OFFSEC_LLM_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e OFFSEC_LLM_MODEL=llama3 \
-  ghcr.io/htunn/offsec-ai:latest \
+  -e OFFENSIVE_AI_LLM_BASE_URL=http://host.docker.internal:11434/v1 \
+  -e OFFENSIVE_AI_LLM_MODEL=llama3 \
+  ghcr.io/htunn/offensive-ai:latest \
   ai-owasp-scan https://api.example.com/v1/chat/completions --llm-judge
 ```
 
@@ -1357,12 +1357,12 @@ See [Docker documentation](https://docs.offensive-ai.org) for the full Docker re
 |----------|-------------|
 | `OPENAI_API_KEY` | Enable OpenAI-based LLM judge |
 | `ANTHROPIC_API_KEY` | Enable Anthropic-based LLM judge |
-| `OFFSEC_LLM_BASE_URL` | Custom OpenAI-compatible base URL for LLM judge |
+| `OFFENSIVE_AI_LLM_BASE_URL` | Custom OpenAI-compatible base URL for LLM judge |
 
 ### Optional Extras
 
 ```bash
-pip install "offsec-ai[ai]"   # Adds openai + anthropic for LLM judge
+pip install "offensive-ai[ai]"   # Adds openai + anthropic for LLM judge
 ```
 
 ---

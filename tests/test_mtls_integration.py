@@ -6,7 +6,7 @@ from datetime import datetime
 
 def test_mtls_model_full_lifecycle():
     """MTLSResult supports full create → serialize → field-access lifecycle."""
-    from offsec_ai.models.mtls_result import CertificateInfo, MTLSResult
+    from offensive_ai.models.mtls_result import CertificateInfo, MTLSResult
 
     cert = CertificateInfo(
         subject="CN=test.example.com,O=Test Org,C=US",
@@ -51,11 +51,11 @@ def test_mtls_model_full_lifecycle():
 
 def test_cli_structure():
     """All expected mTLS commands are present in the CLI."""
-    from offsec_ai.cli import main
+    from offensive_ai.cli import main
 
     cli_source = main.__module__
     import inspect
-    import offsec_ai.cli as cli_module
+    import offensive_ai.cli as cli_module
 
     src = inspect.getsource(cli_module)
     for symbol in ("mtls-check", "mtls-gen-cert", "mtls-validate-cert", "MTLSChecker"):
@@ -72,7 +72,7 @@ def test_documentation_presence():
     assert "mTLS" in content
     assert "mutual TLS" in content
 
-    api_doc = os.path.join(repo_root, "offsec-ai-docs", "api.md")
+    api_doc = os.path.join(repo_root, "offensive-ai-docs", "api.md")
     assert os.path.isfile(api_doc)
     content = open(api_doc).read()
     assert "MTLSChecker" in content

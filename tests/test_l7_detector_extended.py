@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 import pytest
 import dns.resolver
 
-from offsec_ai.core.l7_detector import L7Detector
-from offsec_ai.models.l7_result import L7Detection, L7Protection, L7Result
+from offensive_ai.core.l7_detector import L7Detector
+from offensive_ai.models.l7_result import L7Detection, L7Protection, L7Result
 
 
 # ---------------------------------------------------------------------------

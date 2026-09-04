@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from offsec_ai.cli import main
+from offensive_ai.cli import main
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +279,7 @@ class TestMtlsGenCertCommand:
             cert_path = str(Path(tmpdir) / "client.crt")
             key_path = str(Path(tmpdir) / "client.key")
 
-            with patch("offsec_ai.core.mtls_checker.generate_self_signed_cert", return_value=True) as mock_gen:
+            with patch("offensive_ai.core.mtls_checker.generate_self_signed_cert", return_value=True) as mock_gen:
                 result = runner.invoke(
                     main,
                     [
@@ -294,7 +294,7 @@ class TestMtlsGenCertCommand:
         assert result.exit_code == 0
 
     def test_gen_cert_failure_exits_1(self):
-        with patch("offsec_ai.core.mtls_checker.generate_self_signed_cert", return_value=False):
+        with patch("offensive_ai.core.mtls_checker.generate_self_signed_cert", return_value=False):
             result = runner.invoke(
                 main,
                 ["mtls-gen-cert", "test.example.com"],
@@ -304,7 +304,7 @@ class TestMtlsGenCertCommand:
         assert result.exit_code == 1
 
     def test_gen_cert_with_custom_days_and_key_size(self):
-        with patch("offsec_ai.core.mtls_checker.generate_self_signed_cert", return_value=True):
+        with patch("offensive_ai.core.mtls_checker.generate_self_signed_cert", return_value=True):
             result = runner.invoke(
                 main,
                 [
@@ -325,7 +325,7 @@ class TestMtlsGenCertCommand:
 
 class TestMtlsValidateCertCommand:
     def test_validate_cert_success(self):
-        with patch("offsec_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Certificate and key are valid")):
+        with patch("offensive_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Certificate and key are valid")):
             result = runner.invoke(
                 main,
                 ["mtls-validate-cert", "client.crt", "client.key"],
@@ -335,7 +335,7 @@ class TestMtlsValidateCertCommand:
         assert result.exit_code == 0
 
     def test_validate_cert_failure_exits_1(self):
-        with patch("offsec_ai.core.mtls_checker.validate_certificate_files", return_value=(False, "Certificate and key do not match")):
+        with patch("offensive_ai.core.mtls_checker.validate_certificate_files", return_value=(False, "Certificate and key do not match")):
             result = runner.invoke(
                 main,
                 ["mtls-validate-cert", "client.crt", "client.key"],
@@ -345,7 +345,7 @@ class TestMtlsValidateCertCommand:
         assert result.exit_code == 1
 
     def test_validate_cert_with_check_expiry(self):
-        with patch("offsec_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Valid")):
+        with patch("offensive_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Valid")):
             result = runner.invoke(
                 main,
                 ["mtls-validate-cert", "client.crt", "client.key", "--check-expiry"],
@@ -389,7 +389,7 @@ class TestMtlsValidateCertCommand:
                 )
             )
 
-            with patch("offsec_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Valid")):
+            with patch("offensive_ai.core.mtls_checker.validate_certificate_files", return_value=(True, "Valid")):
                 result = runner.invoke(
                     main,
                     [
@@ -665,8 +665,8 @@ class TestDisplayFunctions:
     """Test the pure display helper functions directly."""
 
     def test_display_scan_result_with_ports(self):
-        from offsec_ai.cli import _display_scan_result
-        from offsec_ai.models.scan_result import ScanResult, PortResult
+        from offensive_ai.cli import _display_scan_result
+        from offensive_ai.models.scan_result import ScanResult, PortResult
 
         port_result = PortResult(port=80, is_open=True, service="http", banner="nginx/1.18.0")
         result = ScanResult(host="example.com", ip_address=None, ports=[port_result], scan_time=0.5)
@@ -674,8 +674,8 @@ class TestDisplayFunctions:
         _display_scan_result(result)
 
     def test_display_scan_result_with_long_banner(self):
-        from offsec_ai.cli import _display_scan_result
-        from offsec_ai.models.scan_result import ScanResult, PortResult
+        from offensive_ai.cli import _display_scan_result
+        from offensive_ai.models.scan_result import ScanResult, PortResult
 
         long_banner = "A" * 100
         port_result = PortResult(port=443, is_open=True, service="https", banner=long_banner)
@@ -683,8 +683,8 @@ class TestDisplayFunctions:
         _display_scan_result(result)
 
     def test_display_l7_result_error(self):
-        from offsec_ai.cli import _display_l7_result
-        from offsec_ai.models.l7_result import L7Result
+        from offensive_ai.cli import _display_l7_result
+        from offensive_ai.models.l7_result import L7Result
 
         result = L7Result(
             host="example.com",
@@ -698,8 +698,8 @@ class TestDisplayFunctions:
         _display_l7_result(result)
 
     def test_display_l7_result_protected(self):
-        from offsec_ai.cli import _display_l7_result
-        from offsec_ai.models.l7_result import L7Result, L7Detection, L7Protection
+        from offensive_ai.cli import _display_l7_result
+        from offensive_ai.models.l7_result import L7Result, L7Detection, L7Protection
 
         detection = L7Detection(
             service=L7Protection.CLOUDFLARE,
@@ -718,8 +718,8 @@ class TestDisplayFunctions:
         _display_l7_result(result)
 
     def test_display_l7_result_unprotected(self):
-        from offsec_ai.cli import _display_l7_result
-        from offsec_ai.models.l7_result import L7Result
+        from offensive_ai.cli import _display_l7_result
+        from offensive_ai.models.l7_result import L7Result
 
         result = L7Result(
             host="example.com",
@@ -733,8 +733,8 @@ class TestDisplayFunctions:
         _display_l7_result(result)
 
     def test_display_l7_result_with_trace(self):
-        from offsec_ai.cli import _display_l7_result
-        from offsec_ai.models.l7_result import L7Result, L7Detection, L7Protection
+        from offensive_ai.cli import _display_l7_result
+        from offensive_ai.models.l7_result import L7Result, L7Detection, L7Protection
 
         detection = L7Detection(
             service=L7Protection.CLOUDFLARE,
@@ -759,8 +759,8 @@ class TestDisplayFunctions:
         _display_l7_result(result, show_trace=True)
 
     def test_display_scan_summary_with_open_ports(self):
-        from offsec_ai.cli import _display_scan_summary
-        from offsec_ai.models.scan_result import ScanResult, BatchScanResult, PortResult
+        from offensive_ai.cli import _display_scan_summary
+        from offensive_ai.models.scan_result import ScanResult, BatchScanResult, PortResult
 
         port_result = PortResult(port=80, is_open=True, service="http", banner="")
         scan_result = ScanResult(host="example.com", ip_address=None, ports=[port_result], scan_time=1.5)
@@ -768,8 +768,8 @@ class TestDisplayFunctions:
         _display_scan_summary(batch)
 
     def test_display_l7_summary_with_results(self):
-        from offsec_ai.cli import _display_l7_summary
-        from offsec_ai.models.l7_result import L7Result, BatchL7Result, L7Detection, L7Protection
+        from offensive_ai.cli import _display_l7_summary
+        from offensive_ai.models.l7_result import L7Result, BatchL7Result, L7Detection, L7Protection
 
         detection = L7Detection(
             service=L7Protection.CLOUDFLARE, confidence=0.9, indicators=["cf-ray"]
@@ -787,8 +787,8 @@ class TestDisplayFunctions:
         _display_l7_summary(batch)
 
     def test_display_l7_summary_with_unprotected(self):
-        from offsec_ai.cli import _display_l7_summary
-        from offsec_ai.models.l7_result import L7Result, BatchL7Result
+        from offensive_ai.cli import _display_l7_summary
+        from offensive_ai.models.l7_result import L7Result, BatchL7Result
 
         result = L7Result(
             host="example.com",
@@ -803,7 +803,7 @@ class TestDisplayFunctions:
         _display_l7_summary(batch)
 
     def test_save_results_with_json_serializable(self):
-        from offsec_ai.cli import _save_results
+        from offensive_ai.cli import _save_results
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = str(Path(tmpdir) / "results.json")
@@ -811,7 +811,7 @@ class TestDisplayFunctions:
             assert Path(out_path).exists()
 
     def test_display_service_info(self):
-        from offsec_ai.cli import _display_service_info
+        from offensive_ai.cli import _display_service_info
 
         service_info = {
             "service": "https",
@@ -822,7 +822,7 @@ class TestDisplayFunctions:
         _display_service_info("example.com", 443, service_info)
 
     def test_display_service_info_with_error(self):
-        from offsec_ai.cli import _display_service_info
+        from offensive_ai.cli import _display_service_info
 
         service_info = {
             "service": "unknown",
@@ -833,8 +833,8 @@ class TestDisplayFunctions:
         _display_service_info("example.com", 9999, service_info)
 
     def test_display_mtls_result_with_error(self):
-        from offsec_ai.cli import _display_mtls_result
-        from offsec_ai.models.mtls_result import MTLSResult
+        from offensive_ai.cli import _display_mtls_result
+        from offensive_ai.models.mtls_result import MTLSResult
         from datetime import datetime, timezone
 
         result = MTLSResult(
@@ -855,8 +855,8 @@ class TestDisplayFunctions:
         _display_mtls_result(result)
 
     def test_display_mtls_result_with_success(self):
-        from offsec_ai.cli import _display_mtls_result
-        from offsec_ai.models.mtls_result import MTLSResult, CertificateInfo
+        from offensive_ai.cli import _display_mtls_result
+        from offensive_ai.models.mtls_result import MTLSResult, CertificateInfo
         from datetime import datetime, timezone
 
         cert_info = CertificateInfo(
@@ -893,8 +893,8 @@ class TestDisplayFunctions:
         _display_mtls_result(result)
 
     def test_display_mtls_summary(self):
-        from offsec_ai.cli import _display_mtls_summary
-        from offsec_ai.models.mtls_result import MTLSResult
+        from offensive_ai.cli import _display_mtls_summary
+        from offensive_ai.models.mtls_result import MTLSResult
         from datetime import datetime, timezone
 
         ts = datetime.now(timezone.utc).isoformat()
@@ -911,7 +911,7 @@ class TestDisplayFunctions:
         _display_mtls_summary(results, 2.5)
 
     def test_display_mtls_metrics(self):
-        from offsec_ai.cli import _display_mtls_metrics
+        from offensive_ai.cli import _display_mtls_metrics
 
         metrics = {
             "total_requests": 10,
@@ -928,8 +928,8 @@ class TestDisplayFunctions:
         _display_mtls_metrics(metrics)
 
     def test_display_hybrid_identity_result(self):
-        from offsec_ai.cli import _display_hybrid_identity_result
-        from offsec_ai.core.hybrid_identity_checker import HybridIdentityResult
+        from offensive_ai.cli import _display_hybrid_identity_result
+        from offensive_ai.core.hybrid_identity_checker import HybridIdentityResult
 
         result = HybridIdentityResult(
             fqdn="corp.example.com",
@@ -947,8 +947,8 @@ class TestDisplayFunctions:
         _display_hybrid_identity_result(result)
 
     def test_display_hybrid_identity_result_with_error(self):
-        from offsec_ai.cli import _display_hybrid_identity_result
-        from offsec_ai.core.hybrid_identity_checker import HybridIdentityResult
+        from offensive_ai.cli import _display_hybrid_identity_result
+        from offensive_ai.core.hybrid_identity_checker import HybridIdentityResult
 
         result = HybridIdentityResult(
             fqdn="bad.example.com",
@@ -966,8 +966,8 @@ class TestDisplayFunctions:
         _display_hybrid_identity_result(result)
 
     def test_display_hybrid_identity_summary(self):
-        from offsec_ai.cli import _display_hybrid_identity_summary
-        from offsec_ai.core.hybrid_identity_checker import HybridIdentityResult
+        from offensive_ai.cli import _display_hybrid_identity_summary
+        from offensive_ai.core.hybrid_identity_checker import HybridIdentityResult
 
         results = [
             HybridIdentityResult(fqdn="a.com", has_hybrid_identity=True),
@@ -984,7 +984,7 @@ class TestOwaspDisplayFunctions:
     """Test OWASP scan result display helpers."""
 
     def _make_owasp_result(self, with_findings=False):
-        from offsec_ai.models.owasp_result import (
+        from offensive_ai.models.owasp_result import (
             OwaspScanResult, OwaspCategoryResult, OwaspFinding,
             ScanMode, SeverityLevel,
         )
@@ -1028,28 +1028,28 @@ class TestOwaspDisplayFunctions:
         )
 
     def test_display_owasp_results_no_findings(self):
-        from offsec_ai.cli import _display_owasp_results
+        from offensive_ai.cli import _display_owasp_results
         result = self._make_owasp_result(with_findings=False)
         _display_owasp_results([result], verbose=False)
 
     def test_display_owasp_results_with_findings_verbose(self):
-        from offsec_ai.cli import _display_owasp_results
+        from offensive_ai.cli import _display_owasp_results
         result = self._make_owasp_result(with_findings=True)
         _display_owasp_results([result], verbose=True)
 
     def test_display_owasp_results_with_judge(self):
-        from offsec_ai.cli import _display_owasp_results
+        from offensive_ai.cli import _display_owasp_results
         result = self._make_owasp_result(with_findings=True)
         _display_owasp_results([result], verbose=False, judge_provider="gemini")
 
     def test_display_category_summary(self):
-        from offsec_ai.cli import _display_category_summary
+        from offensive_ai.cli import _display_category_summary
         result = self._make_owasp_result(with_findings=True)
         _display_category_summary(result)
 
     def test_display_category_summary_untestable(self):
-        from offsec_ai.cli import _display_category_summary
-        from offsec_ai.models.owasp_result import (
+        from offensive_ai.cli import _display_category_summary
+        from offensive_ai.models.owasp_result import (
             OwaspScanResult, OwaspCategoryResult, ScanMode,
         )
         cat = OwaspCategoryResult(
@@ -1067,24 +1067,24 @@ class TestOwaspDisplayFunctions:
         _display_category_summary(result)
 
     def test_display_detailed_findings(self):
-        from offsec_ai.cli import _display_detailed_findings
+        from offensive_ai.cli import _display_detailed_findings
         result = self._make_owasp_result(with_findings=True)
         _display_detailed_findings(result)
 
     def test_display_detailed_findings_empty(self):
-        from offsec_ai.cli import _display_detailed_findings
+        from offensive_ai.cli import _display_detailed_findings
         result = self._make_owasp_result(with_findings=False)
         _display_detailed_findings(result)
 
     def test_get_grade_color(self):
-        from offsec_ai.cli import _get_grade_color
+        from offensive_ai.cli import _get_grade_color
         assert _get_grade_color("A") == "green"
         assert _get_grade_color("F") == "red"
         assert _get_grade_color("N/A") == "dim"
 
     def test_get_severity_color(self):
-        from offsec_ai.cli import _get_severity_color
-        from offsec_ai.models.owasp_result import SeverityLevel
+        from offensive_ai.cli import _get_severity_color
+        from offensive_ai.models.owasp_result import SeverityLevel
         assert "red" in _get_severity_color(SeverityLevel.CRITICAL)
         assert "cyan" in _get_severity_color(SeverityLevel.LOW)
 
@@ -1095,7 +1095,7 @@ class TestOwaspDisplayFunctions:
 
 class TestAiOwaspDisplayFunctions:
     def _make_llm_result(self, with_findings=False):
-        from offsec_ai.models.ai_owasp_result import (
+        from offensive_ai.models.ai_owasp_result import (
             LLMScanResult, LLMCategoryResult, LLMFinding, LLMSeverity, LLMScanMode,
         )
         findings = []
@@ -1128,7 +1128,7 @@ class TestAiOwaspDisplayFunctions:
         )
 
     def test_display_ai_owasp_result_no_findings(self):
-        from offsec_ai.cli import _display_ai_owasp_result
+        from offensive_ai.cli import _display_ai_owasp_result
         result = self._make_llm_result(with_findings=False)
         try:
             _display_ai_owasp_result(result)
@@ -1136,7 +1136,7 @@ class TestAiOwaspDisplayFunctions:
             pass  # Rich markup bug in production code — test that function is callable
 
     def test_display_ai_owasp_result_with_findings(self):
-        from offsec_ai.cli import _display_ai_owasp_result
+        from offensive_ai.cli import _display_ai_owasp_result
         result = self._make_llm_result(with_findings=True)
         try:
             _display_ai_owasp_result(result, judge_provider="anthropic")
@@ -1144,8 +1144,8 @@ class TestAiOwaspDisplayFunctions:
             pass  # Rich markup bug in production code
 
     def test_display_ai_owasp_result_untestable_cat(self):
-        from offsec_ai.cli import _display_ai_owasp_result
-        from offsec_ai.models.ai_owasp_result import (
+        from offensive_ai.cli import _display_ai_owasp_result
+        from offensive_ai.models.ai_owasp_result import (
             LLMScanResult, LLMCategoryResult, LLMScanMode,
         )
         cat = LLMCategoryResult(
@@ -1171,8 +1171,8 @@ class TestAiOwaspDisplayFunctions:
 
 class TestMcpDisplayFunctions:
     def test_display_mcp_scan_result_no_vulns(self):
-        from offsec_ai.cli import _display_mcp_scan_result
-        from offsec_ai.models.mcp_result import (
+        from offensive_ai.cli import _display_mcp_scan_result
+        from offensive_ai.models.mcp_result import (
             MCPScanResult, MCPAuthPosture, MCPServerInfo, MCPTransport,
         )
         result = MCPScanResult(target="http://localhost/mcp", transport=MCPTransport.HTTP)
@@ -1188,8 +1188,8 @@ class TestMcpDisplayFunctions:
         _display_mcp_scan_result(result)
 
     def test_display_mcp_scan_result_with_vulns(self):
-        from offsec_ai.cli import _display_mcp_scan_result
-        from offsec_ai.models.mcp_result import (
+        from offensive_ai.cli import _display_mcp_scan_result
+        from offensive_ai.models.mcp_result import (
             MCPScanResult, MCPAuthPosture, MCPServerInfo, MCPTransport,
             MCPTool, MCPVulnerability, MCPVulnSeverity,
         )
@@ -1206,7 +1206,7 @@ class TestMcpDisplayFunctions:
         ]
         result.vulnerabilities = [
             MCPVulnerability(
-                vuln_id="OFFSEC-MCP-AUTH-001",
+                vuln_id="OAI-MCP-AUTH-001",
                 severity=MCPVulnSeverity.CRITICAL,
                 title="Unauthenticated Access",
                 description="Anyone can access",
@@ -1219,8 +1219,8 @@ class TestMcpDisplayFunctions:
         _display_mcp_scan_result(result, judge_provider="gemini")
 
     def test_display_mcp_attack_report(self):
-        from offsec_ai.cli import _display_mcp_attack_report
-        from offsec_ai.models.mcp_result import MCPAttackReport, MCPTransport
+        from offensive_ai.cli import _display_mcp_attack_report
+        from offensive_ai.models.mcp_result import MCPAttackReport, MCPTransport
 
         report = MCPAttackReport(
             target="http://localhost/mcp",
@@ -1240,8 +1240,8 @@ class TestMcpDisplayFunctions:
 class TestDnsTraceDisplayFunction:
     @pytest.mark.asyncio
     async def test_display_detailed_dns_trace_with_cname_and_ips(self):
-        from offsec_ai.cli import _display_detailed_dns_trace
-        from offsec_ai.models.l7_result import L7Result
+        from offensive_ai.cli import _display_detailed_dns_trace
+        from offensive_ai.models.l7_result import L7Result
 
         result = L7Result(
             host="example.com",
@@ -1261,8 +1261,8 @@ class TestDnsTraceDisplayFunction:
 
     @pytest.mark.asyncio
     async def test_display_detailed_dns_trace_no_cname(self):
-        from offsec_ai.cli import _display_detailed_dns_trace
-        from offsec_ai.models.l7_result import L7Result
+        from offensive_ai.cli import _display_detailed_dns_trace
+        from offensive_ai.models.l7_result import L7Result
 
         result = L7Result(
             host="plain.com",
@@ -1324,52 +1324,52 @@ class TestCertDisplayFunctions:
         return m
 
     def test_display_certificate_analysis_valid(self):
-        from offsec_ai.cli import _display_certificate_analysis
+        from offensive_ai.cli import _display_certificate_analysis
         chain = self._make_cert_chain()
         _display_certificate_analysis(chain, "example.com", True, True, False)
 
     def test_display_certificate_analysis_invalid_hostname(self):
-        from offsec_ai.cli import _display_certificate_analysis
+        from offensive_ai.cli import _display_certificate_analysis
         chain = self._make_cert_chain()
         _display_certificate_analysis(chain, "bad.com", False, True, True)
 
     def test_display_certificate_analysis_with_missing_intermediates(self):
-        from offsec_ai.cli import _display_certificate_analysis
+        from offensive_ai.cli import _display_certificate_analysis
         chain = self._make_cert_chain(with_missing=True)
         _display_certificate_analysis(chain, "example.com", True, False, False)
 
     def test_display_certificate_analysis_no_root(self):
-        from offsec_ai.cli import _display_certificate_analysis
+        from offensive_ai.cli import _display_certificate_analysis
         chain = self._make_cert_chain(with_root=False)
         _display_certificate_analysis(chain, "example.com", True, False, False)
 
     def test_display_certificate_chain_analysis_valid(self):
-        from offsec_ai.cli import _display_certificate_chain_analysis
+        from offensive_ai.cli import _display_certificate_chain_analysis
         chain = self._make_cert_chain()
         _display_certificate_chain_analysis(chain, {}, verbose=False)
 
     def test_display_certificate_chain_analysis_verbose(self):
-        from offsec_ai.cli import _display_certificate_chain_analysis
+        from offensive_ai.cli import _display_certificate_chain_analysis
         chain = self._make_cert_chain()
         _display_certificate_chain_analysis(chain, {"status": "good"}, verbose=True)
 
     def test_display_certificate_chain_analysis_with_missing(self):
-        from offsec_ai.cli import _display_certificate_chain_analysis
+        from offensive_ai.cli import _display_certificate_chain_analysis
         chain = self._make_cert_chain(with_missing=True)
         _display_certificate_chain_analysis(chain, {}, verbose=False)
 
     def test_display_certificate_info_basic(self):
-        from offsec_ai.cli import _display_certificate_info
+        from offensive_ai.cli import _display_certificate_info
         chain = self._make_cert_chain()
         _display_certificate_info(chain, show_pem=False, verbose=False)
 
     def test_display_certificate_info_show_pem(self):
-        from offsec_ai.cli import _display_certificate_info
+        from offensive_ai.cli import _display_certificate_info
         chain = self._make_cert_chain()
         _display_certificate_info(chain, show_pem=True, verbose=True)
 
     def test_display_certificate_info_self_signed(self):
-        from offsec_ai.cli import _display_certificate_info
+        from offensive_ai.cli import _display_certificate_info
         chain = MagicMock()
         chain.server_cert = self._make_cert_info(is_self_signed=True)
         chain.intermediate_certs = []

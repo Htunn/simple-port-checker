@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.cert_analyzer import CertificateAnalyzer, CertificateInfo, CertificateChain
+from offensive_ai.core.cert_analyzer import CertificateAnalyzer, CertificateInfo, CertificateChain
 
 
 # ---------------------------------------------------------------------------

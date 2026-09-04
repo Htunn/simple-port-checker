@@ -14,14 +14,14 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.models.mtls_result import (
+from offensive_ai.models.mtls_result import (
     BatchMTLSResult,
     CertificateInfo,
     MTLSConfig,
     MTLSResult,
     MTLSTestProfile,
 )
-from offsec_ai.core.mtls_checker import MTLSChecker
+from offensive_ai.core.mtls_checker import MTLSChecker
 
 
 # ===========================================================================
@@ -286,11 +286,11 @@ class TestMTLSCheckerValidateTarget:
 # OwaspScanner tests (unit-level with mocked sub-checkers)
 # ===========================================================================
 
-from offsec_ai.core.owasp_scanner import OwaspScanner, SAFE_MODE_CATEGORIES, ALL_CATEGORIES
-from offsec_ai.models.owasp_result import (
+from offensive_ai.core.owasp_scanner import OwaspScanner, SAFE_MODE_CATEGORIES, ALL_CATEGORIES
+from offensive_ai.models.owasp_result import (
     OwaspScanResult, ScanMode, SeverityLevel, OwaspFinding, OwaspCategoryResult
 )
-from offsec_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis
+from offensive_ai.core.security_headers import HeaderAnalysisResult, HeaderAnalysis
 
 
 class TestOwaspScannerInit:
@@ -435,8 +435,8 @@ class TestOwaspScannerScan:
 # MCP Attacker extended paths
 # ===========================================================================
 
-from offsec_ai.core.mcp_attacker import MCPAttacker
-from offsec_ai.models.mcp_result import MCPAttackReport, MCPAttackResult, MCPVulnSeverity
+from offensive_ai.core.mcp_attacker import MCPAttacker
+from offensive_ai.models.mcp_result import MCPAttackReport, MCPAttackResult, MCPVulnSeverity
 
 
 @pytest.mark.asyncio
@@ -515,7 +515,7 @@ class TestExporterImports:
     def test_csv_exporter_importable(self):
         """OwaspCsvExporter can be imported."""
         try:
-            from offsec_ai.utils.exporters import OwaspCsvExporter
+            from offensive_ai.utils.exporters import OwaspCsvExporter
             exporter = OwaspCsvExporter()
             assert exporter is not None
         except ImportError:
@@ -524,7 +524,7 @@ class TestExporterImports:
     def test_json_exporter_importable(self):
         """OwaspJsonExporter can be imported."""
         try:
-            from offsec_ai.utils.exporters import OwaspJsonExporter
+            from offensive_ai.utils.exporters import OwaspJsonExporter
             exporter = OwaspJsonExporter()
             assert exporter is not None
         except ImportError:

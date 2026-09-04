@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID, ExtensionOID
 
-from offsec_ai.core.cert_analyzer import CertificateAnalyzer, CertificateInfo
+from offensive_ai.core.cert_analyzer import CertificateAnalyzer, CertificateInfo
 
 
 # ---------------------------------------------------------------------------
@@ -690,7 +690,7 @@ class TestCheckMissingIntermediatesExtended:
 class TestAnalyzeCertificateChainMocked:
     @pytest.mark.asyncio
     async def test_returns_certificate_chain_object(self):
-        from offsec_ai.core.cert_analyzer import CertificateChain
+        from offensive_ai.core.cert_analyzer import CertificateChain
         from unittest.mock import AsyncMock, patch
 
         analyzer = CertificateAnalyzer(timeout=2.0)

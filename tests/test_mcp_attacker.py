@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from offsec_ai.core.mcp_attacker import AuthorizationRequired, MCPAttacker
-from offsec_ai.models.mcp_result import MCPAttackReport, MCPTransport
+from offensive_ai.core.mcp_attacker import AuthorizationRequired, MCPAttacker
+from offensive_ai.models.mcp_result import MCPAttackReport, MCPTransport
 
 
 class TestMCPAttackerAuthGating:
@@ -27,7 +27,7 @@ class TestMCPAttackerAuthGating:
 
 class TestMCPAttackReport:
     def test_triggered_results_filtered(self):
-        from offsec_ai.models.mcp_result import MCPAttackResult, MCPVulnSeverity
+        from offensive_ai.models.mcp_result import MCPAttackResult, MCPVulnSeverity
         report = MCPAttackReport(target="http://test.local/mcp")
         report.results = [
             MCPAttackResult(

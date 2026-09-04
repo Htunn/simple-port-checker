@@ -5,13 +5,13 @@ from datetime import datetime
 
 def test_imports():
     """All mTLS modules import without error."""
-    from offsec_ai.models.mtls_result import BatchMTLSResult, CertificateInfo, MTLSResult  # noqa: F401
-    from offsec_ai.core.mtls_checker import MTLSChecker  # noqa: F401
+    from offensive_ai.models.mtls_result import BatchMTLSResult, CertificateInfo, MTLSResult  # noqa: F401
+    from offensive_ai.core.mtls_checker import MTLSChecker  # noqa: F401
 
 
 def test_certificate_info_model():
     """CertificateInfo model fields are created correctly."""
-    from offsec_ai.models.mtls_result import CertificateInfo
+    from offensive_ai.models.mtls_result import CertificateInfo
 
     cert = CertificateInfo(
         subject="CN=test.example.com",
@@ -37,7 +37,7 @@ def test_certificate_info_model():
 
 def test_mtls_result_model():
     """MTLSResult is created, fields are accessible, and serializes to JSON."""
-    from offsec_ai.models.mtls_result import CertificateInfo, MTLSResult
+    from offensive_ai.models.mtls_result import CertificateInfo, MTLSResult
 
     cert = CertificateInfo(
         subject="CN=test.example.com",
@@ -84,7 +84,7 @@ def test_cli_mtls_commands_exist():
     """mTLS CLI commands are registered and return help text."""
     from click.testing import CliRunner
 
-    from offsec_ai.cli import main
+    from offensive_ai.cli import main
 
     runner = CliRunner()
 

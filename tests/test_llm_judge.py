@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.llm_judge import LLMJudge
+from offensive_ai.core.llm_judge import LLMJudge
 
 
 # ---------------------------------------------------------------------------
@@ -22,7 +22,7 @@ class TestLLMJudgeInit:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("OFFSEC_LLM_BASE_URL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_BASE_URL", raising=False)
         judge = LLMJudge()
         assert judge.provider is None
 
@@ -44,7 +44,7 @@ class TestLLMJudgeInit:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.setenv("OPENAI_API_KEY", "fake-openai")
-        monkeypatch.delenv("OFFSEC_LLM_BASE_URL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_BASE_URL", raising=False)
         judge = LLMJudge()
         assert judge.provider == "openai"
 
@@ -52,7 +52,7 @@ class TestLLMJudgeInit:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.setenv("OFFSEC_LLM_BASE_URL", "http://localhost:1234")
+        monkeypatch.setenv("OFFENSIVE_AI_LLM_BASE_URL", "http://localhost:1234")
         judge = LLMJudge()
         assert judge.provider == "openai"
 
@@ -65,17 +65,17 @@ class TestLLMJudgeInit:
     def test_default_model_openai(self, monkeypatch):
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        monkeypatch.delenv("OFFSEC_LLM_MODEL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_MODEL", raising=False)
         judge = LLMJudge(provider="openai")
         assert "gpt" in judge.model or judge.model != ""
 
     def test_default_model_anthropic(self, monkeypatch):
-        monkeypatch.delenv("OFFSEC_LLM_MODEL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_MODEL", raising=False)
         judge = LLMJudge(provider="anthropic")
         assert "claude" in judge.model
 
     def test_default_model_gemini(self, monkeypatch):
-        monkeypatch.delenv("OFFSEC_LLM_MODEL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_MODEL", raising=False)
         judge = LLMJudge(provider="gemini")
         assert "gemini" in judge.model
 
@@ -83,13 +83,13 @@ class TestLLMJudgeInit:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("OFFSEC_LLM_BASE_URL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_BASE_URL", raising=False)
         judge = LLMJudge()
         # No provider → model should be empty
         assert judge.model == ""
 
     def test_custom_model_via_env(self, monkeypatch):
-        monkeypatch.setenv("OFFSEC_LLM_MODEL", "my-custom-model")
+        monkeypatch.setenv("OFFENSIVE_AI_LLM_MODEL", "my-custom-model")
         judge = LLMJudge(provider="openai")
         assert judge.model == "my-custom-model"
 
@@ -103,7 +103,7 @@ class TestLLMJudgeAvailability:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("OFFSEC_LLM_BASE_URL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_BASE_URL", raising=False)
         judge = LLMJudge()
         assert not judge.is_available()
 
@@ -126,7 +126,7 @@ class TestLLMJudgeEvaluateNoProvider:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("OFFSEC_LLM_BASE_URL", raising=False)
+        monkeypatch.delenv("OFFENSIVE_AI_LLM_BASE_URL", raising=False)
 
         judge = LLMJudge()
         result = judge.evaluate(

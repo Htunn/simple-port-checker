@@ -12,8 +12,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.mcp_scanner import MCPScanner
-from offsec_ai.models.mcp_result import (
+from offensive_ai.core.mcp_scanner import MCPScanner
+from offensive_ai.models.mcp_result import (
     MCPAuthPosture,
     MCPPrompt,
     MCPResource,
@@ -151,7 +151,7 @@ class TestMCPScannerAnalyzeSecurity:
         )
         vulns = scanner._analyze_security(result)
         vuln_ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-AUTH-001" in vuln_ids
+        assert "OAI-MCP-AUTH-001" in vuln_ids
 
     def test_dangerous_tool_keywords_create_vuln(self):
         scanner = self._make_scanner()
@@ -164,7 +164,7 @@ class TestMCPScannerAnalyzeSecurity:
         result = self._make_result(tools=[tool])
         vulns = scanner._analyze_security(result)
         vuln_ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-TI-001" in vuln_ids
+        assert "OAI-MCP-TI-001" in vuln_ids
 
     def test_clean_tool_no_vuln(self):
         scanner = self._make_scanner()
@@ -175,7 +175,7 @@ class TestMCPScannerAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = scanner._analyze_security(result)
-        ti_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-TI-001"]
+        ti_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-TI-001"]
         assert len(ti_vulns) == 0
 
     def test_path_traversal_in_resource_creates_vuln(self):
@@ -184,7 +184,7 @@ class TestMCPScannerAnalyzeSecurity:
         result = self._make_result(resources=[resource])
         vulns = scanner._analyze_security(result)
         vuln_ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-PT-001" in vuln_ids
+        assert "OAI-MCP-PT-001" in vuln_ids
 
     def test_absolute_path_resource_creates_vuln(self):
         scanner = self._make_scanner()
@@ -192,14 +192,14 @@ class TestMCPScannerAnalyzeSecurity:
         result = self._make_result(resources=[resource])
         vulns = scanner._analyze_security(result)
         vuln_ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-PT-001" in vuln_ids
+        assert "OAI-MCP-PT-001" in vuln_ids
 
     def test_safe_resource_no_vuln(self):
         scanner = self._make_scanner()
         resource = MCPResource(uri="s3://bucket/data", name="data")
         result = self._make_result(resources=[resource])
         vulns = scanner._analyze_security(result)
-        pt_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-PT-001"]
+        pt_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-PT-001"]
         assert len(pt_vulns) == 0
 
     def test_shell_tool_creates_critical_vuln(self):
@@ -211,7 +211,7 @@ class TestMCPScannerAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = scanner._analyze_security(result)
-        scope_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-SCOPE-001"]
+        scope_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-SCOPE-001"]
         assert len(scope_vulns) > 0
         assert scope_vulns[0].severity == MCPVulnSeverity.CRITICAL
 
@@ -224,7 +224,7 @@ class TestMCPScannerAnalyzeSecurity:
         )
         result = self._make_result(tools=[tool])
         vulns = scanner._analyze_security(result)
-        sec_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-MCP-SEC-001"]
+        sec_vulns = [v for v in vulns if v.vuln_id == "OAI-MCP-SEC-001"]
         assert len(sec_vulns) > 0
 
 
@@ -310,7 +310,7 @@ class TestMCPScannerHTTP:
             respx.post(TARGET).mock(side_effect=factory)
             result = await scanner.scan()
 
-        pt_vulns = [v for v in result.vulnerabilities if v.vuln_id == "OFFSEC-MCP-PT-001"]
+        pt_vulns = [v for v in result.vulnerabilities if v.vuln_id == "OAI-MCP-PT-001"]
         assert len(pt_vulns) > 0
 
     async def test_scan_parses_prompts(self):
@@ -372,7 +372,7 @@ class TestMCPScannerHTTP:
 # LLM Judge tests
 # ---------------------------------------------------------------------------
 
-from offsec_ai.core.llm_judge import LLMJudge
+from offensive_ai.core.llm_judge import LLMJudge
 
 
 class TestLLMJudgeNoop:
@@ -474,7 +474,7 @@ class TestLLMJudgeDefaultModels:
     def test_model_env_override(self):
         with patch.dict(os.environ, {
             "OPENAI_API_KEY": "sk-test",
-            "OFFSEC_LLM_MODEL": "gpt-4-turbo",
+            "OFFENSIVE_AI_LLM_MODEL": "gpt-4-turbo",
         }, clear=True):
             judge = LLMJudge()
             assert judge.model == "gpt-4-turbo"

@@ -177,4 +177,4 @@ docker-compose.override.yml
 config.yaml
 config.yml
 .port-checker.yaml
-offsec-ai-docs/
+offensive-ai-docs/

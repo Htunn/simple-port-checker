@@ -8,9 +8,9 @@ programmatically in your Python applications.
 import asyncio
 from pathlib import Path
 
-from offsec_ai import OwaspScanner
-from offsec_ai.models.owasp_result import SeverityLevel
-from offsec_ai.utils.exporters import (
+from offensive_ai import OwaspScanner
+from offensive_ai.models.owasp_result import SeverityLevel
+from offensive_ai.utils.exporters import (
     OwaspPdfExporter,
     export_to_csv,
     export_to_json,
@@ -193,7 +193,7 @@ async def remediation_example():
     """Access remediation information."""
     print("\n=== Remediation Information ===\n")
     
-    from offsec_ai.utils.owasp_remediation import get_remediation
+    from offensive_ai.utils.owasp_remediation import get_remediation
     
     scanner = OwaspScanner(mode="safe")
     result = await scanner.scan("https://example.com")

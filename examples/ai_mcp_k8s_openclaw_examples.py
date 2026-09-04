@@ -1,7 +1,7 @@
 """
 Examples: AI/LLM OWASP, MCP, Kubernetes, and OpenClaw scanning and attacks.
 
-These examples demonstrate the core security assessment capabilities of offsec-ai
+These examples demonstrate the core security assessment capabilities of offensive-ai
 for AI/LLM endpoints, MCP servers, Kubernetes clusters, and OpenClaw gateways.
 
 WARNING: Attack examples (MCPAttacker, K8sAttacker, OpenClawAttacker) require
@@ -31,7 +31,7 @@ async def llm_owasp_safe_scan():
     Safe mode tests LLM02 (Insecure Output Handling), LLM07 (System Prompt
     Leakage), and LLM09 (Misinformation) — low-risk probes only.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
 
     scanner = LLMOwaspScanner(
         endpoint="https://api.example.com/v1/chat/completions",
@@ -64,7 +64,7 @@ async def llm_owasp_deep_scan():
     Deep mode adds: LLM01 (Prompt Injection), LLM05 (Insecure Plugin Design),
     LLM06 (Excessive Agency), LLM10 (Unbounded Consumption).
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
 
     scanner = LLMOwaspScanner(
         endpoint="https://api.example.com/v1/chat/completions",
@@ -91,8 +91,8 @@ async def llm_owasp_with_llm_judge():
     The judge evaluates ambiguous findings and can promote LOW → MEDIUM
     when confidence > 0.7.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env()
     if not judge.is_available():
@@ -124,7 +124,7 @@ async def llm_owasp_batch_scan():
 
     Useful for scanning multiple model deployments or API gateways at once.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
 
     endpoints = [
         "https://api.example.com/v1/chat/completions",
@@ -154,7 +154,7 @@ async def llm_owasp_custom_categories():
     Scan only specific OWASP LLM categories — e.g. focus on prompt injection
     and excessive agency for a production deployment review.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
 
     scanner = LLMOwaspScanner(
         endpoint="https://api.example.com/v1/chat/completions",
@@ -176,7 +176,7 @@ async def llm_owasp_export_json():
     """
     Run a scan and export the full result as JSON for pipeline integration.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
 
     scanner = LLMOwaspScanner(
         endpoint="https://api.example.com/v1/chat/completions",
@@ -203,7 +203,7 @@ async def mcp_basic_scan():
     Enumerates tools, resources, and prompts; checks authentication posture;
     and matches findings against known CVEs and misconfigurations.
     """
-    from offsec_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.mcp_scanner import MCPScanner
 
     scanner = MCPScanner(
         target="http://localhost:6277/mcp",
@@ -237,7 +237,7 @@ async def mcp_scan_with_auth():
     """
     Scan an authenticated MCP server (bearer token or API key).
     """
-    from offsec_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.mcp_scanner import MCPScanner
 
     scanner = MCPScanner(
         target="https://mcp.example.com/mcp",
@@ -258,8 +258,8 @@ async def mcp_scan_with_judge():
     """
     MCP scan with LLM judge for AI-assisted vulnerability triage.
     """
-    from offsec_ai.core.mcp_scanner import MCPScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env()
     if not judge.is_available():
@@ -286,7 +286,7 @@ async def mcp_scan_stdio():
 
     The `cmd` argument is the command used to launch the server process.
     """
-    from offsec_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.mcp_scanner import MCPScanner
 
     scanner = MCPScanner(
         target="stdio://localhost",
@@ -308,7 +308,7 @@ async def mcp_attack_authorized():
     Tests: auth bypass, path traversal, tool injection, command injection,
     prompt injection.
     """
-    from offsec_ai.core.mcp_attacker import MCPAttacker
+    from offensive_ai.core.mcp_attacker import MCPAttacker
 
     # authorized=True asserts you have explicit written authorization
     attacker = MCPAttacker(authorized=True)
@@ -343,8 +343,8 @@ async def mcp_scan_then_attack():
     The scan result provides tool/resource context to the attacker for
     more focused attack payload selection.
     """
-    from offsec_ai.core.mcp_scanner import MCPScanner
-    from offsec_ai.core.mcp_attacker import MCPAttacker
+    from offensive_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.mcp_attacker import MCPAttacker
 
     target = "http://localhost:6277/mcp"
 
@@ -378,7 +378,7 @@ async def k8s_basic_scan():
     Probes all default K8s ports: API server (6443/8080), kubelet (10250/10255),
     etcd (2379), scheduler (10259), controller-manager (10257), dashboard (8443).
     """
-    from offsec_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.k8s_scanner import K8sScanner
 
     scanner = K8sScanner("192.168.1.100")
     result = await scanner.scan()
@@ -404,7 +404,7 @@ async def k8s_custom_ports_scan():
     """
     Scan a Kubernetes cluster with custom port ranges (e.g. non-standard setup).
     """
-    from offsec_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.k8s_scanner import K8sScanner
 
     scanner = K8sScanner(
         target="k8s.internal.example.com",
@@ -421,8 +421,8 @@ async def k8s_scan_with_judge():
     """
     Kubernetes scan with LLM judge for AI-assisted triage and remediation.
     """
-    from offsec_ai.core.k8s_scanner import K8sScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env()
     if not judge.is_available():
@@ -452,7 +452,7 @@ async def k8s_attack_authorized():
 
     Requires explicit written authorization from the cluster owner.
     """
-    from offsec_ai.core.k8s_attacker import K8sAttacker
+    from offensive_ai.core.k8s_attacker import K8sAttacker
 
     attacker = K8sAttacker(authorized=True)
 
@@ -479,8 +479,8 @@ async def k8s_scan_then_attack():
     """
     Reconnaissance scan followed by a targeted Kubernetes attack.
     """
-    from offsec_ai.core.k8s_scanner import K8sScanner
-    from offsec_ai.core.k8s_attacker import K8sAttacker
+    from offensive_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.k8s_attacker import K8sAttacker
 
     target = "192.168.1.100"
 
@@ -498,7 +498,7 @@ async def k8s_batch_scan():
     """
     Scan multiple Kubernetes nodes or clusters in parallel.
     """
-    from offsec_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.k8s_scanner import K8sScanner
 
     targets = [
         "192.168.1.100",
@@ -532,7 +532,7 @@ async def openclaw_basic_scan():
     Fingerprints the instance, enumerates accessible API endpoints, checks
     DM (Direct Message) policy, sandbox mode, and authentication posture.
     """
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
 
     scanner = OpenClawScanner(
         target="192.168.1.50",
@@ -564,7 +564,7 @@ async def openclaw_tls_scan():
     """
     Scan an OpenClaw gateway running HTTPS.
     """
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
 
     scanner = OpenClawScanner(
         target="openclaw.example.com",
@@ -582,7 +582,7 @@ async def openclaw_authenticated_scan():
     """
     Scan an OpenClaw gateway that requires an API token.
     """
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
 
     scanner = OpenClawScanner(
         target="openclaw.example.com",
@@ -600,8 +600,8 @@ async def openclaw_scan_with_judge():
     """
     OpenClaw scan with LLM judge triage.
     """
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env()
     if not judge.is_available():
@@ -628,7 +628,7 @@ async def openclaw_attack_authorized():
 
     Requires explicit written authorization from the system owner.
     """
-    from offsec_ai.core.openclaw_attacker import OpenClawAttacker
+    from offensive_ai.core.openclaw_attacker import OpenClawAttacker
 
     attacker = OpenClawAttacker(authorized=True)
 
@@ -656,8 +656,8 @@ async def openclaw_scan_then_attack():
     """
     Reconnaissance scan followed by a targeted OpenClaw attack.
     """
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
-    from offsec_ai.core.openclaw_attacker import OpenClawAttacker
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.openclaw_attacker import OpenClawAttacker
 
     target = "192.168.1.50"
     port = 18789
@@ -689,11 +689,11 @@ async def full_ai_infrastructure_assessment():
 
     Designed for teams running a full AI stack in a test environment.
     """
-    from offsec_ai.core.ai_owasp_scanner import LLMOwaspScanner
-    from offsec_ai.core.mcp_scanner import MCPScanner
-    from offsec_ai.core.k8s_scanner import K8sScanner
-    from offsec_ai.core.openclaw_scanner import OpenClawScanner
-    from offsec_ai.core.llm_judge import LLMJudge
+    from offensive_ai.core.ai_owasp_scanner import LLMOwaspScanner
+    from offensive_ai.core.mcp_scanner import MCPScanner
+    from offensive_ai.core.k8s_scanner import K8sScanner
+    from offensive_ai.core.openclaw_scanner import OpenClawScanner
+    from offensive_ai.core.llm_judge import LLMJudge
 
     judge = LLMJudge.from_env() if LLMJudge.from_env().is_available() else None
     judge_label = judge.provider if judge else "disabled"
@@ -742,7 +742,7 @@ async def full_ai_infrastructure_assessment():
 
 
 async def main():
-    print("offsec-ai: AI / MCP / Kubernetes / OpenClaw Examples")
+    print("offensive-ai: AI / MCP / Kubernetes / OpenClaw Examples")
     print("=" * 60)
     print()
     print("These examples require real target endpoints.")

@@ -1,6 +1,6 @@
-# Contributing to offsec-ai
+# Contributing to offensive-ai
 
-Thank you for your interest in contributing to offsec-ai! This guide will help you get started.
+Thank you for your interest in contributing to offensive-ai! This guide will help you get started.
 
 ## Code of Conduct
 
@@ -12,8 +12,8 @@ This project adheres to a code of conduct. By participating, you are expected to
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/Htunn/offsec-ai.git
-   cd offsec-ai
+   git clone https://github.com/Htunn/offensive-ai.git
+   cd offensive-ai
    ```
 
 2. **Set up development environment**
@@ -33,7 +33,7 @@ This project adheres to a code of conduct. By participating, you are expected to
 4. **Verify setup**
    ```bash
    make test
-   offsec-ai --help
+   offensive-ai --help
    ```
 
 ### Development Workflow
@@ -97,7 +97,7 @@ async def scan_port(host: str, port: int, timeout: float = 3.0) -> PortResult:
 ### Code Organization
 
 ```
-src/offsec_ai/
+src/offensive_ai/
 ├── __init__.py           # Package exports
 ├── core/                 # Core functionality
 │   ├── port_scanner.py   # Port scanning logic
@@ -327,4 +327,4 @@ Contributors will be recognized in:
 - **Release notes** for significant contributions
 - **GitHub contributors** page
 
-Thank you for contributing to offsec-ai! 🎉
+Thank you for contributing to offensive-ai! 🎉

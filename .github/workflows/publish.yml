@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/offsec-ai
+      url: https://pypi.org/p/offensive-ai
 
     steps:
       - name: Download build artifacts
@@ -75,73 +75,73 @@ jobs:
       - name: Install latest version from PyPI
         run: |
           pip install --upgrade pip
-          pip install offsec-ai --upgrade --no-cache-dir
+          pip install offensive-ai --upgrade --no-cache-dir
           echo "Installed package version:"
-          pip show offsec-ai
+          pip show offensive-ai
 
       - name: Validate CLI entry point and help
         run: |
-          offsec-ai --version
-          offsec-ai --help
+          offensive-ai --version
+          offensive-ai --help
           # Verify all key command groups are present
-          offsec-ai --help | grep -E "(scan|l7-check|cert-check|mtls-check|owasp-scan|ai-owasp-scan|mcp-scan|mcp-attack|full-scan)"
+          offensive-ai --help | grep -E "(scan|l7-check|cert-check|mtls-check|owasp-scan|ai-owasp-scan|mcp-scan|mcp-attack|full-scan)"
 
       - name: Test basic port scan
         run: |
           echo "Testing basic port scan..."
-          offsec-ai scan google.com --ports 443 --timeout 5
+          offensive-ai scan google.com --ports 443 --timeout 5
 
       - name: Test L7 protection detection
         run: |
           echo "Testing L7 protection detection..."
-          offsec-ai l7-check google.com --timeout 5
+          offensive-ai l7-check google.com --timeout 5
 
       - name: Test certificate analysis
         run: |
           echo "Testing SSL/TLS certificate analysis..."
-          offsec-ai cert-check google.com --timeout 10
-          offsec-ai cert-chain github.com --timeout 10
+          offensive-ai cert-check google.com --timeout 10
+          offensive-ai cert-chain github.com --timeout 10
 
       - name: Test full scan
         run: |
           echo "Testing full scan..."
-          offsec-ai full-scan google.com --ports 443 --timeout 10
+          offensive-ai full-scan google.com --ports 443 --timeout 10
 
       - name: Test mTLS check
         run: |
           echo "Testing mTLS check..."
-          offsec-ai mtls-check google.com --timeout 10 || true
+          offensive-ai mtls-check google.com --timeout 10 || true
 
       - name: Test DNS trace
         run: |
           echo "Testing DNS trace..."
-          offsec-ai dns-trace google.com --timeout 10
+          offensive-ai dns-trace google.com --timeout 10
 
       - name: Test MCP scan (passive, no auth)
         run: |
           echo "Testing MCP scan against public endpoint..."
-          offsec-ai mcp-scan https://mcp.simpleportchecker.com/mcp --timeout 30 || true
+          offensive-ai mcp-scan https://mcp.simpleportchecker.com/mcp --timeout 30 || true
 
       - name: Test OWASP web scan
         run: |
           echo "Testing OWASP web scan (safe mode)..."
-          offsec-ai owasp-scan google.com --timeout 15
+          offensive-ai owasp-scan google.com --timeout 15
           echo "✅ All certificate analysis commands are available"
 
       - name: Test OWASP vulnerability scanner (NEW)
         run: |
           echo "Testing OWASP Top 10 2021 vulnerability scanner..."
-          python -m offsec_ai owasp-scan example.com --timeout 10 --quiet
+          python -m offensive_ai owasp-scan example.com --timeout 10 --quiet
 
       - name: Test OWASP scan with categories
         run: |
           echo "Testing OWASP scan with specific categories..."
-          python -m offsec_ai owasp-scan google.com -c A02,A05 --timeout 10
+          python -m offensive_ai owasp-scan google.com -c A02,A05 --timeout 10
 
       - name: Test OWASP JSON export
         run: |
           echo "Testing OWASP JSON export..."
-          python -m offsec_ai owasp-scan example.com -f json -o /tmp/owasp-test.json --timeout 10
+          python -m offensive_ai owasp-scan example.com -f json -o /tmp/owasp-test.json --timeout 10
           if [ -f /tmp/owasp-test.json ]; then
             echo "✅ JSON export successful"
             cat /tmp/owasp-test.json | python -m json.tool > /dev/null
@@ -151,7 +151,7 @@ jobs:
       - name: Test OWASP CSV export
         run: |
           echo "Testing OWASP CSV export..."
-          python -m offsec_ai owasp-scan example.com -f csv -o /tmp/owasp-test.csv --timeout 10
+          python -m offensive_ai owasp-scan example.com -f csv -o /tmp/owasp-test.csv --timeout 10
           if [ -f /tmp/owasp-test.csv ]; then
             echo "✅ CSV export successful"
             head -n 5 /tmp/owasp-test.csv
@@ -160,21 +160,21 @@ jobs:
       - name: Validate OWASP command exists
         run: |
           echo "Validating OWASP scan command is available..."
-          python -m offsec_ai --help | grep "owasp-scan"
+          python -m offensive_ai --help | grep "owasp-scan"
           echo "✅ OWASP vulnerability scanner is available"
 
       - name: Test OWASP 2025 categories (NEW)
         run: |
           echo "Testing OWASP Top 10 2025 categories..."
-          python -m offsec_ai owasp-scan example.com -c A03_2025,A10_2025 --timeout 10 --quiet
+          python -m offensive_ai owasp-scan example.com -c A03_2025,A10_2025 --timeout 10 --quiet
 
       - name: Test mixed OWASP 2021/2025 scan
         run: |
           echo "Testing mixed OWASP 2021 and 2025 categories..."
-          python -m offsec_ai owasp-scan example.com -c A02,A05,A03_2025,A10_2025 --timeout 10
+          python -m offensive_ai owasp-scan example.com -c A02,A05,A03_2025,A10_2025 --timeout 10
 
       - name: Validate OWASP 2025 help text
         run: |
           echo "Validating OWASP 2025 support in help..."
-          python -m offsec_ai owasp-scan --help | grep "2025"
+          python -m offensive_ai owasp-scan --help | grep "2025"
           echo "✅ OWASP Top 10 2025 support verified"

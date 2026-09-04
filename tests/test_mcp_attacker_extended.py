@@ -9,9 +9,9 @@ import httpx
 import respx
 from unittest.mock import MagicMock
 
-from offsec_ai.core.mcp_attacker import MCPAttacker
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.models.mcp_result import (
+from offensive_ai.core.mcp_attacker import MCPAttacker
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.models.mcp_result import (
     MCPAttackReport,
     MCPAttackResult,
     MCPScanResult,
@@ -203,7 +203,7 @@ class TestMCPToolInjection:
             results = await attacker._attack_tool_injection(target, {}, 5.0, scan_result)
 
         # Only first 3 tools should be attacked (2 payloads each = max 6)
-        from offsec_ai.utils.mcp_payloads import TOOL_INJECTION_PAYLOADS
+        from offensive_ai.utils.mcp_payloads import TOOL_INJECTION_PAYLOADS
         assert len(results) <= 3 * len(TOOL_INJECTION_PAYLOADS)
 
 
@@ -374,8 +374,8 @@ class TestMcpAttackerTriggeredPaths:
     @respx.mock
     async def test_path_traversal_triggered_by_signal_in_response(self):
         """Lines 270-273: triggered=True when signal appears in response."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker
-        from offsec_ai.models.mcp_result import MCPScanResult, MCPTransport
+        from offensive_ai.core.mcp_attacker import MCPAttacker
+        from offensive_ai.models.mcp_result import MCPScanResult, MCPTransport
 
         attacker = MCPAttacker(authorized=True)
         target = "http://localhost:5001/mcp"
@@ -395,7 +395,7 @@ class TestMcpAttackerTriggeredPaths:
     @respx.mock
     async def test_path_traversal_exception_caught(self):
         """Exception path in _attack_path_traversal."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker
+        from offensive_ai.core.mcp_attacker import MCPAttacker
 
         attacker = MCPAttacker(authorized=True)
         target = "http://localhost:5002/mcp"
@@ -411,8 +411,8 @@ class TestMcpAttackerTriggeredPaths:
     @respx.mock
     async def test_tool_injection_triggered_by_signal(self):
         """Lines 397-398: triggered=True when signal in command injection response."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker
-        from offsec_ai.models.mcp_result import MCPScanResult, MCPTransport, MCPTool
+        from offensive_ai.core.mcp_attacker import MCPAttacker
+        from offensive_ai.models.mcp_result import MCPScanResult, MCPTransport, MCPTool
 
         attacker = MCPAttacker(authorized=True)
         target = "http://localhost:5003/mcp"
@@ -436,8 +436,8 @@ class TestMcpAttackerTriggeredPaths:
     @respx.mock
     async def test_tool_injection_exception_caught(self):
         """Exception path in _attack_tool_injection."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker
-        from offsec_ai.models.mcp_result import MCPScanResult, MCPTransport, MCPTool
+        from offensive_ai.core.mcp_attacker import MCPAttacker
+        from offensive_ai.models.mcp_result import MCPScanResult, MCPTransport, MCPTool
 
         attacker = MCPAttacker(authorized=True)
         target = "http://localhost:5004/mcp"
@@ -466,7 +466,7 @@ class TestMcpAttackerLLMEnrichment:
     @respx.mock
     async def test_attack_with_judge_calls_enrich_with_llm(self):
         """Lines 92, 153: authorized attack with judge calls _enrich_with_llm."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker
+        from offensive_ai.core.mcp_attacker import MCPAttacker
         from unittest.mock import MagicMock
 
         mock_judge = MagicMock()
@@ -497,7 +497,7 @@ class TestMcpAttackerLLMEnrichment:
 
     def test_enrich_with_llm_adds_analysis_to_evidence(self):
         """Lines 174-175: LLM reason appended to triggered result evidence."""
-        from offsec_ai.core.mcp_attacker import MCPAttacker, MCPAttackReport, MCPAttackResult, MCPVulnSeverity
+        from offensive_ai.core.mcp_attacker import MCPAttacker, MCPAttackReport, MCPAttackResult, MCPVulnSeverity
         from unittest.mock import MagicMock
 
         mock_judge = MagicMock()

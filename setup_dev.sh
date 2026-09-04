@@ -1,9 +1,9 @@
 #!/bin/bash
-# offsec-ai Development Setup Script
+# offensive-ai Development Setup Script
 
 set -e
 
-echo "Setting up offsec-ai development environment..."
+echo "Setting up offensive-ai development environment..."
 
 # Check Python version
 python_version=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
@@ -53,5 +53,5 @@ echo ""
 echo "To get started:"
 echo "  1. Activate the virtual environment: source .venv/bin/activate"
 echo "  2. Run tests: pytest"
-echo "  3. Run the CLI: offsec-ai --help"
+echo "  3. Run the CLI: offensive-ai --help"
 echo "  4. Check code style: pre-commit run --all-files"

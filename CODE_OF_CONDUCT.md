@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement by opening a
-[GitHub issue](https://github.com/Htunn/offsec-ai/issues) or contacting the
+[GitHub issue](https://github.com/Htunn/offensive-ai/issues) or contacting the
 maintainers directly via GitHub.
 
 All complaints will be reviewed and investigated promptly and fairly.

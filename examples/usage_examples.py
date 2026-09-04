@@ -1,8 +1,8 @@
 """Example usage of the Simple Port Checker library."""
 
 import asyncio
-from offsec_ai import PortChecker, L7Detector
-from offsec_ai.core.port_scanner import ScanConfig
+from offensive_ai import PortChecker, L7Detector
+from offensive_ai.core.port_scanner import ScanConfig
 
 
 async def basic_port_scan():

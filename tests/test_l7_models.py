@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from offsec_ai.models.l7_result import (
+from offensive_ai.models.l7_result import (
     BatchL7Result,
     L7Detection,
     L7Protection,

@@ -9,13 +9,13 @@ import pytest
 import httpx
 import respx
 
-from offsec_ai.core.llm_conversation_attacker import (
+from offensive_ai.core.llm_conversation_attacker import (
     LLMConversationAttacker,
     MultiTurnAttackReport,
     MultiTurnAttackResult,
 )
-from offsec_ai.core.auth_attacker import AuthAttacker
-from offsec_ai.models.auth_result import AuthAttackReport, AuthVulnSeverity
+from offensive_ai.core.auth_attacker import AuthAttacker
+from offensive_ai.models.auth_result import AuthAttackReport, AuthVulnSeverity
 
 
 # ---------------------------------------------------------------------------
@@ -260,7 +260,7 @@ class TestAuthAttackerSubMethods:
             respx.get(url__startswith=target).mock(
                 return_value=httpx.Response(
                     302,
-                    headers={"Location": "https://offsec-probe.invalid/callback"},
+                    headers={"Location": "https://offensive-ai-probe.invalid/callback"},
                 )
             )
             respx.post(url__startswith=target).mock(
@@ -296,7 +296,7 @@ class TestAuthAttackReportProps:
         assert report.triggered_results == []
 
     def test_triggered_results_filters(self):
-        from offsec_ai.models.auth_result import AuthAttackResult
+        from offensive_ai.models.auth_result import AuthAttackResult
         report = AuthAttackReport(target="http://example.com")
         report.results = [
             AuthAttackResult(
@@ -320,7 +320,7 @@ class TestAuthAttackReportProps:
         assert report.triggered_results[0].attack_id == "A1"
 
     def test_protocol_stored(self):
-        from offsec_ai.models.auth_result import AuthProtocol
+        from offensive_ai.models.auth_result import AuthProtocol
         report = AuthAttackReport(
             target="http://example.com",
             protocol=AuthProtocol.OAUTH2,
@@ -337,7 +337,7 @@ class TestLLMConversationAttackerAdditional:
     @respx.mock
     async def test_llm_send_message_http_status_error(self):
         """Line 199: HTTPStatusError in _send_message returns error string."""
-        from offsec_ai.core.llm_conversation_attacker import LLMConversationAttacker
+        from offensive_ai.core.llm_conversation_attacker import LLMConversationAttacker
         attacker = LLMConversationAttacker(authorized=True, timeout=5.0)
 
         # Use crescendo — a valid pattern that calls _send_message
@@ -358,7 +358,7 @@ class TestLLMConversationAttackerAdditional:
     @respx.mock
     async def test_attack_unknown_pattern_sets_error(self):
         """Lines 396-397: unknown pattern returns error."""
-        from offsec_ai.core.llm_conversation_attacker import LLMConversationAttacker
+        from offensive_ai.core.llm_conversation_attacker import LLMConversationAttacker
         attacker = LLMConversationAttacker(authorized=True, timeout=5.0)
 
         respx.post("http://llm.example.com/v1/chat/completions").mock(
@@ -382,8 +382,8 @@ class TestLLMConversationAttackerAdditional:
     @respx.mock
     async def test_attack_exception_during_conversation_captured(self):
         """Lines 421-422: exception in _run_pattern try block is captured."""
-        from offsec_ai.core.llm_conversation_attacker import LLMConversationAttacker
-        import offsec_ai.core.llm_conversation_attacker as llm_mod
+        from offensive_ai.core.llm_conversation_attacker import LLMConversationAttacker
+        import offensive_ai.core.llm_conversation_attacker as llm_mod
         attacker = LLMConversationAttacker(authorized=True, timeout=5.0)
 
         respx.post("http://llm.example.com/v1/chat/completions").mock(
@@ -409,8 +409,8 @@ class TestLLMConversationAttackerAdditional:
     @respx.mock
     async def test_attack_gather_exception_result(self):
         """Line 290: isinstance(res, Exception) branch in asyncio.gather."""
-        from offsec_ai.core.llm_conversation_attacker import LLMConversationAttacker
-        import offsec_ai.core.llm_conversation_attacker as llm_mod
+        from offensive_ai.core.llm_conversation_attacker import LLMConversationAttacker
+        import offensive_ai.core.llm_conversation_attacker as llm_mod
         attacker = LLMConversationAttacker(authorized=True, timeout=5.0)
 
         respx.post("http://llm.example.com/v1/chat/completions").mock(

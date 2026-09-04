@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.l7_detector import L7Detector
-from offsec_ai.models.l7_result import L7Detection, L7Protection, L7Result
+from offensive_ai.core.l7_detector import L7Detector
+from offensive_ai.models.l7_result import L7Detection, L7Protection, L7Result
 
 
 # ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ class TestL7DetectorInit:
     def test_default_init(self):
         detector = L7Detector()
         assert detector.timeout == 10.0
-        assert "offsec-ai" in detector.user_agent.lower()
+        assert "offensive-ai" in detector.user_agent.lower()
 
     def test_custom_timeout(self):
         detector = L7Detector(timeout=30.0)

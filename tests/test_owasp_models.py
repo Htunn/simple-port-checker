@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from offsec_ai.models.owasp_result import (
+from offensive_ai.models.owasp_result import (
     BatchOwaspResult,
     OwaspCategoryResult,
     OwaspFinding,

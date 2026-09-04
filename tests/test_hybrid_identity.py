@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from offsec_ai.core.hybrid_identity_checker import HybridIdentityChecker, HybridIdentityResult
+from offensive_ai.core.hybrid_identity_checker import HybridIdentityChecker, HybridIdentityResult
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ class TestHybridIdentityCheckerInit:
 
     def test_user_agent_set(self):
         checker = HybridIdentityChecker()
-        assert "offsec-ai" in checker.user_agent
+        assert "offensive-ai" in checker.user_agent
 
 
 # ---------------------------------------------------------------------------

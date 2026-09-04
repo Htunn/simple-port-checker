@@ -37,7 +37,7 @@ test:
 	pytest tests/ -v
 
 test-cov:
-	pytest tests/ -v --cov=src/offsec_ai --cov-report=html --cov-report=term --cov-fail-under=60
+	pytest tests/ -v --cov=src/offensive_ai --cov-report=html --cov-report=term --cov-fail-under=60
 
 lint:
 	flake8 src/ tests/ examples/
@@ -94,26 +94,26 @@ example:
 
 # CLI help
 cli-help:
-	offsec-ai --help
+	offensive-ai --help
 
 # Docker commands
 # Docker commands
 docker-build:  ## Build Docker image
-	docker build -t offsec-ai:latest .
+	docker build -t offensive-ai:latest .
 
 docker-build-no-cache:  ## Build Docker image without cache
-	docker build --no-cache -t offsec-ai:latest .
+	docker build --no-cache -t offensive-ai:latest .
 
 docker-run:  ## Run Docker container with help
-	docker run --rm offsec-ai:latest --help
+	docker run --rm offensive-ai:latest --help
 
 docker-test:  ## Test Docker container
-	docker run --rm offsec-ai:latest --help
-	docker run --rm offsec-ai:latest --version
+	docker run --rm offensive-ai:latest --help
+	docker run --rm offensive-ai:latest --version
 
 docker-scan:  ## Run vulnerability scan on Docker image
 	@command -v trivy >/dev/null 2>&1 || { echo "trivy is required for security scanning. Install from https://trivy.dev/"; exit 1; }
-	trivy image offsec-ai:latest
+	trivy image offensive-ai:latest
 
 docker-clean:  ## Clean Docker artifacts
 	docker system prune -f
@@ -121,7 +121,7 @@ docker-clean:  ## Clean Docker artifacts
 
 # Docker multi-arch build (requires buildx)
 docker-build-multi:  ## Build multi-architecture image
-	docker buildx build --platform linux/amd64,linux/arm64 -t offsec-ai:latest .
+	docker buildx build --platform linux/amd64,linux/arm64 -t offensive-ai:latest .
 
 # Docker push to Docker Hub
 # Usage: make docker-push DOCKER_USERNAME=youruser
@@ -129,9 +129,9 @@ DOCKER_USERNAME ?= htunnthuthu
 DOCKER_VERSION := $(shell python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
 
 docker-push: docker-build  ## Build and push image to Docker Hub
-	docker tag offsec-ai:latest $(DOCKER_USERNAME)/offsec-ai:$(DOCKER_VERSION)
-	docker tag offsec-ai:latest $(DOCKER_USERNAME)/offsec-ai:latest
-	docker push $(DOCKER_USERNAME)/offsec-ai:$(DOCKER_VERSION)
-	docker push $(DOCKER_USERNAME)/offsec-ai:latest
+	docker tag offensive-ai:latest $(DOCKER_USERNAME)/offensive-ai:$(DOCKER_VERSION)
+	docker tag offensive-ai:latest $(DOCKER_USERNAME)/offensive-ai:latest
+	docker push $(DOCKER_USERNAME)/offensive-ai:$(DOCKER_VERSION)
+	docker push $(DOCKER_USERNAME)/offensive-ai:latest
 
 docker-release: docker-push  ## Full release: build → tag → push to Docker Hub

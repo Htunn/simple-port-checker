@@ -24,9 +24,9 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.openclaw_attacker import AuthorizationRequired, OpenClawAttacker
-from offsec_ai.core.openclaw_scanner import OpenClawScanner
-from offsec_ai.models.openclaw_result import (
+from offensive_ai.core.openclaw_attacker import AuthorizationRequired, OpenClawAttacker
+from offensive_ai.core.openclaw_scanner import OpenClawScanner
+from offensive_ai.models.openclaw_result import (
     OpenClawAttackReport,
     OpenClawAttackResult,
     OpenClawAuthPosture,
@@ -37,13 +37,13 @@ from offsec_ai.models.openclaw_result import (
     OpenClawVulnerability,
     OpenClawVulnSeverity,
 )
-from offsec_ai.utils.openclaw_cve_db import (
+from offensive_ai.utils.openclaw_cve_db import (
     OPENCLAW_CVE_DB,
     OPENCLAW_DEFAULT_PORT,
     OPENCLAW_FINGERPRINTS,
     match_cves,
 )
-from offsec_ai.utils.openclaw_payloads import (
+from offensive_ai.utils.openclaw_payloads import (
     API_AUTH_BYPASS_PAYLOADS,
     DM_PROMPT_INJECTION_PAYLOADS,
     MESSAGE_INJECTION_PAYLOADS,

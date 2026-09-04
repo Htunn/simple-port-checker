@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-09-04
+
+### Changed
+
+- **Project rebrand: `offsec-ai` → `offensive-ai`** — the project, PyPI package, Python import path, and CLI command have been renamed to avoid confusion with the unrelated "OffSec"/Offensive Security trademark.
+  - Python package: `offsec_ai` → `offensive_ai` (`src/offsec_ai/` → `src/offensive_ai/`)
+  - PyPI distribution: `offsec-ai` → `offensive-ai`
+  - CLI command: `offsec-ai` → `offensive-ai`
+  - Config env var prefix: `OFFSEC_` → `OFFENSIVE_AI_` (standard provider keys `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`/`GEMINI_API_KEY` are unaffected)
+  - Exception/config classes: `OffsecError` → `OffensiveAIError`, `OffsecConfig` → `OffensiveAIConfig`
+  - Vulnerability ID prefix: `OFFSEC-*` → `OAI-*`
+  - Docs now published at [docs.offensive-ai.org](https://docs.offensive-ai.org)
+  - No backward-compatible shim is provided; pin to a pre-rebrand release if you depend on the old `offsec_ai` import path or `offsec-ai` PyPI name.
+
 ## [2.9.0] - 2026-09-04
 
 ### Added
@@ -13,15 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `BlockchainScanner` — fingerprints the client (Geth/Erigon/Besu/Nethermind/bor) and chain via `web3_clientVersion`/`eth_chainId`, then probes whether admin (`admin_peers`, `admin_nodeInfo`), wallet (`eth_accounts`, `personal_listAccounts`), mining (`eth_mining`, `miner_getHashrate`), and debug/txpool (`debug_dumpBlock`, `txpool_content`) RPC namespaces are reachable without authentication
   - `BlockchainAttacker` — authorization-gated active testing with **safe mode** (read-only admin/peer probes) and **deep mode** (adds debug/txpool leak checks plus unrestricted `eth_sign`/`eth_sendTransaction` tests against accounts discovered via `eth_accounts`). Every payload is engineered to be non-destructive: `admin_addPeer` uses a non-routable loopback enode, and `eth_sendTransaction` is a zero-value self-transfer — no functioning peer is added and no funds ever leave the account
   - `analyze_contract()` — offline heuristic static analysis of a smart contract's ABI and/or bytecode (self-destruct, delegatecall, re-entrancy pattern via CALL-before-SSTORE ordering, unchecked arithmetic), mapped to the OWASP Smart Contract Top 10 / SWC Registry. Local-only, no network calls, no authorization flag required
-  - `src/offsec_ai/models/blockchain_result.py` — Pydantic models: `BlockchainScanResult`, `BlockchainNodeInfo`, `BlockchainVulnerability`, `BlockchainAttackReport`, `BlockchainAttackResult`, `ChainType`, `ContractAuditResult`, `ContractFinding`
-  - `src/offsec_ai/utils/blockchain_cve_db.py` — 5 misconfiguration advisories (`CHAIN-ADV-2024-001` through `005`), RPC-method-to-category map, and client/chain-ID fingerprinting helpers
-  - `src/offsec_ai/utils/blockchain_payloads.py` — passive probe method lists and non-destructive attack payloads
+  - `src/offensive_ai/models/blockchain_result.py` — Pydantic models: `BlockchainScanResult`, `BlockchainNodeInfo`, `BlockchainVulnerability`, `BlockchainAttackReport`, `BlockchainAttackResult`, `ChainType`, `ContractAuditResult`, `ContractFinding`
+  - `src/offensive_ai/utils/blockchain_cve_db.py` — 5 misconfiguration advisories (`CHAIN-ADV-2024-001` through `005`), RPC-method-to-category map, and client/chain-ID fingerprinting helpers
+  - `src/offensive_ai/utils/blockchain_payloads.py` — passive probe method lists and non-destructive attack payloads
   - `blockchain-scan` CLI command with `--port`, `--header`, `--timeout`, `--no-tls-verify`, `--format`, `--output`, `--llm-judge` options
   - `blockchain-attack` CLI command with `--i-have-authorization` (required), `--mode safe|deep`, and all scan options
   - `blockchain-contract-audit` CLI command (`--abi`, `--bytecode`) — no authorization flag needed since it performs only local static analysis
-  - All Blockchain types exported from the `offsec_ai` package `__all__`
+  - All Blockchain types exported from the `offensive_ai` package `__all__`
   - 61 new tests across `tests/test_blockchain_scanner.py` and `tests/test_blockchain_attacker.py` covering the CVE DB, payloads, static analysis heuristics, HTTP-mocked scanner/attacker integration, and LLM enrichment
-  - New doc page [`offsec-ai-docs/blockchain.md`](offsec-ai-docs/blockchain.md)
+  - New doc page [`offensive-ai-docs/blockchain.md`](offensive-ai-docs/blockchain.md)
 
 ### Changed
 
@@ -33,16 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Shared base classes** (`src/offsec_ai/core/_base.py`) — `BaseScanner` and `BaseAttacker` centralise the constructor boilerplate, HTTP client factory, and authorization-guard logic previously duplicated across every protocol module. `MCPAttacker`, `A2AAttacker`, `AuthAttacker`, `K8sAttacker`, `OpenClawAttacker`, `PostmanAttacker`, and `LLMConversationAttacker` now inherit from `BaseAttacker`; each declares only its `_MODULE_NAME` for the authorization banner.
-- **Shared vulnerability model** — `src/offsec_ai/models/severity.py` (`VulnSeverity`) and `src/offsec_ai/models/vulnerability.py` (`BaseVulnerability`) are now the single source of truth for the severity enum and common vulnerability fields. `MCPVulnerability`, `A2AVulnerability`, `AuthVulnerability`, `K8sVulnerability`, `OpenClawVulnerability`, and `PostmanVulnerability` inherit from `BaseVulnerability`, keeping their protocol-specific `*VulnSeverity` names as backward-compatible aliases.
-- **`src/offsec_ai/utils/constants.py`** — centralises the dynamic `USER_AGENT` string (derived from the installed package version) plus the MCP protocol/client constants, replacing magic strings scattered across modules.
-- **`src/offsec_ai/utils/authorization.py`** — `make_authorization_banner()` generates the attacker authorization banner from a module name instead of duplicating the ASCII-art block seven times.
+- **Shared base classes** (`src/offensive_ai/core/_base.py`) — `BaseScanner` and `BaseAttacker` centralise the constructor boilerplate, HTTP client factory, and authorization-guard logic previously duplicated across every protocol module. `MCPAttacker`, `A2AAttacker`, `AuthAttacker`, `K8sAttacker`, `OpenClawAttacker`, `PostmanAttacker`, and `LLMConversationAttacker` now inherit from `BaseAttacker`; each declares only its `_MODULE_NAME` for the authorization banner.
+- **Shared vulnerability model** — `src/offensive_ai/models/severity.py` (`VulnSeverity`) and `src/offensive_ai/models/vulnerability.py` (`BaseVulnerability`) are now the single source of truth for the severity enum and common vulnerability fields. `MCPVulnerability`, `A2AVulnerability`, `AuthVulnerability`, `K8sVulnerability`, `OpenClawVulnerability`, and `PostmanVulnerability` inherit from `BaseVulnerability`, keeping their protocol-specific `*VulnSeverity` names as backward-compatible aliases.
+- **`src/offensive_ai/utils/constants.py`** — centralises the dynamic `USER_AGENT` string (derived from the installed package version) plus the MCP protocol/client constants, replacing magic strings scattered across modules.
+- **`src/offensive_ai/utils/authorization.py`** — `make_authorization_banner()` generates the attacker authorization banner from a module name instead of duplicating the ASCII-art block seven times.
 
 ### Fixed
 
-- **Stale hardcoded `User-Agent` headers** — MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers were sending hardcoded, outdated version strings (e.g. `offsec-ai/2.0.1`, `offsec-ai/2.3.0`, `offsec-ai/2.7.0`) regardless of the actually installed package version. All modules now send `offsec-ai/<installed-version>` via the shared `USER_AGENT` constant.
+- **Stale hardcoded `User-Agent` headers** — MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers were sending hardcoded, outdated version strings (e.g. `offensive-ai/2.0.1`, `offensive-ai/2.3.0`, `offensive-ai/2.7.0`) regardless of the actually installed package version. All modules now send `offensive-ai/<installed-version>` via the shared `USER_AGENT` constant.
 - **Authorization banner now goes through structured logging** — attacker modules previously `print()`ed the ASCII authorization banner directly to stdout in addition to logging it; this was inconsistent between modules (some only logged, some only printed) and polluted stdout when piping JSON output. The banner is now emitted exactly once via `logger.warning()` at instantiation.
-- **`tests/test_mtls_integration.py::test_documentation_presence`** — referenced the removed `docs/api.md` path (docs were migrated to `offsec-ai-docs/` in v2.7.1); updated to check `offsec-ai-docs/api.md`.
+- **`tests/test_mtls_integration.py::test_documentation_presence`** — referenced the removed `docs/api.md` path (docs were migrated to `offensive-ai-docs/` in v2.7.1); updated to check `offensive-ai-docs/api.md`.
 
 ### Changed
 
@@ -62,13 +76,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Postman Collection Security Scanner & Attacker** — full Postman Collection v2.x support:
   - `PostmanScanner` — passive multi-phase assessment: parses collection, resolves `{{variables}}` from environment files, probes each endpoint, runs static analysis (missing auth on sensitive endpoints, unresolved variables, verbose error disclosure, secrets in responses, wildcard CORS), and optionally triages findings via LLM judge
   - `PostmanAttacker` — authorization-gated active testing with **safe mode** (auth-bypass probes) and **deep mode** (auth bypass + BOLA/IDOR + mass assignment + injection + SSRF); LLM judge synthesises `exploit_chain_summary`
-  - `src/offsec_ai/models/postman_result.py` — Pydantic models: `PostmanScanResult`, `PostmanEndpoint`, `PostmanVulnerability`, `PostmanEndpointResult`, `PostmanAuthInfo`, `PostmanAttackReport`, `PostmanAttackResult`, `PostmanVulnSeverity`
-  - `src/offsec_ai/utils/postman_findings.py` — 10 secret-leak regex patterns (AWS keys, OpenAI keys, GitHub PATs, JWTs, etc.), sensitive endpoint keywords, verbose error signatures
-  - `src/offsec_ai/utils/postman_payloads.py` — attack payloads across 5 OWASP API Top 10 categories: auth bypass, BOLA ID mutations, mass assignment, injection, SSRF
-  - `src/offsec_ai/utils/postman_parser.py` — recursive Postman Collection v2.x folder flattening, variable resolution with unresolved-variable tracking, target override, body/query/header/path-param extraction
+  - `src/offensive_ai/models/postman_result.py` — Pydantic models: `PostmanScanResult`, `PostmanEndpoint`, `PostmanVulnerability`, `PostmanEndpointResult`, `PostmanAuthInfo`, `PostmanAttackReport`, `PostmanAttackResult`, `PostmanVulnSeverity`
+  - `src/offensive_ai/utils/postman_findings.py` — 10 secret-leak regex patterns (AWS keys, OpenAI keys, GitHub PATs, JWTs, etc.), sensitive endpoint keywords, verbose error signatures
+  - `src/offensive_ai/utils/postman_payloads.py` — attack payloads across 5 OWASP API Top 10 categories: auth bypass, BOLA ID mutations, mass assignment, injection, SSRF
+  - `src/offensive_ai/utils/postman_parser.py` — recursive Postman Collection v2.x folder flattening, variable resolution with unresolved-variable tracking, target override, body/query/header/path-param extraction
   - `postman-scan` CLI command with `--environment`, `--target/-T`, `--header`, `--timeout`, `--no-tls-verify`, `--max-endpoints`, `--format`, `--output`, `--llm-judge` options
   - `postman-attack` CLI command with `--i-have-authorization` (required), `--mode safe|deep`, and all scan options
-  - All Postman types exported from `offsec_ai` package `__all__`
+  - All Postman types exported from `offensive_ai` package `__all__`
   - 63 new tests in `tests/test_postman.py` covering payloads, findings, parser, result models, scanner static analysis, HTTP-mocked integration, and attacker
 
 ## [2.6.0] - 2026-07-08
@@ -78,12 +92,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A2A (Agent-to-Agent) Protocol Security** — full support for Google's open A2A standard (a2a-protocol.org v1.0.0):
   - `A2AScanner` — 8-phase passive assessment: fetches Agent Card (`/.well-known/agent-card.json`), parses skills/capabilities/security schemes, probes auth posture via unauthenticated `SendMessage` JSON-RPC, performs static analysis, matches CVEs, and optionally triages findings via LLM judge
   - `A2AAttacker` — authorization-gated active testing with **safe mode** (auth-bypass probes) and **deep mode** (auth bypass + SSRF webhook + message injection + task enumeration + JSON-RPC manipulation)
-  - `src/offsec_ai/models/a2a_result.py` — Pydantic models: `A2AScanResult`, `A2AAgentCard`, `A2ASkill`, `A2ACapabilities`, `A2AAuthPosture`, `A2AVulnerability`, `A2AAttackReport`, `A2AAttackResult`, `A2AVulnSeverity`
-  - `src/offsec_ai/utils/a2a_cve_db.py` — 10 A2A security advisories (A2A-ADV-2025-001 through 010); regex-based secret scanner; dangerous-keyword scanner for skill descriptions
-  - `src/offsec_ai/utils/a2a_payloads.py` — 22 attack payloads across 5 categories: auth bypass, SSRF webhook, message injection, task enumeration, JSON-RPC manipulation
+  - `src/offensive_ai/models/a2a_result.py` — Pydantic models: `A2AScanResult`, `A2AAgentCard`, `A2ASkill`, `A2ACapabilities`, `A2AAuthPosture`, `A2AVulnerability`, `A2AAttackReport`, `A2AAttackResult`, `A2AVulnSeverity`
+  - `src/offensive_ai/utils/a2a_cve_db.py` — 10 A2A security advisories (A2A-ADV-2025-001 through 010); regex-based secret scanner; dangerous-keyword scanner for skill descriptions
+  - `src/offensive_ai/utils/a2a_payloads.py` — 22 attack payloads across 5 categories: auth bypass, SSRF webhook, message injection, task enumeration, JSON-RPC manipulation
   - `a2a-scan` CLI command with `--port`, `--header`, `--timeout`, `--no-tls-verify`, `--format`, `--output`, `--llm-judge` options
   - `a2a-attack` CLI command with `--i-have-authorization` (required), `--mode safe|deep`, and the same output options
-  - All A2A types exported from `offsec_ai` package `__all__`
+  - All A2A types exported from `offensive_ai` package `__all__`
   - 58 new tests in `tests/test_a2a_scanner.py` covering CVE DB, payloads, models, scanner static analysis, HTTP-mocked integration, and attacker
 
 ### Changed
@@ -165,7 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added — Kubernetes Cluster Security Scanner and Attacker
 
-- **⎈ Kubernetes Scanner** (`offsec_ai.core.k8s_scanner.K8sScanner`)
+- **⎈ Kubernetes Scanner** (`offensive_ai.core.k8s_scanner.K8sScanner`)
   - Black-box five-phase scan of exposed Kubernetes cluster components over the network
     (no `kubernetes` SDK, no kubeconfig required)
   - **Phase 1 — Component Discovery**: probes all well-known K8s component ports
@@ -185,9 +199,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     and enriches remediation text
   - Response body capped at 64 KB per request (`_MAX_RESPONSE_BYTES = 65_536`)
   - `trust_env=False`, `verify=False` on `httpx.AsyncClient` (consistent with all modules)
-  - CLI command: `offsec-ai k8s-scan`
+  - CLI command: `offensive-ai k8s-scan`
 
-- **⚔️ Kubernetes Attacker** (`offsec_ai.core.k8s_attacker.K8sAttacker`)
+- **⚔️ Kubernetes Attacker** (`offensive_ai.core.k8s_attacker.K8sAttacker`)
   - Hard authorization gate: `K8sAttacker(authorized=False)` raises `AuthorizationRequired`;
     `--i-have-authorization` required at CLI
   - Accepts optional `judge` (`LLMJudge`) for attack-path narrative generation
@@ -198,16 +212,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     kubelet `/exec` command execution (K06), anonymous secret extraction (K03),
     etcd key dump (K03), cloud IMDS/metadata SSRF probes for AWS/GCP/Azure (K08)
   - Response body capped at 4 KB per attack request
-  - CLI command: `offsec-ai k8s-attack`
+  - CLI command: `offensive-ai k8s-attack`
 
-- **New models** (`offsec_ai.models.k8s_result`):
+- **New models** (`offensive_ai.models.k8s_result`):
   `K8sScanResult`, `K8sAttackReport`, `K8sAttackResult`, `K8sVulnerability`,
   `K8sExposedComponent`, `K8sServerInfo`, `K8sVulnSeverity`, `K8sComponent`
 
 - **New utilities**:
-  - `offsec_ai.utils.k8s_cve_db` — `K8sCVEEntry` dataclass, `K8S_CVE_DB` (11 entries),
+  - `offensive_ai.utils.k8s_cve_db` — `K8sCVEEntry` dataclass, `K8S_CVE_DB` (11 entries),
     `match_cves(version, accessible_components)` with component-boundary-safe version matching
-  - `offsec_ai.utils.k8s_payloads` — `K8S_DEFAULT_SCAN_PORTS`, `K8S_COMPONENT_PORTS`,
+  - `offensive_ai.utils.k8s_payloads` — `K8S_DEFAULT_SCAN_PORTS`, `K8S_COMPONENT_PORTS`,
     `APISERVER_PROBE_PATHS`, `KUBELET_PROBE_PATHS`, `ETCD_PROBE_PATHS`,
     `ANONYMOUS_API_PATHS`, `K8S_FINGERPRINTS`, `KUBELET_EXEC_PAYLOADS`,
     `CLOUD_METADATA_PAYLOADS`, `SELF_SUBJECT_REVIEW_PAYLOAD`
@@ -219,10 +233,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and JSON serialization — 238 tests total (up from 195)
 
 ### Changed
-- `src/offsec_ai/cli.py`: added `k8s-scan` and `k8s-attack` commands with `--port` (multiple),
+- `src/offensive_ai/cli.py`: added `k8s-scan` and `k8s-attack` commands with `--port` (multiple),
   `--header`, `--timeout`, `--llm-judge`, `--format`, `--output` options; `k8s-attack`
   additionally requires `--i-have-authorization` and `--mode safe|deep`
-- `src/offsec_ai/__init__.py`: exported `K8sScanner`, `K8sAttacker`, `K8sScanResult`,
+- `src/offensive_ai/__init__.py`: exported `K8sScanner`, `K8sAttacker`, `K8sScanResult`,
   `K8sAttackReport`, `K8sVulnerability`, `K8sComponent`, `K8sVulnSeverity`
 - `pyproject.toml`: version bumped `2.2.0` → `2.3.0`
 
@@ -232,46 +246,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added — AI/LLM Attack Expansion (Track A)
 
-- **🗡️ Jailbreak Technique Library** (`offsec_ai.utils.llm_jailbreaks`)
+- **🗡️ Jailbreak Technique Library** (`offensive_ai.utils.llm_jailbreaks`)
   - DAN (Do Anything Now) variants, developer-mode bypass, roleplay/persona injection,
     refusal-suppression patterns, hypothetical framing, payload-splitting
   - Each technique carries OWASP LLM category refs, expected severity, and response detection strings
   - Constants: `DAN_TECHNIQUES`, `ROLEPLAY_TECHNIQUES`, `REFUSAL_SUPPRESSION_TECHNIQUES`,
     `HYPOTHETICAL_TECHNIQUES`, `PAYLOAD_SPLITTING_TECHNIQUES`, `JAILBREAK_TECHNIQUES` (combined)
 
-- **🔠 Encoding/Obfuscation Bypass Engine** (`offsec_ai.utils.llm_encoders`)
+- **🔠 Encoding/Obfuscation Bypass Engine** (`offensive_ai.utils.llm_encoders`)
   - Encodes payloads in base64, ROT-13, leetspeak, hex, reversed text, homoglyph, zero-width Unicode
   - `encode(payload, method)` — encode a string in the given representation
   - `wrap(payload, method)` — produce a complete prompt asking the model to decode-and-execute
   - `detect_bypass(response, payload)` — heuristic to detect if a model decoded and acted on the payload
   - `ENCODING_METHODS` — list of all available method names
 
-- **💬 Multi-Turn Conversation Attacker** (`offsec_ai.core.llm_conversation_attacker`)
+- **💬 Multi-Turn Conversation Attacker** (`offensive_ai.core.llm_conversation_attacker`)
   - Requires `authorized=True`; prints legal authorization banner on every instantiation
   - Attack patterns: **crescendo** (gradual escalation), **many-shot** (in-context few-shot jailbreak),
     **context-priming** (false context injection), **goal-hijack** (incremental goal redefinition)
   - `attack(endpoint, mode, ...)` returns `MultiTurnAttackResult` with full conversation transcript,
     turn-by-turn analysis, escalation detection, and audit trail
 
-- **📊 Guardrail Benchmarker** (`offsec_ai.core.guardrail_bench`)
+- **📊 Guardrail Benchmarker** (`offensive_ai.core.guardrail_bench`)
   - Maps which OWASP LLM categories are blocked vs. passed by the target's content filter
   - Produces a per-category block rate and overall `GuardrailBenchResult` with a letter grade
   - Distinguishes between hard blocks (no response), soft refusals, and compliant responses
 
-- **⚔️ Active LLM Attack CLI** (`offsec-ai llm-attack`)
+- **⚔️ Active LLM Attack CLI** (`offensive-ai llm-attack`)
   - Requires `--i-have-authorization`; authorization gate identical to `mcp-attack`/`openclaw-attack`
   - Modes: `jailbreak` · `encoding` · `multiturn` · `agentic` · `guardrail` · `all`
   - Safe mode — informational payload report (no auto-execution)
   - Deep mode — actively sends attack payloads and reports results
-  - New models: `LLMAttackResult`, `LLMAttackReport` (`offsec_ai.models.llm_attack_result`)
+  - New models: `LLMAttackResult`, `LLMAttackReport` (`offensive_ai.models.llm_attack_result`)
 
 - **Extended `LLMOwaspScanner`** — jailbreak and encoding payloads are now plugged into the
   deep-mode scanning pipeline alongside the existing 22 OWASP probes
 
 ### Added — Enterprise-Grade Hardening (Track B)
 
-- **🏗️ Exception Hierarchy** (`offsec_ai.exceptions`)
-  - `OffsecError` — base class for all package exceptions
+- **🏗️ Exception Hierarchy** (`offensive_ai.exceptions`)
+  - `OffensiveAIError` — base class for all package exceptions
   - `ScanError` — unexpected scan-operation failures
   - `ConfigError` — invalid/missing configuration at startup
   - `NetworkError` — DNS, connection, timeout failures
@@ -279,21 +293,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `AuthorizationRequired` — consolidated single class (replaces duplicate definitions in
     `mcp_attacker` and `openclaw_attacker`)
 
-- **⚙️ Centralised Config** (`offsec_ai.config`)
-  - `OffsecConfig(BaseSettings)` — pydantic-settings v2, validated at import time
+- **⚙️ Centralised Config** (`offensive_ai.config`)
+  - `OffensiveAIConfig(BaseSettings)` — pydantic-settings v2, validated at import time
   - `SecretStr` for all API keys — never serialised or printed as plain text
   - `.env` file support via `python-dotenv`
-  - All `OFFSEC_*` env vars: timeout, concurrency, retries, log level, log format, audit log path
+  - All `OFFENSIVE_AI_*` env vars: timeout, concurrency, retries, log level, log format, audit log path
   - `get_config()` returns a cached singleton; `reset_config()` for test isolation
 
-- **📋 Structured Logging** (`offsec_ai.log_config`)
+- **📋 Structured Logging** (`offensive_ai.log_config`)
   - `configure_logging(level, fmt)` — central setup; `fmt="json"` emits newline-delimited JSON
   - `JsonFormatter` — includes `timestamp`, `level`, `logger`, `correlation_id`, `message`, plus
     all extra fields passed to the log call
   - `new_correlation_id()` / `get_correlation_id()` — `contextvars`-based async-safe correlation IDs
     so all log lines from a single scan/attack share the same ID
   - `audit_log(event, **fields)` — dedicated audit logger; always JSON; optionally rotated to file
-    via `OFFSEC_AUDIT_LOG_FILE`; records every authorized attack invocation
+    via `OFFENSIVE_AI_AUDIT_LOG_FILE`; records every authorized attack invocation
 
 - **Quality Gates**
   - `pyproject.toml`: ruff linter/formatter configuration added; pytest markers registered
@@ -331,33 +345,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added — OpenClaw Gateway Security Assessment
 
-- **🦀 OpenClaw Scanner** (`offsec_ai.core.openclaw_scanner.OpenClawScanner`)
+- **🦀 OpenClaw Scanner** (`offensive_ai.core.openclaw_scanner.OpenClawScanner`)
   - Fingerprints OpenClaw personal AI assistant gateway deployments (default port 18789)
   - Five-phase scan: fingerprint → endpoint enumeration → auth posture → configuration → CVE matching
   - Detects unauthenticated REST API access, open DM policy, disabled sandbox, unauthenticated WebSocket upgrades, health endpoint disclosure, session history exposure, API key leakage
   - Response body capped at 64 KB per request to prevent memory issues with binary/large payloads
   - `trust_env=False` on httpx client to prevent ambient proxy interference
-  - CLI command: `offsec-ai openclaw-scan`
+  - CLI command: `offensive-ai openclaw-scan`
 
-- **⚔️ OpenClaw Attacker** (`offsec_ai.core.openclaw_attacker.OpenClawAttacker`)
+- **⚔️ OpenClaw Attacker** (`offensive_ai.core.openclaw_attacker.OpenClawAttacker`)
   - Active red-team probe suite for authorized security assessments
   - Hard authorization gate: `OpenClawAttacker(authorized=False)` raises `AuthorizationRequired`; `--i-have-authorization` required at CLI
   - **Safe mode**: unauthenticated API endpoint probes across all known `/api/v1/*` paths
   - **Deep mode**: adds message injection, WebSocket upgrade probes, SSRF via webhook endpoint, and an informational prompt-injection payload report (payloads listed but not auto-executed to avoid unintended model manipulation)
   - Response body capped at 4 KB per attack request
-  - CLI command: `offsec-ai openclaw-attack`
+  - CLI command: `offensive-ai openclaw-attack`
 
-- **New models** (`offsec_ai.models.openclaw_result`): `OpenClawScanResult`, `OpenClawAttackReport`, `OpenClawAttackResult`, `OpenClawVulnerability`, `OpenClawServerInfo`, `OpenClawAuthPosture`, `OpenClawDMPolicy`, `OpenClawSandboxInfo`, `OpenClawAccessibleEndpoint`, `OpenClawVulnSeverity`
+- **New models** (`offensive_ai.models.openclaw_result`): `OpenClawScanResult`, `OpenClawAttackReport`, `OpenClawAttackResult`, `OpenClawVulnerability`, `OpenClawServerInfo`, `OpenClawAuthPosture`, `OpenClawDMPolicy`, `OpenClawSandboxInfo`, `OpenClawAccessibleEndpoint`, `OpenClawVulnSeverity`
 
 - **New utilities**:
-  - `offsec_ai.utils.openclaw_cve_db` — 10 OpenClaw-specific advisories (OCL-ADV-001 through OCL-ADV-010) covering critical through informational severity; `match_cves()` path and version filter function; `OPENCLAW_FINGERPRINTS`, `OPENCLAW_PROBE_PATHS`, `OPENCLAW_API_PATHS`
-  - `offsec_ai.utils.openclaw_payloads` — `DM_PROMPT_INJECTION_PAYLOADS`, `API_AUTH_BYPASS_PAYLOADS`, `MESSAGE_INJECTION_PAYLOADS`, `SSRF_WEBHOOK_PAYLOADS`, `WEBSOCKET_PROBE_PATHS`
+  - `offensive_ai.utils.openclaw_cve_db` — 10 OpenClaw-specific advisories (OCL-ADV-001 through OCL-ADV-010) covering critical through informational severity; `match_cves()` path and version filter function; `OPENCLAW_FINGERPRINTS`, `OPENCLAW_PROBE_PATHS`, `OPENCLAW_API_PATHS`
+  - `offensive_ai.utils.openclaw_payloads` — `DM_PROMPT_INJECTION_PAYLOADS`, `API_AUTH_BYPASS_PAYLOADS`, `MESSAGE_INJECTION_PAYLOADS`, `SSRF_WEBHOOK_PAYLOADS`, `WEBSOCKET_PROBE_PATHS`
 
 - **Tests**: 63 new tests in `tests/test_openclaw.py` covering CVE DB integrity, payload structure, result model properties, scanner fingerprinting (positive/negative), endpoint enumeration, auth posture detection, configuration parsing, vulnerability matching, attacker authorization gating, API probes (safe mode), deep-mode attacks, and full scan-then-attack end-to-end flow — all passing
 
 ### Changed
 - `pyproject.toml`: description updated to include "OpenClaw gateway security assessment"; keywords updated with `"openclaw"`, `"ai-gateway"`, `"personal-ai"`
-- `src/offsec_ai/cli.py`: added `openclaw-scan` and `openclaw-attack` commands with `--port`, `--tls`, `--header`, `--timeout`, `--format`, `--output` options; `openclaw-attack` additionally requires `--i-have-authorization` and `--mode safe|deep`
+- `src/offensive_ai/cli.py`: added `openclaw-scan` and `openclaw-attack` commands with `--port`, `--tls`, `--header`, `--timeout`, `--format`, `--output` options; `openclaw-attack` additionally requires `--i-have-authorization` and `--mode safe|deep`
 - `docs/api.md`: new **OpenClaw Gateway Security** section with full API reference, advisory table, CLI examples, and scan-then-attack workflow example
 - Removed `sonar-project.properties` and `.github/workflows/sonarcloud.yml` (SonarCloud integration disabled)
 
@@ -365,7 +379,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - README logo replaced with inline ASCII art (no external image dependency)
-- User-Agent strings updated from `SimplePortChecker/1.0` to `offsec-ai/2.0` in `L7Detector` and `HybridIdentityChecker`
+- User-Agent strings updated from `SimplePortChecker/1.0` to `offensive-ai/2.0` in `L7Detector` and `HybridIdentityChecker`
 - `reportlab>=4.0.0` promoted to core dependency in `pyproject.toml` (was missing, caused `ModuleNotFoundError` on fresh installs)
 - Docker image now installs `[ai]` extras (`openai`, `anthropic`) so LLM judge works at runtime via env vars
 - Dockerfile redundant pre-installs removed; `pip install ".[ai]"` is now the single install step
@@ -379,37 +393,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0] - 2026-06-29
 
-### Added — AI / LLM Security (fresh start as `offsec-ai`)
+### Added — AI / LLM Security (fresh start as `offensive-ai`)
 
-This release renames the package from `simple-port-checker` to `offsec-ai` and introduces comprehensive AI/LLM security capabilities.
+This release renames the package from `simple-port-checker` to `offensive-ai` and introduces comprehensive AI/LLM security capabilities.
 
-- **🤖 AI OWASP Top 10 Scanner** (`offsec_ai.core.ai_owasp_scanner.LLMOwaspScanner`)
+- **🤖 AI OWASP Top 10 Scanner** (`offensive_ai.core.ai_owasp_scanner.LLMOwaspScanner`)
   - Black-box probing of live LLM/chat API endpoints (OpenAI-compatible and generic formats)
   - Covers LLM01–LLM10 where externally testable (LLM03, LLM04, LLM08 marked not-testable)
   - Safe mode (passive) and deep mode (all probes)
   - Severity-based grading (A–F); CRITICAL finding auto-assigns F grade
   - Batch scanning via `batch_scan()`
-  - CLI command: `offsec-ai ai-owasp-scan`
+  - CLI command: `offensive-ai ai-owasp-scan`
 
-- **🔬 LLM Judge** (`offsec_ai.core.llm_judge.LLMJudge`)
+- **🔬 LLM Judge** (`offensive_ai.core.llm_judge.LLMJudge`)
   - Optional semantic evaluation of probe responses via OpenAI or Anthropic
-  - Auto-detected from `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `OFFSEC_LLM_BASE_URL`
+  - Auto-detected from `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `OFFENSIVE_AI_LLM_BASE_URL`
   - Falls back to rule-based detection when no API key is present
-  - Enabled via `pip install "offsec-ai[ai]"` optional extra
+  - Enabled via `pip install "offensive-ai[ai]"` optional extra
 
-- **🔌 MCP Security Scanner** (`offsec_ai.core.mcp_scanner.MCPScanner`)
+- **🔌 MCP Security Scanner** (`offensive_ai.core.mcp_scanner.MCPScanner`)
   - Scans Model Context Protocol servers over HTTP/SSE and stdio transports
   - Enumerates tools, resources, and prompts via JSON-RPC
   - Auth posture detection (unauthenticated vs authenticated access)
   - Built-in CVE database: tool poisoning, path traversal, command injection, secrets in descriptions, excessive agency, prompt injection via tool response, rug-pull/tool shadowing
-  - CLI command: `offsec-ai mcp-scan`
+  - CLI command: `offensive-ai mcp-scan`
 
-- **⚔️ MCP Attacker** (`offsec_ai.core.mcp_attacker.MCPAttacker`)
+- **⚔️ MCP Attacker** (`offensive_ai.core.mcp_attacker.MCPAttacker`)
   - Active attack suite: auth bypass, path traversal, tool injection, command injection
   - Hard authorization gate: `MCPAttacker(authorized=False)` raises `AuthorizationRequired`
   - `--i-have-authorization` flag required at CLI; prints legal banner on every run
   - Safe mode (auth bypass only) and deep mode (all attacks)
-  - CLI command: `offsec-ai mcp-attack`
+  - CLI command: `offensive-ai mcp-attack`
 
 - **New models**: `LLMScanResult`, `LLMFinding`, `LLMCategoryResult`, `LLMSeverity`, `LLMScanMode`, `BatchLLMScanResult`, `MCPScanResult`, `MCPTool`, `MCPResource`, `MCPVulnerability`, `MCPAttackReport`, `MCPAttackResult`, `MCPTransport`, `MCPVulnSeverity`, `AuthorizationRequired`
 
@@ -417,8 +431,8 @@ This release renames the package from `simple-port-checker` to `offsec-ai` and i
 
 ### Changed
 
-- Package renamed: `simple-port-checker` → `offsec-ai` (PyPI), `simple_port_checker` → `offsec_ai` (import)
-- CLI entry point renamed: `offsec-ai` (removed legacy `port-checker`, `simple-port-checker` aliases)
+- Package renamed: `simple-port-checker` → `offensive-ai` (PyPI), `simple_port_checker` → `offensive_ai` (import)
+- CLI entry point renamed: `offensive-ai` (removed legacy `port-checker`, `simple-port-checker` aliases)
 - Version bumped to `2.0.0` (continues from `simple-port-checker` v1.1.2 — major version for complete rebrand)
 - Requires Python 3.12+
 - Added `mcp>=1.0.0` and `httpx>=0.25.0` as core dependencies
@@ -430,7 +444,7 @@ This release renames the package from `simple-port-checker` to `offsec-ai` and i
 from simple_port_checker import PortChecker
 
 # After
-from offsec_ai import PortChecker
+from offensive_ai import PortChecker
 ```
 
 ```bash
@@ -439,8 +453,8 @@ pip install simple-port-checker
 simple-port-checker scan example.com
 
 # After
-pip install offsec-ai
-offsec-ai scan example.com
+pip install offensive-ai
+offensive-ai scan example.com
 ```
 
 All existing functionality (port scanning, L7 detection, mTLS, certificate analysis, OWASP web scanner, hybrid identity) is preserved and works identically.
@@ -642,7 +656,7 @@ All existing functionality (port scanning, L7 detection, mTLS, certificate analy
 ### Major Refactoring and Cleanup
 - **BREAKING**: Removed standalone scripts directory and integrated all functionality into main CLI
 - **BREAKING**: Moved all tests to top-level `tests/` directory following Python packaging standards
-- **BREAKING**: Removed `run.py` entry point (use `python -m offsec_ai` or installed CLI commands)
+- **BREAKING**: Removed `run.py` entry point (use `python -m offensive_ai` or installed CLI commands)
 
 ### Added
 - Unified CLI interface with all functionality accessible via main commands
@@ -652,7 +666,7 @@ All existing functionality (port scanning, L7 detection, mTLS, certificate analy
 - Production-ready project structure following Python packaging best practices
 
 ### Improved
-- Clean and consistent project organization under `src/offsec_ai/`
+- Clean and consistent project organization under `src/offensive_ai/`
 - Better error handling in DNS trace functionality
 - Fixed undefined variable issues in L7 detector
 - Updated documentation and project structure guide
@@ -665,7 +679,7 @@ All existing functionality (port scanning, L7 detection, mTLS, certificate analy
 - Duplicate test directories cleanup
 
 ### Removed
-- `src/offsec_ai/scripts/` directory (functionality moved to main CLI)
+- `src/offensive_ai/scripts/` directory (functionality moved to main CLI)
 - `run.py` standalone entry point
 - Unnecessary script entry points from pyproject.toml
 - Duplicate and outdated test files
@@ -932,6 +946,6 @@ All existing functionality (port scanning, L7 detection, mTLS, certificate analy
 - cryptography: For certificate handling
 - certifi: For CA bundle management
 
-[Unreleased]: https://github.com/Htunn/offsec-ai/compare/v2.0.1...HEAD
-[2.0.1]: https://github.com/Htunn/offsec-ai/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/htunn/offsec-ai/releases/tag/v2.0.0
+[Unreleased]: https://github.com/Htunn/offensive-ai/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/Htunn/offensive-ai/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/htunn/offensive-ai/releases/tag/v2.0.0

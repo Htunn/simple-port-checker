@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # scan_result model (closed_ports, error_ports, BatchScanResult)
 # ===========================================================================
 
-from offsec_ai.models.scan_result import BatchScanResult, PortResult, ScanResult
+from offensive_ai.models.scan_result import BatchScanResult, PortResult, ScanResult
 
 
 class TestPortResult:
@@ -136,12 +136,12 @@ class TestBatchScanResult:
 # GuardrailBench and GuardrailReport
 # ===========================================================================
 
-from offsec_ai.core.guardrail_bench import (
+from offensive_ai.core.guardrail_bench import (
     GuardrailBench,
     GuardrailProbeResult,
     GuardrailReport,
 )
-from offsec_ai.exceptions import AuthorizationRequired
+from offensive_ai.exceptions import AuthorizationRequired
 
 
 class TestGuardrailProbeResult:
@@ -374,7 +374,7 @@ class TestGuardrailBenchRun:
 # LLMJudge
 # ===========================================================================
 
-from offsec_ai.core.llm_judge import LLMJudge
+from offensive_ai.core.llm_judge import LLMJudge
 
 
 class TestLLMJudgeFromEnv:
@@ -384,7 +384,7 @@ class TestLLMJudgeFromEnv:
         assert isinstance(judge, LLMJudge)
 
     def test_is_available_without_key(self):
-        env = {k: "" for k in ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OFFSEC_LLM_BASE_URL"]}
+        env = {k: "" for k in ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OFFENSIVE_AI_LLM_BASE_URL"]}
         with patch.dict(os.environ, env, clear=False):
             # Remove them so detection returns None
             clean = {k: "" for k in env}
@@ -428,7 +428,7 @@ class TestLLMJudgeFromEnv:
         assert "vulnerable" in result
 
     def test_model_override_via_env(self):
-        with patch.dict(os.environ, {"OFFSEC_LLM_MODEL": "custom-model", "OPENAI_API_KEY": "sk-test"}):
+        with patch.dict(os.environ, {"OFFENSIVE_AI_LLM_MODEL": "custom-model", "OPENAI_API_KEY": "sk-test"}):
             judge = LLMJudge()
         assert judge.model == "custom-model"
 
@@ -442,7 +442,7 @@ class TestLLMJudgeFromEnv:
 # l7_signatures utility functions
 # ===========================================================================
 
-from offsec_ai.utils.l7_signatures import (
+from offensive_ai.utils.l7_signatures import (
     L7_SIGNATURES,
     estimate_protection_confidence,
     get_all_header_patterns,
@@ -450,7 +450,7 @@ from offsec_ai.utils.l7_signatures import (
     get_protection_by_header,
     get_signature_patterns,
 )
-from offsec_ai.models.l7_result import L7Protection
+from offensive_ai.models.l7_result import L7Protection
 
 
 class TestGetSignaturePatternsL7:
@@ -570,12 +570,12 @@ class TestEstimateProtectionConfidence:
 class TestGuardrailBenchExceptionPath:
     async def test_run_with_probe_exception_appends_error_result(self):
         """Line 270 — exception result is appended to report."""
-        from offsec_ai.core.guardrail_bench import GuardrailBench, GuardrailReport
+        from offensive_ai.core.guardrail_bench import GuardrailBench, GuardrailReport
         import httpx
 
         bench = GuardrailBench(authorized=True, model="gpt-3.5-turbo", timeout=5.0)
 
-        with patch("offsec_ai.core.guardrail_bench.httpx.AsyncClient") as MockClient:
+        with patch("offensive_ai.core.guardrail_bench.httpx.AsyncClient") as MockClient:
             mock_instance = MagicMock()
             mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
             mock_instance.__aexit__ = AsyncMock(return_value=False)
@@ -594,7 +594,7 @@ class TestGuardrailBenchExceptionPath:
 
     async def test_probe_http_status_error_handled(self):
         """Lines 342-343 — HTTPStatusError sets status and error."""
-        from offsec_ai.core.guardrail_bench import GuardrailBench, GuardrailReport
+        from offensive_ai.core.guardrail_bench import GuardrailBench, GuardrailReport
         import httpx
 
         bench = GuardrailBench(authorized=True, model="gpt-3.5-turbo", timeout=5.0)
@@ -607,7 +607,7 @@ class TestGuardrailBenchExceptionPath:
             response=mock_response,
         )
 
-        with patch("offsec_ai.core.guardrail_bench.httpx.AsyncClient") as MockClient:
+        with patch("offensive_ai.core.guardrail_bench.httpx.AsyncClient") as MockClient:
             mock_instance = MagicMock()
             mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
             mock_instance.__aexit__ = AsyncMock(return_value=False)

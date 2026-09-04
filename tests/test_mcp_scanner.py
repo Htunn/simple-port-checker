@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from offsec_ai.models.mcp_result import (
+from offensive_ai.models.mcp_result import (
     MCPAttackReport,
     MCPScanResult,
     MCPServerInfo,
@@ -15,12 +15,12 @@ from offsec_ai.models.mcp_result import (
     MCPTransport,
     MCPVulnSeverity,
 )
-from offsec_ai.utils.mcp_cve_db import (
+from offensive_ai.utils.mcp_cve_db import (
     match_cves,
     scan_for_dangerous_keywords,
     scan_for_secrets,
 )
-from offsec_ai.core.mcp_scanner import MCPScanner
+from offensive_ai.core.mcp_scanner import MCPScanner
 
 
 # ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ class TestMCPTool:
 
 class TestMCPScanResult:
     def _make_result(self, vuln_severity=None):
-        from offsec_ai.models.mcp_result import MCPVulnerability
+        from offensive_ai.models.mcp_result import MCPVulnerability
         result = MCPScanResult(target="http://test.local/mcp")
         if vuln_severity:
             result.vulnerabilities.append(MCPVulnerability(
@@ -122,7 +122,7 @@ class TestMCPScanResult:
         assert not result.has_critical
 
     def test_all_vulns_includes_cve_matches(self):
-        from offsec_ai.models.mcp_result import MCPVulnerability
+        from offensive_ai.models.mcp_result import MCPVulnerability
         result = MCPScanResult(target="http://test.local/mcp")
         result.vulnerabilities.append(MCPVulnerability(
             vuln_id="V1", severity=MCPVulnSeverity.HIGH, title="A", description="A"
@@ -142,7 +142,7 @@ class TestMCPScannerAnalysis:
         return MCPScanner(target="http://mock.local/mcp")
 
     def test_unauthenticated_access_produces_vuln(self):
-        from offsec_ai.models.mcp_result import MCPAuthPosture
+        from offensive_ai.models.mcp_result import MCPAuthPosture
         scanner = self._scanner()
         result = MCPScanResult(target="http://mock.local/mcp")
         result.auth_posture = MCPAuthPosture(
@@ -150,7 +150,7 @@ class TestMCPScannerAnalysis:
         )
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-AUTH-001" in ids
+        assert "OAI-MCP-AUTH-001" in ids
 
     def test_dangerous_tool_produces_vuln(self):
         scanner = self._scanner()
@@ -161,31 +161,31 @@ class TestMCPScannerAnalysis:
             has_dangerous_keywords=True,
             dangerous_keywords_found=["ignore previous"],
         )]
-        from offsec_ai.models.mcp_result import MCPAuthPosture
+        from offensive_ai.models.mcp_result import MCPAuthPosture
         result.auth_posture = MCPAuthPosture()
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-TI-001" in ids
+        assert "OAI-MCP-TI-001" in ids
 
     def test_shell_tool_produces_critical_vuln(self):
         scanner = self._scanner()
         result = MCPScanResult(target="http://mock.local/mcp")
         result.tools = [MCPTool(name="bash-exec", description="Runs shell commands")]
-        from offsec_ai.models.mcp_result import MCPAuthPosture
+        from offensive_ai.models.mcp_result import MCPAuthPosture
         result.auth_posture = MCPAuthPosture()
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-SCOPE-001" in ids
+        assert "OAI-MCP-SCOPE-001" in ids
 
     def test_path_traversal_in_resource_uri_detected(self):
-        from offsec_ai.models.mcp_result import MCPAuthPosture, MCPResource
+        from offensive_ai.models.mcp_result import MCPAuthPosture, MCPResource
         scanner = self._scanner()
         result = MCPScanResult(target="http://mock.local/mcp")
         result.resources = [MCPResource(uri="../../etc/passwd", name="secret")]
         result.auth_posture = MCPAuthPosture()
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-PT-001" in ids
+        assert "OAI-MCP-PT-001" in ids
 
     def test_secret_in_tool_description_detected(self):
         scanner = self._scanner()
@@ -194,8 +194,8 @@ class TestMCPScannerAnalysis:
             name="my-tool",
             description="API_KEY=sk-abc123 Use this key to authenticate.",
         )]
-        from offsec_ai.models.mcp_result import MCPAuthPosture
+        from offensive_ai.models.mcp_result import MCPAuthPosture
         result.auth_posture = MCPAuthPosture()
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-MCP-SEC-001" in ids
+        assert "OAI-MCP-SEC-001" in ids

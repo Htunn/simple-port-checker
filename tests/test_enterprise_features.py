@@ -1,7 +1,7 @@
 """
 Tests for Phase 0–4 enterprise features:
 - exceptions.py (hierarchy + AuthorizationRequired)
-- config.py (OffsecConfig defaults, helpers, reset)
+- config.py (OffensiveAIConfig defaults, helpers, reset)
 - log_config.py (correlation IDs, JSON formatter, audit_log)
 - utils/llm_jailbreaks.py (structure, wrap, by_category, by_severity)
 - utils/llm_encoders.py (encode/wrap/detect_bypass per method)
@@ -21,8 +21,8 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.guardrail_bench import GuardrailBench, GuardrailReport, GuardrailProbeResult
-from offsec_ai.core.llm_conversation_attacker import (
+from offensive_ai.core.guardrail_bench import GuardrailBench, GuardrailReport, GuardrailProbeResult
+from offensive_ai.core.llm_conversation_attacker import (
     LLMConversationAttacker,
     MultiTurnAttackReport,
     MultiTurnAttackResult,
@@ -31,15 +31,15 @@ from offsec_ai.core.llm_conversation_attacker import (
     _build_many_shot_turns,
     _build_context_priming_turns,
 )
-from offsec_ai.exceptions import (
+from offensive_ai.exceptions import (
     AuthorizationRequired,
     ConfigError,
     NetworkError,
-    OffsecError,
+    OffensiveAIError,
     ScanError,
     TargetUnreachableError,
 )
-from offsec_ai.log_config import (
+from offensive_ai.log_config import (
     JsonFormatter,
     audit_log,
     configure_logging,
@@ -47,19 +47,19 @@ from offsec_ai.log_config import (
     get_correlation_id,
     new_correlation_id,
 )
-from offsec_ai.models.llm_attack_result import (
+from offensive_ai.models.llm_attack_result import (
     LLMAttackReport,
     LLMAttackResult,
     LLMAttackSeverity,
 )
-from offsec_ai.utils.llm_encoders import (
+from offensive_ai.utils.llm_encoders import (
     ENCODING_METHODS,
     all_wrapped_probes,
     detect_bypass,
     encode,
     wrap as enc_wrap,
 )
-from offsec_ai.utils.llm_jailbreaks import (
+from offensive_ai.utils.llm_jailbreaks import (
     JAILBREAK_TECHNIQUES,
     by_category,
     by_severity,
@@ -73,36 +73,36 @@ from offsec_ai.utils.llm_jailbreaks import (
 
 
 class TestExceptionHierarchy:
-    def test_offsec_error_is_exception(self):
-        assert issubclass(OffsecError, Exception)
+    def test_offensiveai_error_is_exception(self):
+        assert issubclass(OffensiveAIError, Exception)
 
-    def test_scan_error_is_offsec_error(self):
-        assert issubclass(ScanError, OffsecError)
+    def test_scan_error_is_offensiveai_error(self):
+        assert issubclass(ScanError, OffensiveAIError)
 
-    def test_config_error_is_offsec_error(self):
-        assert issubclass(ConfigError, OffsecError)
+    def test_config_error_is_offensiveai_error(self):
+        assert issubclass(ConfigError, OffensiveAIError)
 
-    def test_network_error_is_offsec_error(self):
-        assert issubclass(NetworkError, OffsecError)
+    def test_network_error_is_offensiveai_error(self):
+        assert issubclass(NetworkError, OffensiveAIError)
 
     def test_target_unreachable_is_network_error(self):
         assert issubclass(TargetUnreachableError, NetworkError)
 
-    def test_authorization_required_is_offsec_error(self):
-        assert issubclass(AuthorizationRequired, OffsecError)
+    def test_authorization_required_is_offensiveai_error(self):
+        assert issubclass(AuthorizationRequired, OffensiveAIError)
 
     def test_authorization_required_default_message(self):
         exc = AuthorizationRequired()
         assert "authorization" in str(exc).lower()
-        assert exc.module == "offsec-ai attack module"
+        assert exc.module == "offensive-ai attack module"
 
     def test_authorization_required_custom_module(self):
         exc = AuthorizationRequired("LLM Attacker")
         assert "LLM Attacker" in str(exc)
         assert exc.module == "LLM Attacker"
 
-    def test_can_catch_authorization_as_offsec_error(self):
-        with pytest.raises(OffsecError):
+    def test_can_catch_authorization_as_offensiveai_error(self):
+        with pytest.raises(OffensiveAIError):
             raise AuthorizationRequired("test")
 
     def test_target_unreachable_can_be_caught_as_network_error(self):
@@ -115,31 +115,31 @@ class TestExceptionHierarchy:
 # ===========================================================================
 
 
-class TestOffsecConfig:
+class TestOffensiveAIConfig:
     def setup_method(self):
-        from offsec_ai.config import reset_config
+        from offensive_ai.config import reset_config
         reset_config()
 
     def test_default_timeout(self):
-        from offsec_ai.config import get_config
+        from offensive_ai.config import get_config
         cfg = get_config()
         assert cfg.default_timeout == 15.0
 
     def test_default_concurrent(self):
-        from offsec_ai.config import get_config
+        from offensive_ai.config import get_config
         assert get_config().default_concurrent == 50
 
     def test_default_log_level(self):
-        from offsec_ai.config import get_config
+        from offensive_ai.config import get_config
         assert get_config().log_level == "WARNING"
 
     def test_no_keys_configured_by_default(self):
         import os
         from unittest.mock import patch
-        from offsec_ai.config import reset_config, get_config
+        from offensive_ai.config import reset_config, get_config
         key_vars = [
             "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
-            "OFFSEC_OPENAI_API_KEY", "OFFSEC_ANTHROPIC_API_KEY", "OFFSEC_GEMINI_API_KEY",
+            "OFFENSIVE_AI_OPENAI_API_KEY", "OFFENSIVE_AI_ANTHROPIC_API_KEY", "OFFENSIVE_AI_GEMINI_API_KEY",
         ]
         clean_env = {k: v for k, v in os.environ.items() if k not in key_vars}
         with patch.dict(os.environ, clean_env, clear=True):
@@ -152,36 +152,36 @@ class TestOffsecConfig:
         reset_config()
 
     def test_key_not_leaked_in_repr(self):
-        from offsec_ai.config import OffsecConfig
+        from offensive_ai.config import OffensiveAIConfig
         from pydantic import SecretStr
-        cfg = OffsecConfig(openai_api_key=SecretStr("sk-secret-12345"))
+        cfg = OffensiveAIConfig(openai_api_key=SecretStr("sk-secret-12345"))
         assert "sk-secret-12345" not in repr(cfg)
         assert "sk-secret-12345" not in str(cfg)
 
     def test_openai_key_helper_returns_value(self):
-        from offsec_ai.config import OffsecConfig
+        from offensive_ai.config import OffensiveAIConfig
         from pydantic import SecretStr
-        cfg = OffsecConfig(openai_api_key=SecretStr("sk-test"))
+        cfg = OffensiveAIConfig(openai_api_key=SecretStr("sk-test"))
         assert cfg.openai_key_value() == "sk-test"
         assert cfg.has_openai() is True
 
     def test_missing_key_helper_returns_none(self):
         import os
         from unittest.mock import patch
-        from offsec_ai.config import OffsecConfig
+        from offensive_ai.config import OffensiveAIConfig
         key_vars = [
             "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
-            "OFFSEC_OPENAI_API_KEY", "OFFSEC_ANTHROPIC_API_KEY", "OFFSEC_GEMINI_API_KEY",
+            "OFFENSIVE_AI_OPENAI_API_KEY", "OFFENSIVE_AI_ANTHROPIC_API_KEY", "OFFENSIVE_AI_GEMINI_API_KEY",
         ]
         clean_env = {k: v for k, v in os.environ.items() if k not in key_vars}
         with patch.dict(os.environ, clean_env, clear=True):
-            cfg = OffsecConfig()
+            cfg = OffensiveAIConfig()
             assert cfg.openai_key_value() is None
             assert cfg.anthropic_key_value() is None
             assert cfg.gemini_key_value() is None
 
     def test_reset_clears_singleton(self):
-        from offsec_ai.config import get_config, reset_config
+        from offensive_ai.config import get_config, reset_config
         a = get_config()
         reset_config()
         b = get_config()
@@ -236,7 +236,7 @@ class TestLogConfig:
     def test_configure_logging_is_idempotent(self):
         """Calling configure_logging twice should not add duplicate handlers."""
         configure_logging(level="DEBUG", fmt="text")
-        root = logging.getLogger("offsec_ai")
+        root = logging.getLogger("offensive_ai")
         handler_count = len(root.handlers)
         configure_logging(level="DEBUG", fmt="text")
         assert len(root.handlers) == handler_count
@@ -489,8 +489,8 @@ class TestLLMConversationAttackerAuthorization:
         attacker = LLMConversationAttacker(authorized=True)
         assert attacker is not None
 
-    def test_authorization_required_is_offsec_error(self):
-        with pytest.raises(OffsecError):
+    def test_authorization_required_is_offensiveai_error(self):
+        with pytest.raises(OffensiveAIError):
             LLMConversationAttacker(authorized=False)
 
 

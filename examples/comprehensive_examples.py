@@ -9,8 +9,8 @@ import asyncio
 import json
 import time
 from typing import List, Dict, Any
-from offsec_ai import PortChecker, L7Detector, L7Protection, ScanResult, L7Result
-from offsec_ai.core.port_scanner import ScanConfig
+from offensive_ai import PortChecker, L7Detector, L7Protection, ScanResult, L7Result
+from offensive_ai.core.port_scanner import ScanConfig
 
 
 # ============================================================================

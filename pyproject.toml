@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "offsec-ai"
-version = "2.9.0"
+name = "offensive-ai"
+version = "3.0.0"
 description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security, Postman Collection API security scanning and attacking, blockchain JSON-RPC node scanning/attacking and smart contract static analysis"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -79,16 +79,16 @@ gemini = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/htunn/offsec-ai"
-Repository = "https://github.com/htunn/offsec-ai"
-Issues = "https://github.com/htunn/offsec-ai/issues"
-Documentation = "https://github.com/htunn/offsec-ai#readme"
+Homepage = "https://github.com/htunn/offensive-ai"
+Repository = "https://github.com/htunn/offensive-ai"
+Issues = "https://github.com/htunn/offensive-ai/issues"
+Documentation = "https://docs.offensive-ai.org"
 
 [project.scripts]
-offsec-ai = "offsec_ai.cli:main"
+offensive-ai = "offensive_ai.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/offsec_ai"]
+packages = ["src/offensive_ai"]
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -125,7 +125,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["offsec_ai"]
+known_first_party = ["offensive_ai"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -145,32 +145,32 @@ strict_equality = true
 # New modules added after v2.5.0 should NOT be added here — fix types instead.
 [[tool.mypy.overrides]]
 module = [
-    "offsec_ai.cli",
-    "offsec_ai.core.ai_owasp_scanner",
-    "offsec_ai.core.auth_attacker",
-    "offsec_ai.core.auth_scanner",
-    "offsec_ai.core.cert_analyzer",
-    "offsec_ai.core.guardrail_bench",
-    "offsec_ai.core.hybrid_identity_checker",
-    "offsec_ai.core.k8s_attacker",
-    "offsec_ai.core.k8s_scanner",
-    "offsec_ai.core.l7_detector",
-    "offsec_ai.core.llm_conversation_attacker",
-    "offsec_ai.core.llm_judge",
-    "offsec_ai.core.mcp_attacker",
-    "offsec_ai.core.mcp_scanner",
-    "offsec_ai.core.mtls_checker",
-    "offsec_ai.core.openclaw_attacker",
-    "offsec_ai.core.openclaw_scanner",
-    "offsec_ai.core.owasp_scanner",
-    "offsec_ai.core.security_headers",
-    "offsec_ai.models.l7_result",
-    "offsec_ai.models.owasp_result",
-    "offsec_ai.models.scan_result",
-    "offsec_ai.utils.common_ports",
-    "offsec_ai.utils.exporters",
-    "offsec_ai.utils.l7_signatures",
-    "offsec_ai.utils.llm_jailbreaks",
+    "offensive_ai.cli",
+    "offensive_ai.core.ai_owasp_scanner",
+    "offensive_ai.core.auth_attacker",
+    "offensive_ai.core.auth_scanner",
+    "offensive_ai.core.cert_analyzer",
+    "offensive_ai.core.guardrail_bench",
+    "offensive_ai.core.hybrid_identity_checker",
+    "offensive_ai.core.k8s_attacker",
+    "offensive_ai.core.k8s_scanner",
+    "offensive_ai.core.l7_detector",
+    "offensive_ai.core.llm_conversation_attacker",
+    "offensive_ai.core.llm_judge",
+    "offensive_ai.core.mcp_attacker",
+    "offensive_ai.core.mcp_scanner",
+    "offensive_ai.core.mtls_checker",
+    "offensive_ai.core.openclaw_attacker",
+    "offensive_ai.core.openclaw_scanner",
+    "offensive_ai.core.owasp_scanner",
+    "offensive_ai.core.security_headers",
+    "offensive_ai.models.l7_result",
+    "offensive_ai.models.owasp_result",
+    "offensive_ai.models.scan_result",
+    "offensive_ai.utils.common_ports",
+    "offensive_ai.utils.exporters",
+    "offensive_ai.utils.l7_signatures",
+    "offensive_ai.utils.llm_jailbreaks",
 ]
 ignore_errors = true
 
@@ -191,7 +191,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/offsec_ai"]
+source = ["src/offensive_ai"]
 omit = ["*/tests/*"]
 
 [tool.coverage.report]

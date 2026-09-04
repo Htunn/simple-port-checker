@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
 
-from offsec_ai.core.hybrid_identity_checker import HybridIdentityChecker, HybridIdentityResult
+from offensive_ai.core.hybrid_identity_checker import HybridIdentityChecker, HybridIdentityResult
 
 
 # ---------------------------------------------------------------------------

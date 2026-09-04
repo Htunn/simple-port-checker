@@ -19,16 +19,16 @@ import pytest
 import respx
 import httpx
 
-from offsec_ai.core.auth_scanner import AuthScanner
-from offsec_ai.core.auth_attacker import AuthAttacker
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.models.auth_result import (
+from offensive_ai.core.auth_scanner import AuthScanner
+from offensive_ai.core.auth_attacker import AuthAttacker
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.models.auth_result import (
     AuthProtocol,
     AuthProviderInfo,
     AuthScanResult,
     AuthVulnSeverity,
 )
-from offsec_ai.utils.auth_cve_db import (
+from offensive_ai.utils.auth_cve_db import (
     AUTH_CVE_DB,
     match_cves,
 )
@@ -172,7 +172,7 @@ class TestAuthCveDb:
         assert "AUTH-ADV-011" in ids  # CVE-2018-0489
 
     def test_match_returns_cve_entry_objects(self):
-        from offsec_ai.utils.auth_cve_db import AuthCVEEntry
+        from offensive_ai.utils.auth_cve_db import AuthCVEEntry
         matches = match_cves("keycloak 20", [])
         for m in matches:
             assert isinstance(m, AuthCVEEntry)
@@ -199,7 +199,7 @@ class TestAuthScannerAnalysis:
         result = self._make_result(pkce_supported=False, issuer="https://auth.mock.local")
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-PKCE-002" in ids
+        assert "OAI-AUTH-PKCE-002" in ids
 
     def test_pkce_supported_but_not_required_produces_pkce001(self):
         scanner = self._scanner()
@@ -209,7 +209,7 @@ class TestAuthScannerAnalysis:
         result.provider_info.endpoints["authorization_endpoint"] = "https://auth.mock.local/oauth2/authorize"
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-PKCE-001" in ids
+        assert "OAI-AUTH-PKCE-001" in ids
 
     def test_implicit_flow_enabled_produces_impl001(self):
         scanner = self._scanner()
@@ -219,7 +219,7 @@ class TestAuthScannerAnalysis:
         )
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-IMPL-001" in ids
+        assert "OAI-AUTH-IMPL-001" in ids
 
     def test_alg_none_in_algorithms_produces_jwtalgn001(self):
         scanner = self._scanner()
@@ -229,9 +229,9 @@ class TestAuthScannerAnalysis:
         )
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-JWTALGN-001" in ids
+        assert "OAI-AUTH-JWTALGN-001" in ids
         # Severity must be CRITICAL
-        alg_none_vulns = [v for v in vulns if v.vuln_id == "OFFSEC-AUTH-JWTALGN-001"]
+        alg_none_vulns = [v for v in vulns if v.vuln_id == "OAI-AUTH-JWTALGN-001"]
         assert alg_none_vulns[0].severity == AuthVulnSeverity.CRITICAL
 
     def test_no_implicit_no_alg_none_clean_config(self):
@@ -253,7 +253,7 @@ class TestAuthScannerAnalysis:
         result.provider_info.raw = {"signing_certs_found": 0, "source": "https://idp.mock.local/saml/metadata"}
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-SAML-NOSIG" in ids
+        assert "OAI-AUTH-SAML-NOSIG" in ids
 
     def test_saml_with_certs_no_nosig_vuln(self):
         scanner = self._scanner()
@@ -262,7 +262,7 @@ class TestAuthScannerAnalysis:
         result.provider_info.endpoints["acs:HTTP-POST"] = "https://idp.mock.local/saml/acs"
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-SAML-NOSIG" not in ids
+        assert "OAI-AUTH-SAML-NOSIG" not in ids
 
     def test_saml_xsw_info_vuln_always_present(self):
         scanner = self._scanner()
@@ -271,7 +271,7 @@ class TestAuthScannerAnalysis:
         result.provider_info.endpoints["acs:HTTP-POST"] = "https://idp.mock.local/saml/acs"
         vulns = scanner._analyze_security(result)
         ids = {v.vuln_id for v in vulns}
-        assert "OFFSEC-AUTH-SAML-XSW" in ids
+        assert "OAI-AUTH-SAML-XSW" in ids
 
 
 # ===========================================================================
@@ -294,9 +294,9 @@ class TestAuthScannerLLMTriage:
         judge = self._mock_judge(vulnerable=True, confidence=0.60)
         scanner = AuthScanner(target="https://auth.mock.local", judge=judge)
         result = AuthScanResult(target="https://auth.mock.local", protocol=AuthProtocol.OIDC)
-        from offsec_ai.models.auth_result import AuthVulnerability
+        from offensive_ai.models.auth_result import AuthVulnerability
         vuln = AuthVulnerability(
-            vuln_id="OFFSEC-AUTH-STATE-001",
+            vuln_id="OAI-AUTH-STATE-001",
             severity=AuthVulnSeverity.MEDIUM,
             title="State parameter not required",
             description="Test",
@@ -310,9 +310,9 @@ class TestAuthScannerLLMTriage:
         judge = self._mock_judge(vulnerable=True, confidence=0.90)
         scanner = AuthScanner(target="https://auth.mock.local", judge=judge)
         result = AuthScanResult(target="https://auth.mock.local", protocol=AuthProtocol.OIDC)
-        from offsec_ai.models.auth_result import AuthVulnerability
+        from offensive_ai.models.auth_result import AuthVulnerability
         vuln = AuthVulnerability(
-            vuln_id="OFFSEC-AUTH-STATE-001",
+            vuln_id="OAI-AUTH-STATE-001",
             severity=AuthVulnSeverity.LOW,
             title="Low finding",
             description="Test",
@@ -327,9 +327,9 @@ class TestAuthScannerLLMTriage:
         judge = self._mock_judge(vulnerable=True, confidence=0.50)
         scanner = AuthScanner(target="https://auth.mock.local", judge=judge)
         result = AuthScanResult(target="https://auth.mock.local", protocol=AuthProtocol.OIDC)
-        from offsec_ai.models.auth_result import AuthVulnerability
+        from offensive_ai.models.auth_result import AuthVulnerability
         vuln = AuthVulnerability(
-            vuln_id="OFFSEC-AUTH-STATE-001",
+            vuln_id="OAI-AUTH-STATE-001",
             severity=AuthVulnSeverity.LOW,
             title="Low finding",
             description="Test",
@@ -343,9 +343,9 @@ class TestAuthScannerLLMTriage:
         judge = self._mock_judge()
         scanner = AuthScanner(target="https://auth.mock.local", judge=judge)
         result = AuthScanResult(target="https://auth.mock.local", protocol=AuthProtocol.OIDC)
-        from offsec_ai.models.auth_result import AuthVulnerability
+        from offensive_ai.models.auth_result import AuthVulnerability
         vuln = AuthVulnerability(
-            vuln_id="OFFSEC-AUTH-JWTALGN-001",
+            vuln_id="OAI-AUTH-JWTALGN-001",
             severity=AuthVulnSeverity.CRITICAL,
             title="alg=none accepted",
             description="Test",
@@ -361,9 +361,9 @@ class TestAuthScannerLLMTriage:
         judge.evaluate.side_effect = RuntimeError("LLM exploded")
         scanner = AuthScanner(target="https://auth.mock.local", judge=judge)
         result = AuthScanResult(target="https://auth.mock.local", protocol=AuthProtocol.OIDC)
-        from offsec_ai.models.auth_result import AuthVulnerability
+        from offensive_ai.models.auth_result import AuthVulnerability
         vuln = AuthVulnerability(
-            vuln_id="OFFSEC-AUTH-STATE-001",
+            vuln_id="OAI-AUTH-STATE-001",
             severity=AuthVulnSeverity.MEDIUM,
             title="test",
             description="test",
@@ -412,7 +412,7 @@ class TestAuthScannerIntegration:
 
         assert result.provider_info.implicit_flow_enabled is True
         ids = {v.vuln_id for v in result.vulnerabilities}
-        assert "OFFSEC-AUTH-IMPL-001" in ids
+        assert "OAI-AUTH-IMPL-001" in ids
 
     @pytest.mark.asyncio
     @respx.mock
@@ -427,7 +427,7 @@ class TestAuthScannerIntegration:
         result = await scanner.scan()
 
         critical = result.critical_vulns
-        assert any(v.vuln_id == "OFFSEC-AUTH-JWTALGN-001" for v in critical)
+        assert any(v.vuln_id == "OAI-AUTH-JWTALGN-001" for v in critical)
 
     @pytest.mark.asyncio
     @respx.mock
@@ -586,7 +586,7 @@ class TestAuthAttacker:
 
     def test_enrich_with_llm_appends_analysis_to_evidence(self):
         """_enrich_with_llm appends LLM analysis text to the first triggered result's evidence."""
-        from offsec_ai.models.auth_result import AuthAttackResult, AuthAttackReport, AuthProtocol
+        from offensive_ai.models.auth_result import AuthAttackResult, AuthAttackReport, AuthProtocol
 
         judge = MagicMock()
         judge.provider = "mock"
@@ -622,7 +622,7 @@ class TestAuthAttacker:
 
     def test_enrich_with_llm_skips_when_no_triggered(self):
         """_enrich_with_llm must not call judge.evaluate when nothing was triggered."""
-        from offsec_ai.models.auth_result import AuthAttackResult, AuthAttackReport, AuthProtocol
+        from offensive_ai.models.auth_result import AuthAttackResult, AuthAttackReport, AuthProtocol
 
         judge = MagicMock()
         judge.provider = "mock"
@@ -660,8 +660,8 @@ class TestSamlMetadataParsing:
 
     def test_parse_saml_metadata_invalid_xml_returns_false(self):
         """Lines 282-284: invalid XML parse returns False."""
-        from offsec_ai.core.auth_scanner import AuthScanner
-        from offsec_ai.models.auth_result import AuthScanResult
+        from offensive_ai.core.auth_scanner import AuthScanner
+        from offensive_ai.models.auth_result import AuthScanResult
 
         scanner = AuthScanner(target="https://example.com", timeout=5.0)
         result = AuthScanResult(target="https://example.com")
@@ -672,8 +672,8 @@ class TestSamlMetadataParsing:
 
     def test_parse_saml_metadata_wrong_namespace_returns_false(self):
         """Line 289: non-SAML XML root tag returns False."""
-        from offsec_ai.core.auth_scanner import AuthScanner
-        from offsec_ai.models.auth_result import AuthScanResult
+        from offensive_ai.core.auth_scanner import AuthScanner
+        from offensive_ai.models.auth_result import AuthScanResult
 
         scanner = AuthScanner(target="https://example.com", timeout=5.0)
         result = AuthScanResult(target="https://example.com")
@@ -685,8 +685,8 @@ class TestSamlMetadataParsing:
 
     def test_parse_saml_metadata_with_sso_service(self):
         """Lines 307-310: SSO service location extracted."""
-        from offsec_ai.core.auth_scanner import AuthScanner
-        from offsec_ai.models.auth_result import AuthScanResult
+        from offensive_ai.core.auth_scanner import AuthScanner
+        from offensive_ai.models.auth_result import AuthScanResult
 
         scanner = AuthScanner(target="https://example.com", timeout=5.0)
         result = AuthScanResult(target="https://example.com")
@@ -713,7 +713,7 @@ class TestAuthScannerAdditionalCoverage:
     @respx.mock
     async def test_scan_exception_in_detect_and_parse_sets_error(self):
         """Lines 109-111: exception in _detect_and_parse sets result.error."""
-        from offsec_ai.core.auth_scanner import AuthScanner
+        from offensive_ai.core.auth_scanner import AuthScanner
 
         target = "https://broken-auth.example.com"
         scanner = AuthScanner(target=target, timeout=5.0)
@@ -736,7 +736,7 @@ class TestAuthScannerAdditionalCoverage:
     @respx.mock
     async def test_scan_with_llm_judge_calls_triage(self):
         """Line 119: _phase_llm_triage called when judge with provider is set."""
-        from offsec_ai.core.auth_scanner import AuthScanner
+        from offensive_ai.core.auth_scanner import AuthScanner
 
         target = "https://idp.example.com"
         mock_judge = MagicMock()

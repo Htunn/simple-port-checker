@@ -17,12 +17,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.mtls_checker import (
+from offensive_ai.core.mtls_checker import (
     MTLSChecker,
     generate_self_signed_cert,
     validate_certificate_files,
 )
-from offsec_ai.models.mtls_result import CertificateInfo, MTLSResult
+from offensive_ai.models.mtls_result import CertificateInfo, MTLSResult
 
 
 # ---------------------------------------------------------------------------

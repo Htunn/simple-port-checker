@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement for offsec-ai
+description: Suggest a new feature or enhancement for offensive-ai
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: Problem Statement
       description: What problem does this feature solve? What are you trying to do that isn't currently possible?
-      placeholder: "I'm trying to scan X but offsec-ai doesn't support..."
+      placeholder: "I'm trying to scan X but offensive-ai doesn't support..."
     validations:
       required: true
 
@@ -35,7 +35,7 @@ body:
     id: area
     attributes:
       label: Feature Area
-      description: Which part of offsec-ai does this relate to?
+      description: Which part of offensive-ai does this relate to?
       multiple: true
       options:
         - Auth Scanner

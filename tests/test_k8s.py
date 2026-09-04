@@ -25,10 +25,10 @@ import httpx
 import pytest
 import respx
 
-from offsec_ai.core.k8s_attacker import K8sAttacker
-from offsec_ai.core.k8s_scanner import K8sScanner
-from offsec_ai.exceptions import AuthorizationRequired
-from offsec_ai.models.k8s_result import (
+from offensive_ai.core.k8s_attacker import K8sAttacker
+from offensive_ai.core.k8s_scanner import K8sScanner
+from offensive_ai.exceptions import AuthorizationRequired
+from offensive_ai.models.k8s_result import (
     K8sAttackReport,
     K8sAttackResult,
     K8sComponent,
@@ -38,8 +38,8 @@ from offsec_ai.models.k8s_result import (
     K8sVulnerability,
     K8sVulnSeverity,
 )
-from offsec_ai.utils.k8s_cve_db import K8S_CVE_DB, match_cves
-from offsec_ai.utils.k8s_payloads import (
+from offensive_ai.utils.k8s_cve_db import K8S_CVE_DB, match_cves
+from offensive_ai.utils.k8s_payloads import (
     APISERVER_ANON_READ_PAYLOADS,
     APISERVER_PROBE_PATHS,
     ETCD_KEY_PAYLOADS,
@@ -795,7 +795,7 @@ class TestK8sAttackerReportSerialization:
 class TestK8sCliSmoke:
     def test_k8s_scan_command_exists(self):
         from click.testing import CliRunner
-        from offsec_ai.cli import main
+        from offensive_ai.cli import main
 
         runner = CliRunner()
         result = runner.invoke(main, ["k8s-scan", "--help"])
@@ -804,7 +804,7 @@ class TestK8sCliSmoke:
 
     def test_k8s_attack_command_exists(self):
         from click.testing import CliRunner
-        from offsec_ai.cli import main
+        from offensive_ai.cli import main
 
         runner = CliRunner()
         result = runner.invoke(main, ["k8s-attack", "--help"])
@@ -813,7 +813,7 @@ class TestK8sCliSmoke:
 
     def test_k8s_attack_requires_authorization_flag(self):
         from click.testing import CliRunner
-        from offsec_ai.cli import main
+        from offensive_ai.cli import main
 
         runner = CliRunner()
         result = runner.invoke(main, ["k8s-attack", "10.0.0.1"])

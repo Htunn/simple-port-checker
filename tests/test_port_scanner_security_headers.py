@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from offsec_ai.core.port_scanner import PortChecker, PortResult, ScanResult
+from offensive_ai.core.port_scanner import PortChecker, PortResult, ScanResult
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ class TestCheckHeadersMocked:
     @pytest.mark.asyncio
     async def test_check_headers_with_all_security_headers(self):
         import httpx
-        from offsec_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
+        from offensive_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
 
         checker = SecurityHeaderChecker(timeout=2.0)
 
@@ -208,7 +208,7 @@ class TestCheckHeadersMocked:
     @pytest.mark.asyncio
     async def test_check_headers_missing_all_headers(self):
         import httpx
-        from offsec_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
+        from offensive_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
 
         checker = SecurityHeaderChecker()
 
@@ -230,7 +230,7 @@ class TestCheckHeadersMocked:
     @pytest.mark.asyncio
     async def test_batch_check_multiple_urls(self):
         import httpx
-        from offsec_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
+        from offensive_ai.core.security_headers import SecurityHeaderChecker, HeaderAnalysisResult
 
         checker = SecurityHeaderChecker()
 
@@ -256,7 +256,7 @@ class TestCheckHeadersMocked:
     @pytest.mark.asyncio
     async def test_check_headers_with_cors_issue(self):
         import httpx
-        from offsec_ai.core.security_headers import SecurityHeaderChecker
+        from offensive_ai.core.security_headers import SecurityHeaderChecker
 
         checker = SecurityHeaderChecker()
 
