@@ -33,6 +33,18 @@
 
 ## Features
 
+### New in v3.0.0 — Project Rebrand: `offsec-ai` → `offensive-ai`
+
+| Change | Description |
+|--------|-------------|
+| 📦 **Package & CLI** | Python import path `offsec_ai` → `offensive_ai`; PyPI project and CLI command `offsec-ai` → `offensive-ai` |
+| 🐳 **Docker & GHCR** | Image renamed to `htunnthuthu/offensive-ai` / `ghcr.io/htunn/offensive-ai` |
+| ⚙️ **Config env vars** | Prefix `OFFSEC_` → `OFFENSIVE_AI_` (standard `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`/`GEMINI_API_KEY` are unaffected) |
+| 🏷️ **Exceptions & vuln IDs** | `OffsecError`/`OffsecConfig` → `OffensiveAIError`/`OffensiveAIConfig`; vulnerability ID prefix `OFFSEC-*` → `OAI-*` |
+| 📖 **Docs** | Now published at [docs.offensive-ai.org](https://docs.offensive-ai.org) |
+
+> No backward-compatible shim is provided — pin to a pre-3.0.0 release if you depend on the old `offsec_ai` import path or `offsec-ai` PyPI name.
+
 ### New in v2.9.0 — Blockchain Node Security
 
 | Feature | Description |
