@@ -97,6 +97,8 @@ from .models.postman_result import (
 )
 from .core.k8s_scanner import K8sScanner
 from .core.k8s_attacker import K8sAttacker
+from .core.blockchain_scanner import BlockchainScanner, analyze_contract
+from .core.blockchain_attacker import BlockchainAttacker
 from .core.auth_scanner import AuthScanner
 from .core.auth_attacker import AuthAttacker
 from .models.auth_result import (
@@ -116,6 +118,17 @@ from .models.k8s_result import (
     K8sComponent,
     K8sExposedComponent,
     K8sServerInfo,
+)
+from .models.blockchain_result import (
+    BlockchainScanResult,
+    BlockchainNodeInfo,
+    BlockchainVulnerability,
+    BlockchainVulnSeverity,
+    BlockchainAttackReport,
+    BlockchainAttackResult,
+    ChainType,
+    ContractAuditResult,
+    ContractFinding,
 )
 
 __all__ = [
@@ -198,6 +211,10 @@ __all__ = [
     # Kubernetes modules
     "K8sScanner",
     "K8sAttacker",
+    # Blockchain modules
+    "BlockchainScanner",
+    "BlockchainAttacker",
+    "analyze_contract",
     # Kubernetes result models
     "K8sScanResult",
     "K8sAttackReport",
@@ -207,6 +224,16 @@ __all__ = [
     "K8sComponent",
     "K8sExposedComponent",
     "K8sServerInfo",
+    # Blockchain result models
+    "BlockchainScanResult",
+    "BlockchainNodeInfo",
+    "BlockchainVulnerability",
+    "BlockchainVulnSeverity",
+    "BlockchainAttackReport",
+    "BlockchainAttackResult",
+    "ChainType",
+    "ContractAuditResult",
+    "ContractFinding",
     # Auth (OIDC / OAuth2 / SAML) modules
     "AuthScanner",
     "AuthAttacker",

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "offsec-ai"
-version = "2.8.0"
-description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security, Postman Collection API security scanning and attacking"
+version = "2.9.0"
+description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security, Postman Collection API security scanning and attacking, blockchain JSON-RPC node scanning/attacking and smart contract static analysis"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -17,7 +17,7 @@ maintainers = [
     {name = "Htunn"},
     {email = "htunnthuthu.linux@gmail.com"}
 ]
-keywords = ["firewall", "port-scanner", "l7-protection", "waf", "network", "security", "ssl", "tls", "certificate", "certificate-analysis", "pki", "offensive-security", "red-team", "pentest", "ai", "llm", "mcp", "owasp", "ai-security", "model-context-protocol", "openclaw", "ai-gateway", "personal-ai"]
+keywords = ["firewall", "port-scanner", "l7-protection", "waf", "network", "security", "ssl", "tls", "certificate", "certificate-analysis", "pki", "offensive-security", "red-team", "pentest", "ai", "llm", "mcp", "owasp", "ai-security", "model-context-protocol", "openclaw", "ai-gateway", "personal-ai", "blockchain", "ethereum", "web3", "smart-contract", "json-rpc"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

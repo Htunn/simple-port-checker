@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-09-04
+
+### Added
+
+- **Blockchain JSON-RPC Node Security Scanner & Attacker** — passive/active security assessment of Ethereum and EVM-compatible chains (Polygon, BSC, Arbitrum, Optimism, Avalanche):
+  - `BlockchainScanner` — fingerprints the client (Geth/Erigon/Besu/Nethermind/bor) and chain via `web3_clientVersion`/`eth_chainId`, then probes whether admin (`admin_peers`, `admin_nodeInfo`), wallet (`eth_accounts`, `personal_listAccounts`), mining (`eth_mining`, `miner_getHashrate`), and debug/txpool (`debug_dumpBlock`, `txpool_content`) RPC namespaces are reachable without authentication
+  - `BlockchainAttacker` — authorization-gated active testing with **safe mode** (read-only admin/peer probes) and **deep mode** (adds debug/txpool leak checks plus unrestricted `eth_sign`/`eth_sendTransaction` tests against accounts discovered via `eth_accounts`). Every payload is engineered to be non-destructive: `admin_addPeer` uses a non-routable loopback enode, and `eth_sendTransaction` is a zero-value self-transfer — no functioning peer is added and no funds ever leave the account
+  - `analyze_contract()` — offline heuristic static analysis of a smart contract's ABI and/or bytecode (self-destruct, delegatecall, re-entrancy pattern via CALL-before-SSTORE ordering, unchecked arithmetic), mapped to the OWASP Smart Contract Top 10 / SWC Registry. Local-only, no network calls, no authorization flag required
+  - `src/offsec_ai/models/blockchain_result.py` — Pydantic models: `BlockchainScanResult`, `BlockchainNodeInfo`, `BlockchainVulnerability`, `BlockchainAttackReport`, `BlockchainAttackResult`, `ChainType`, `ContractAuditResult`, `ContractFinding`
+  - `src/offsec_ai/utils/blockchain_cve_db.py` — 5 misconfiguration advisories (`CHAIN-ADV-2024-001` through `005`), RPC-method-to-category map, and client/chain-ID fingerprinting helpers
+  - `src/offsec_ai/utils/blockchain_payloads.py` — passive probe method lists and non-destructive attack payloads
+  - `blockchain-scan` CLI command with `--port`, `--header`, `--timeout`, `--no-tls-verify`, `--format`, `--output`, `--llm-judge` options
+  - `blockchain-attack` CLI command with `--i-have-authorization` (required), `--mode safe|deep`, and all scan options
+  - `blockchain-contract-audit` CLI command (`--abi`, `--bytecode`) — no authorization flag needed since it performs only local static analysis
+  - All Blockchain types exported from the `offsec_ai` package `__all__`
+  - 61 new tests across `tests/test_blockchain_scanner.py` and `tests/test_blockchain_attacker.py` covering the CVE DB, payloads, static analysis heuristics, HTTP-mocked scanner/attacker integration, and LLM enrichment
+  - New doc page [`offsec-ai-docs/blockchain.md`](offsec-ai-docs/blockchain.md)
+
+### Changed
+
+- `README.md` updated with a v2.9.0 feature table, Quick Start examples, and updated "All CLI Commands" list
+- Banner tagline updated to `AI/LLM · MCP · A2A · Postman · Blockchain · Red-Team`
+- Legal notice updated to include `blockchain-attack` in the list of commands requiring `--i-have-authorization`
+
 ## [2.8.0] - 2026-09-04
 
 ### Added

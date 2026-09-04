@@ -5,7 +5,7 @@
  ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
  ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
   ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
-  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Red-Team
+  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Blockchain · Red-Team
 ```
 
 <p align="center">
@@ -27,11 +27,21 @@
 
 `offsec-ai` is a Python library and CLI that combines classic network reconnaissance with modern AI/LLM security testing. It probes live AI/LLM endpoints for the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/), scans and actively attacks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers for known CVEs, and performs full-stack infrastructure security assessments.
 
-> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
+> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, `blockchain-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
 
 ---
 
 ## Features
+
+### New in v2.9.0 — Blockchain Node Security
+
+| Feature | Description |
+|---------|-------------|
+| ⛓️ **Blockchain Scanner** | Fingerprints Ethereum/EVM-compatible JSON-RPC nodes (Geth, Erigon, Besu, Nethermind, bor) and their chain (Ethereum, Polygon, BSC, Arbitrum, Optimism, Avalanche); checks whether admin/debug/wallet RPC namespaces are reachable without authentication |
+| 🔑 **Wallet & Admin Exposure Detection** | Flags disclosed wallet addresses (`eth_accounts`), an unauthenticated `admin_*` namespace, and a reachable `debug_*`/`txpool_*` namespace, each mapped to a dedicated advisory in `BLOCKCHAIN_CVE_DB` |
+| ⚔️ **Blockchain Attacker** | Authorization-gated active testing with **safe mode** (read-only admin/peer probes) and **deep mode** (adds debug/txpool leak checks + unrestricted `eth_sign`/`eth_sendTransaction` tests against discovered accounts) — every payload is engineered to be non-destructive |
+| 🧐 **Smart Contract Static Analysis** | `blockchain-contract-audit` runs offline, heuristic opcode/ABI-shape analysis (self-destruct, delegatecall, re-entrancy pattern, unchecked arithmetic) mapped to the OWASP Smart Contract Top 10 / SWC Registry — no network calls, no authorization flag required |
+| 🤖 **Optional LLM Judge** | Enriches MEDIUM/LOW findings with provider reasoning, consistent with every other `--llm-judge` command |
 
 ### New in v2.8.0 — Internal Consistency & Maintainability Pass
 
@@ -163,12 +173,18 @@ docker run --rm ghcr.io/htunn/offsec-ai:latest --help
  ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
  ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
   ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝
-  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Red-Team
+  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Postman · Blockchain · Red-Team
 ```
 
 ### CLI
 
 ```bash
+# Blockchain JSON-RPC node security
+offsec-ai blockchain-scan node.example.com --port 8545
+offsec-ai blockchain-scan node.example.com --llm-judge
+offsec-ai blockchain-attack node.example.com --i-have-authorization --mode deep
+offsec-ai blockchain-contract-audit --abi ./MyToken.json --bytecode ./MyToken.bin
+
 # Postman collection security
 offsec-ai postman-scan collection.json -T https://api.example.com
 offsec-ai postman-scan collection.json -e env.json --llm-judge --output report.json
@@ -1259,6 +1275,9 @@ Commands:
   k8s-attack          Authorized active red-team attack against Kubernetes components
   auth-scan           Passive OIDC / OAuth 2.0 / SAML auth protocol security scan
   auth-attack         Authorized active attack against auth/identity endpoints
+  blockchain-scan     Scan a blockchain JSON-RPC endpoint (Ethereum/EVM) for security issues
+  blockchain-attack   Authorized active attack against a blockchain JSON-RPC node
+  blockchain-contract-audit  Heuristic static analysis of a smart contract ABI/bytecode
   postman-scan        Passively scan every API endpoint defined in a Postman Collection v2.x
   postman-attack      Perform authorized active security testing against a Postman Collection
   scan                Scan target hosts for open ports

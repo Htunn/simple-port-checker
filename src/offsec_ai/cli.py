@@ -48,6 +48,8 @@ from .core.guardrail_bench import GuardrailBench
 from .core.llm_judge import LLMJudge
 from .core.k8s_scanner import K8sScanner
 from .core.k8s_attacker import K8sAttacker
+from .core.blockchain_scanner import BlockchainScanner, analyze_contract
+from .core.blockchain_attacker import BlockchainAttacker
 from .core.auth_scanner import AuthScanner
 from .core.auth_attacker import AuthAttacker
 from .exceptions import AuthorizationRequired
@@ -79,6 +81,12 @@ from .models.auth_result import (
     AuthVulnSeverity,
     AuthProtocol,
 )
+from .models.blockchain_result import (
+    BlockchainScanResult,
+    BlockchainAttackReport,
+    BlockchainVulnSeverity,
+    ContractAuditResult,
+)
 from .utils.common_ports import TOP_PORTS, get_service_name, get_port_description
 from .utils.exporters import OwaspPdfExporter, export_to_csv, export_to_json
 from . import __version__
@@ -93,7 +101,7 @@ LOGO = r"""[bold red]
  ██║   ██║██╔══╝  ██╔══╝  ╚════██║██╔══╝  ██║     ╚════╝██╔══██║██║
  ╚██████╔╝██║     ██║     ███████║███████╗╚██████╗       ██║  ██║██║
   ╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝ ╚═════╝       ╚═╝  ╚═╝╚═╝[/bold red]
-[dim]  Offensive-Security Toolkit · AI/LLM · MCP · Red-Team  [/dim]"""
+[dim]  Offensive-Security Toolkit · AI/LLM · MCP · A2A · Blockchain · Red-Team  [/dim]"""
 
 def _print_logo() -> None:
     console.print(LOGO)
@@ -4515,6 +4523,370 @@ def _display_a2a_attack_report(report: A2AAttackReport, judge_provider: str | No
                 console.print(f"    [dim]Evidence: {r.evidence[:120]}[/dim]")
     else:
         console.print("\n[green]No attacks triggered. Target appears resilient to tested probes.[/green]")
+
+
+# ============================================================================
+# blockchain-scan — passive security scan of a blockchain JSON-RPC endpoint
+# ============================================================================
+
+@main.command("blockchain-scan")
+@click.argument("target")
+@click.option("--port", "-p", default=8545, show_default=True, type=int,
+              help="JSON-RPC port (used when TARGET has no scheme).")
+@click.option("--header", "extra_headers", multiple=True, metavar="KEY:VALUE",
+              help="Extra HTTP headers, e.g. --header 'Authorization:Bearer <token>'")
+@click.option("--timeout", default=15.0, show_default=True, help="Request timeout (seconds).")
+@click.option("--no-tls-verify", "no_tls_verify", is_flag=True, default=False,
+              help="Disable TLS certificate verification (for self-signed certs).")
+@click.option("--format", "output_format", type=click.Choice(["console", "json"]),
+              default="console", show_default=True)
+@click.option("--output", "-o", type=click.Path(), default=None,
+              help="Save JSON result to file.")
+@click.option("--llm-judge", "use_judge", is_flag=True, default=False,
+              help="Use LLM judge (auto-detected provider) to enrich findings.")
+def blockchain_scan(target, port, extra_headers, timeout, no_tls_verify, output_format, output, use_judge):
+    """Scan a blockchain JSON-RPC endpoint (Ethereum / EVM-compatible) for security issues.
+
+    TARGET is a hostname/IP (combined with --port) or a full URL. The scanner
+    fingerprints the client/chain and checks whether admin/debug/wallet RPC
+    namespaces are reachable without authentication.
+
+    \b
+    Examples:
+        offsec-ai blockchain-scan node.example.com --port 8545
+        offsec-ai blockchain-scan https://rpc.example.com --format json --output report.json
+    """
+    judge_provider = asyncio.run(_run_blockchain_scan(
+        target=target, port=port, extra_headers=list(extra_headers),
+        timeout=timeout, no_tls_verify=no_tls_verify,
+        output_format=output_format, output=output, use_judge=use_judge,
+    ))
+    if output_format == "console" and judge_provider:
+        console.print(f"[dim]LLM Judge powered by: [bold green]{judge_provider}[/bold green][/dim]")
+
+
+async def _run_blockchain_scan(target, port, extra_headers, timeout, no_tls_verify,
+                                output_format, output, use_judge=False):
+    headers = {}
+    for h in extra_headers:
+        if ":" in h:
+            k, v = h.split(":", 1)
+            headers[k.strip()] = v.strip()
+
+    judge = None
+    judge_provider: str | None = None
+    if use_judge:
+        judge = LLMJudge.from_env()
+        if not judge.is_available():
+            console.print("[yellow]Warning: --llm-judge set but no provider found. "
+                          "Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY.[/yellow]")
+            judge = None
+        else:
+            judge_provider = judge.provider
+            console.print("[bold cyan]LLM judge enabled.[/bold cyan]")
+
+    scanner = BlockchainScanner(
+        target=target, port=port, headers=headers, timeout=timeout,
+        verify_tls=not no_tls_verify, judge=judge,
+    )
+
+    with Progress(
+        SpinnerColumn(), TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(), console=console,
+    ) as progress:
+        task = progress.add_task(f"Scanning blockchain node {target}...", total=None)
+        result: BlockchainScanResult = await scanner.scan()
+        progress.stop_task(task)
+
+    if output_format == "json" or output:
+        data = result.model_dump(mode="json")
+        if output:
+            Path(output).write_text(json.dumps(data, indent=2, default=str))
+            console.print(f"[green]Results saved to {output}[/green]")
+        if output_format == "json":
+            console.print_json(json.dumps(data, default=str))
+        return judge_provider
+
+    _display_blockchain_scan_result(result, judge_provider=judge_provider)
+    return judge_provider
+
+
+def _display_blockchain_scan_result(result: BlockchainScanResult, judge_provider: str | None = None) -> None:
+    if result.error:
+        console.print(f"[bold red]Error:[/bold red] {result.error}")
+        return
+
+    all_vulns = result.all_vulns
+    critical = [v for v in all_vulns if v.severity == BlockchainVulnSeverity.CRITICAL]
+    high = [v for v in all_vulns if v.severity == BlockchainVulnSeverity.HIGH]
+    panel_color = "red" if critical else ("yellow" if high else "green")
+    info = result.node_info
+
+    console.print(Panel(
+        f"[bold]Target:[/bold] {result.target}:{result.port}\n"
+        f"[bold]Client:[/bold] {info.client_version or '—'}\n"
+        f"[bold]Chain:[/bold] {info.chain_type.value}  [bold]Chain ID:[/bold] {info.chain_id or '—'}\n"
+        f"[bold]Latest block:[/bold] {info.latest_block or '—'}  "
+        f"[bold]Peers:[/bold] {info.peer_count if info.peer_count is not None else '—'}\n"
+        f"[bold]Admin API:[/bold] {'[red]exposed[/red]' if result.admin_api_exposed else '[green]no[/green]'}  "
+        f"[bold]Debug API:[/bold] {'[red]exposed[/red]' if result.debug_api_exposed else '[green]no[/green]'}  "
+        f"[bold]Wallets disclosed:[/bold] {len(result.wallet_addresses)}\n"
+        f"[bold]Vulnerabilities:[/bold] [red]{len(critical)} critical[/red]  "
+        f"[yellow]{len(high)} high[/yellow]  {len(all_vulns)} total  "
+        f"[bold]CVE matches:[/bold] {len(result.cve_matches)}\n"
+        f"[bold]LLM Judge:[/bold] {judge_provider if judge_provider else 'Disabled'}\n"
+        f"[bold]Duration:[/bold] {result.scan_duration:.1f}s",
+        title="[bold cyan]Blockchain Security Scan Results[/bold cyan]",
+        border_style=panel_color,
+    ))
+
+    if all_vulns:
+        console.print("\n[bold]Vulnerabilities Found:[/bold]")
+        for vuln in all_vulns:
+            sev_color = {
+                BlockchainVulnSeverity.CRITICAL: "bold red",
+                BlockchainVulnSeverity.HIGH: "red",
+                BlockchainVulnSeverity.MEDIUM: "yellow",
+                BlockchainVulnSeverity.LOW: "cyan",
+            }.get(vuln.severity, "white")
+            cve = f" [{vuln.cve_id}]" if vuln.cve_id else ""
+            console.print(
+                f"  [{sev_color}]{vuln.severity.value.upper()}[/{sev_color}] "
+                f"[bold]{vuln.vuln_id}[/bold]{cve}: {vuln.title}"
+            )
+            if vuln.evidence:
+                console.print(f"    [dim]Evidence: {vuln.evidence[:120]}[/dim]")
+            if vuln.remediation:
+                console.print(f"    [green]Fix: {vuln.remediation[:120]}[/green]")
+    else:
+        console.print("\n[green]No vulnerabilities found.[/green]")
+
+
+# ============================================================================
+# blockchain-attack — blockchain node attacker (gated, authorized use only)
+# ============================================================================
+
+@main.command("blockchain-attack")
+@click.argument("target")
+@click.option("--i-have-authorization", "authorized", is_flag=True, default=False, required=True,
+              help="REQUIRED: Confirms you have explicit written authorization to test this target.")
+@click.option("--port", "-p", default=8545, show_default=True, type=int,
+              help="JSON-RPC port (used when TARGET has no scheme).")
+@click.option("--mode", type=click.Choice(["safe", "deep"]), default="safe", show_default=True,
+              help="safe: read-only admin/peer probes. deep: adds debug/txpool leak checks "
+                   "and unrestricted signing tests against discovered accounts.")
+@click.option("--header", "extra_headers", multiple=True, metavar="KEY:VALUE")
+@click.option("--timeout", default=15.0, show_default=True)
+@click.option("--no-tls-verify", "no_tls_verify", is_flag=True, default=False,
+              help="Disable TLS certificate verification.")
+@click.option("--format", "output_format", type=click.Choice(["console", "json"]),
+              default="console", show_default=True)
+@click.option("--output", "-o", type=click.Path(), default=None)
+@click.option("--llm-judge", "use_judge", is_flag=True, default=False,
+              help="Use LLM judge (auto-detected provider) to enrich attack findings.")
+def blockchain_attack(target, authorized, port, mode, extra_headers, timeout, no_tls_verify,
+                       output_format, output, use_judge):
+    """Perform authorized active security testing against a blockchain JSON-RPC node.
+
+    \b
+    ⚠  WARNING: This command sends active attack payloads.
+    Only run against systems you have EXPLICIT WRITTEN AUTHORIZATION to test.
+    Unauthorized use is illegal.
+
+    All payloads are engineered to be non-destructive (see BlockchainAttacker
+    module docstring) — no real peer is added, no funds leave any account.
+
+    \b
+    Required flag: --i-have-authorization
+
+    Recommend running blockchain-scan first:
+        offsec-ai blockchain-scan node.example.com --port 8545
+        offsec-ai blockchain-attack node.example.com --i-have-authorization --mode deep
+    """
+    if not authorized:
+        console.print("[bold red]Error:[/bold red] --i-have-authorization flag is required. "
+                      "Only use this against systems you are authorized to test.")
+        raise SystemExit(1)
+
+    asyncio.run(_run_blockchain_attack(
+        target=target, port=port, mode=mode, extra_headers=list(extra_headers),
+        timeout=timeout, no_tls_verify=no_tls_verify,
+        output_format=output_format, output=output, use_judge=use_judge,
+    ))
+
+
+async def _run_blockchain_attack(target, port, mode, extra_headers, timeout, no_tls_verify,
+                                  output_format, output, use_judge=False):
+    headers = {}
+    for h in extra_headers:
+        if ":" in h:
+            k, v = h.split(":", 1)
+            headers[k.strip()] = v.strip()
+
+    judge = None
+    judge_provider: str | None = None
+    if use_judge:
+        judge = LLMJudge.from_env()
+        if not judge.is_available():
+            console.print("[yellow]Warning: --llm-judge set but no provider found. "
+                          "Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY.[/yellow]")
+            judge = None
+        else:
+            judge_provider = judge.provider
+            console.print("[bold cyan]LLM judge enabled.[/bold cyan]")
+
+    scan_result = None
+    if mode == "deep":
+        console.print("[cyan]Running reconnaissance scan first...[/cyan]")
+        scanner = BlockchainScanner(target=target, port=port, headers=headers, timeout=timeout,
+                                     verify_tls=not no_tls_verify)
+        try:
+            scan_result = await scanner.scan()
+        except Exception:
+            pass
+
+    attacker = BlockchainAttacker(authorized=True, judge=judge)
+
+    with Progress(
+        SpinnerColumn(), TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(), console=console,
+    ) as progress:
+        task = progress.add_task(f"Attacking blockchain node {target} ({mode} mode)...", total=None)
+        report: BlockchainAttackReport = await attacker.attack(
+            target=target, port=port, mode=mode, headers=headers, timeout=timeout,
+            verify_tls=not no_tls_verify, scan_result=scan_result,
+        )
+        progress.stop_task(task)
+
+    if output_format == "json" or output:
+        data = report.model_dump(mode="json")
+        if output:
+            Path(output).write_text(json.dumps(data, indent=2, default=str))
+            console.print(f"[green]Results saved to {output}[/green]")
+        if output_format == "json":
+            console.print_json(json.dumps(data, default=str))
+        return
+
+    _display_blockchain_attack_report(report, judge_provider=judge_provider)
+    if judge_provider:
+        console.print(f"[dim]LLM Judge powered by: [bold green]{judge_provider}[/bold green][/dim]")
+
+
+def _display_blockchain_attack_report(report: BlockchainAttackReport, judge_provider: str | None = None) -> None:
+    triggered = report.successful_attacks
+    panel_color = "red" if triggered else "green"
+
+    console.print(Panel(
+        f"[bold]Target:[/bold] {report.target}\n"
+        f"[bold]Attacks run:[/bold] {report.attacks_run}  "
+        f"[bold]Triggered:[/bold] [{'red' if triggered else 'green'}]{report.attacks_triggered}[/{'red' if triggered else 'green'}]\n"
+        f"[bold]LLM Judge:[/bold] {judge_provider if judge_provider else 'Disabled'}\n"
+        f"[bold]Duration:[/bold] {report.scan_duration:.1f}s\n"
+        f"[dim]{report.authorization_note}[/dim]",
+        title="[bold red]Blockchain Attack Report[/bold red]",
+        border_style=panel_color,
+    ))
+
+    if triggered:
+        console.print("\n[bold red]Triggered Attacks:[/bold red]")
+        for r in triggered:
+            sev_color = {
+                BlockchainVulnSeverity.CRITICAL: "bold red",
+                BlockchainVulnSeverity.HIGH: "red",
+                BlockchainVulnSeverity.MEDIUM: "yellow",
+            }.get(r.severity, "white")
+            console.print(
+                f"  [{sev_color}]{r.severity.value.upper()}[/{sev_color}] "
+                f"[bold]{r.attack_id}[/bold] ({r.attack_type}): {r.title}"
+            )
+            if r.evidence:
+                console.print(f"    [dim]Evidence: {r.evidence[:120]}[/dim]")
+    else:
+        console.print("\n[green]No attacks triggered. Target appears resilient to tested probes.[/green]")
+
+
+# ============================================================================
+# blockchain-contract-audit — heuristic static analysis of a smart contract
+# ============================================================================
+
+@main.command("blockchain-contract-audit")
+@click.option("--abi", "abi_path", type=click.Path(exists=True), default=None,
+              help="Path to a JSON file containing the contract ABI.")
+@click.option("--bytecode", "bytecode_path", type=click.Path(exists=True), default=None,
+              help="Path to a file containing the contract runtime bytecode (hex, optionally 0x-prefixed).")
+@click.option("--format", "output_format", type=click.Choice(["console", "json"]),
+              default="console", show_default=True)
+@click.option("--output", "-o", type=click.Path(), default=None)
+def blockchain_contract_audit(abi_path, bytecode_path, output_format, output):
+    """Run heuristic static analysis on a smart contract ABI and/or bytecode.
+
+    This is local, offline analysis only (no network calls) — it does not
+    require --i-have-authorization. Not a full disassembler or symbolic
+    execution engine; findings require manual review.
+
+    \b
+    Examples:
+        offsec-ai blockchain-contract-audit --abi ./contract.json
+        offsec-ai blockchain-contract-audit --abi ./contract.json --bytecode ./contract.bin
+    """
+    if not abi_path and not bytecode_path:
+        console.print("[bold red]Error:[/bold red] Provide at least one of --abi or --bytecode.")
+        raise SystemExit(1)
+
+    abi = None
+    if abi_path:
+        try:
+            abi = json.loads(Path(abi_path).read_text())
+            if isinstance(abi, dict) and "abi" in abi:
+                abi = abi["abi"]  # tolerate Hardhat/Foundry artifact JSON
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Error:[/bold red] Invalid ABI JSON: {exc}")
+            raise SystemExit(1)
+
+    bytecode = Path(bytecode_path).read_text().strip() if bytecode_path else None
+
+    result: ContractAuditResult = analyze_contract(
+        abi=abi, bytecode=bytecode, target=abi_path or bytecode_path or "contract"
+    )
+
+    if output_format == "json" or output:
+        data = result.model_dump(mode="json")
+        if output:
+            Path(output).write_text(json.dumps(data, indent=2, default=str))
+            console.print(f"[green]Results saved to {output}[/green]")
+        if output_format == "json":
+            console.print_json(json.dumps(data, default=str))
+        return
+
+    _display_contract_audit_result(result)
+
+
+def _display_contract_audit_result(result: ContractAuditResult) -> None:
+    panel_color = "red" if result.has_critical else ("yellow" if result.findings else "green")
+    console.print(Panel(
+        f"[bold]Target:[/bold] {result.target}\n"
+        f"[bold]Has ABI:[/bold] {result.has_abi}  [bold]Has bytecode:[/bold] {result.has_bytecode}\n"
+        f"[bold]Findings:[/bold] {len(result.findings)}  [bold]Risk score:[/bold] {result.risk_score:.0f}\n"
+        f"[dim]Heuristic static analysis — manual review recommended.[/dim]",
+        title="[bold cyan]Smart Contract Audit Results[/bold cyan]",
+        border_style=panel_color,
+    ))
+    if result.error:
+        console.print(f"[bold red]Error:[/bold red] {result.error}")
+    for finding in result.findings:
+        sev_color = {
+            BlockchainVulnSeverity.CRITICAL: "bold red",
+            BlockchainVulnSeverity.HIGH: "red",
+            BlockchainVulnSeverity.MEDIUM: "yellow",
+            BlockchainVulnSeverity.LOW: "cyan",
+        }.get(finding.severity, "white")
+        console.print(
+            f"  [{sev_color}]{finding.severity.value.upper()}[/{sev_color}] "
+            f"[bold]{finding.finding_id}[/bold]: {finding.title}"
+        )
+        console.print(f"    [dim]{finding.description[:200]}[/dim]")
+        if finding.remediation:
+            console.print(f"    [green]Fix: {finding.remediation[:150]}[/green]")
 
 
 # ============================================================================
