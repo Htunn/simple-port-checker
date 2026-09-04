@@ -22,6 +22,9 @@ from urllib.parse import urlparse, urlunparse
 import httpx
 
 from ..exceptions import AuthorizationRequired
+from ..utils.constants import USER_AGENT
+
+from ._base import BaseAttacker
 from ..models.a2a_result import (
     A2AAttackReport,
     A2AAttackResult,
@@ -37,38 +40,20 @@ from ..utils.a2a_payloads import (
 )
 
 logger = logging.getLogger(__name__)
-
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║                  ⚠  OFFSEC-AI A2A ATTACK MODULE ⚠                  ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active security testing against this target.             ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
-
-_USER_AGENT = "offsec-ai/2.0.1"
 _AGENT_CARD_PATH = "/.well-known/agent-card.json"
 
 
-class A2AAttacker:
+class A2AAttacker(BaseAttacker):
     """
     Active attack module for A2A (Agent-to-Agent) protocol endpoints.
 
     Requires authorized=True. Will refuse all operations if not authorized.
     """
 
+    _MODULE_NAME = "A2A"
+
     def __init__(self, authorized: bool = False, judge: object | None = None) -> None:
-        if not authorized:
-            raise AuthorizationRequired(
-                "A2AAttacker requires authorized=True. "
-                "Only use this against systems you have explicit written authorization to test."
-            )
-        self.authorized = True
-        self._judge = judge
+        super().__init__(authorized=authorized, judge=judge)
 
     async def attack(
         self,
@@ -90,10 +75,6 @@ class A2AAttacker:
             verify_tls:  Verify TLS certificates.
             scan_result: Optional prior A2AScanResult to guide endpoint selection.
         """
-        if not self.authorized:
-            raise AuthorizationRequired("Not authorized.")
-
-        print(AUTHORIZATION_BANNER)
         logger.warning(
             "A2A attack started against target=%s mode=%s timestamp=%s",
             target,
@@ -173,7 +154,7 @@ class A2AAttacker:
             headers={
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "User-Agent": _USER_AGENT,
+                "User-Agent": USER_AGENT,
                 "A2A-Version": "1.0",
                 **(extra_headers or {}),
             },

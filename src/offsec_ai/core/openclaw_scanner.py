@@ -27,6 +27,8 @@ from urllib.parse import urljoin
 
 import httpx
 
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
 # Maximum bytes to read from any single response body to prevent memory issues
@@ -93,7 +95,7 @@ class OpenClawScanner:
         try:
             async with httpx.AsyncClient(
                 headers={
-                    "User-Agent": "offsec-ai/2.0.1",
+                    "User-Agent": USER_AGENT,
                     **self.headers,
                 },
                 timeout=self._timeout_config,

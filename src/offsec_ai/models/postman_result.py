@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
 
-class PostmanVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
+# Backward-compatible alias
+PostmanVulnSeverity = VulnSeverity
 
 
 class PostmanAuthInfo(BaseModel):
@@ -52,19 +49,10 @@ class PostmanEndpointResult(BaseModel):
     duration: float = 0.0
 
 
-class PostmanVulnerability(BaseModel):
+class PostmanVulnerability(BaseVulnerability):
     """A security finding on a Postman-collection-derived endpoint."""
-    vuln_id: str
-    severity: PostmanVulnSeverity
-    title: str
-    description: str
     endpoint: str = ""              # "METHOD url" label
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     owasp_api_category: str = ""    # e.g. "API1:2023 Broken Object Level Authorization"
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class PostmanScanResult(BaseModel):

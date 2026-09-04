@@ -35,19 +35,9 @@ import httpx
 from ..exceptions import AuthorizationRequired
 from ..log_config import audit_log, get_correlation_id, new_correlation_id
 
-logger = logging.getLogger(__name__)
+from ._base import BaseAttacker
 
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║          ⚠  OFFSEC-AI MULTI-TURN LLM ATTACK MODULE ⚠               ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active multi-turn security testing against this target.  ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Result models
@@ -206,7 +196,7 @@ async def _send_message(
 # ---------------------------------------------------------------------------
 
 
-class LLMConversationAttacker:
+class LLMConversationAttacker(BaseAttacker):
     """
     Multi-turn LLM conversation attacker.
 
@@ -218,15 +208,15 @@ class LLMConversationAttacker:
         timeout:    Per-request timeout in seconds.
     """
 
+    _MODULE_NAME = "MULTI-TURN LLM"
+
     def __init__(
         self,
         authorized: bool = False,
         model: str = "gpt-4",
         timeout: float = 30.0,
     ) -> None:
-        if not authorized:
-            raise AuthorizationRequired("LLM Conversation Attacker")
-        logger.warning(AUTHORIZATION_BANNER)
+        super().__init__(authorized=authorized)
         self._model = model
         self._timeout = timeout
 

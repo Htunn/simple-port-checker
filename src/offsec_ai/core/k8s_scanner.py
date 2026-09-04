@@ -52,6 +52,8 @@ from ..utils.k8s_payloads import (
     KUBELET_PROBE_PATHS,
 )
 
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
 # Maximum bytes to read from any single response body
@@ -132,7 +134,7 @@ class K8sScanner:
 
         try:
             async with httpx.AsyncClient(
-                headers={"User-Agent": "offsec-ai/2.3.0", **self.headers},
+                headers={"User-Agent": USER_AGENT, **self.headers},
                 timeout=httpx.Timeout(self.timeout, connect=10.0),
                 follow_redirects=True,
                 verify=False,  # noqa: S501 — intentional; security scanning of self-signed certs

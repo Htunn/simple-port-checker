@@ -72,7 +72,7 @@ def test_documentation_presence():
     assert "mTLS" in content
     assert "mutual TLS" in content
 
-    api_doc = os.path.join(repo_root, "docs", "api.md")
+    api_doc = os.path.join(repo_root, "offsec-ai-docs", "api.md")
     assert os.path.isfile(api_doc)
     content = open(api_doc).read()
     assert "MTLSChecker" in content

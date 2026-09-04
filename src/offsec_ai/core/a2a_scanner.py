@@ -40,10 +40,12 @@ from ..utils.a2a_cve_db import (
     scan_for_secrets,
 )
 
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
 _AGENT_CARD_PATH = "/.well-known/agent-card.json"
-_USER_AGENT = "offsec-ai/2.0.1"
+
 
 
 class A2AScanner:
@@ -87,7 +89,7 @@ class A2AScanner:
         async with httpx.AsyncClient(
             headers={
                 "Accept": "application/json",
-                "User-Agent": _USER_AGENT,
+                "User-Agent": USER_AGENT,
                 **self.headers,
             },
             timeout=self.timeout,
@@ -306,7 +308,7 @@ class A2AScanner:
             headers={
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "User-Agent": _USER_AGENT,
+                "User-Agent": USER_AGENT,
                 "A2A-Version": "1.0",
             },
             timeout=self.timeout,
@@ -376,7 +378,7 @@ class A2AScanner:
         probe_client = httpx.AsyncClient(
             headers={
                 "Accept": "application/json",
-                "User-Agent": _USER_AGENT,
+                "User-Agent": USER_AGENT,
             },
             timeout=self.timeout,
             trust_env=False,

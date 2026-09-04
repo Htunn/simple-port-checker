@@ -8,20 +8,18 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
+
+# Backward-compatible alias
+AuthVulnSeverity = VulnSeverity
+
 
 class AuthProtocol(str, Enum):
     OIDC = "oidc"
     OAUTH2 = "oauth2"
     SAML = "saml"
     UNKNOWN = "unknown"
-
-
-class AuthVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
 
 
 class AuthProviderInfo(BaseModel):
@@ -44,21 +42,10 @@ class AuthProviderInfo(BaseModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
-class AuthVulnerability(BaseModel):
+class AuthVulnerability(BaseVulnerability):
     """A security vulnerability found on an auth endpoint."""
 
-    vuln_id: str                          # e.g. "OFFSEC-AUTH-PKCE-001"
-    cve_id: str | None = None
-    severity: AuthVulnSeverity
-    title: str
-    description: str
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     affected_component: str = ""          # e.g. "/.well-known/openid-configuration"
-    # LLM Judge enrichment fields
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class AuthScanResult(BaseModel):

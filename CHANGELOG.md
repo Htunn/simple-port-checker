@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-09-04
+
+### Added
+
+- **Shared base classes** (`src/offsec_ai/core/_base.py`) — `BaseScanner` and `BaseAttacker` centralise the constructor boilerplate, HTTP client factory, and authorization-guard logic previously duplicated across every protocol module. `MCPAttacker`, `A2AAttacker`, `AuthAttacker`, `K8sAttacker`, `OpenClawAttacker`, `PostmanAttacker`, and `LLMConversationAttacker` now inherit from `BaseAttacker`; each declares only its `_MODULE_NAME` for the authorization banner.
+- **Shared vulnerability model** — `src/offsec_ai/models/severity.py` (`VulnSeverity`) and `src/offsec_ai/models/vulnerability.py` (`BaseVulnerability`) are now the single source of truth for the severity enum and common vulnerability fields. `MCPVulnerability`, `A2AVulnerability`, `AuthVulnerability`, `K8sVulnerability`, `OpenClawVulnerability`, and `PostmanVulnerability` inherit from `BaseVulnerability`, keeping their protocol-specific `*VulnSeverity` names as backward-compatible aliases.
+- **`src/offsec_ai/utils/constants.py`** — centralises the dynamic `USER_AGENT` string (derived from the installed package version) plus the MCP protocol/client constants, replacing magic strings scattered across modules.
+- **`src/offsec_ai/utils/authorization.py`** — `make_authorization_banner()` generates the attacker authorization banner from a module name instead of duplicating the ASCII-art block seven times.
+
+### Fixed
+
+- **Stale hardcoded `User-Agent` headers** — MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers were sending hardcoded, outdated version strings (e.g. `offsec-ai/2.0.1`, `offsec-ai/2.3.0`, `offsec-ai/2.7.0`) regardless of the actually installed package version. All modules now send `offsec-ai/<installed-version>` via the shared `USER_AGENT` constant.
+- **Authorization banner now goes through structured logging** — attacker modules previously `print()`ed the ASCII authorization banner directly to stdout in addition to logging it; this was inconsistent between modules (some only logged, some only printed) and polluted stdout when piping JSON output. The banner is now emitted exactly once via `logger.warning()` at instantiation.
+- **`tests/test_mtls_integration.py::test_documentation_presence`** — referenced the removed `docs/api.md` path (docs were migrated to `offsec-ai-docs/` in v2.7.1); updated to check `offsec-ai-docs/api.md`.
+
+### Changed
+
+- No behavioral or CLI-facing changes — this release is an internal consistency/maintainability pass. The full existing test suite passes unchanged (aside from one banner-detection test updated to check log records instead of captured stdout).
+
 ## [2.7.1] - 2026-08-21
 
 ### Fixed

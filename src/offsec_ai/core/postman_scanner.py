@@ -35,9 +35,11 @@ from ..utils.postman_findings import (
 )
 from ..utils.postman_parser import parse_collection
 
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
-_USER_AGENT = "offsec-ai/2.7.0"
+
 
 
 class PostmanScanner:
@@ -130,7 +132,7 @@ class PostmanScanner:
             return endpoint_result
 
         try:
-            merged_headers = {**endpoint.headers, **self.headers, "User-Agent": _USER_AGENT}
+            merged_headers = {**endpoint.headers, **self.headers, "User-Agent": USER_AGENT}
             kwargs: dict[str, Any] = {"headers": merged_headers}
             if endpoint.body and endpoint.method in ("POST", "PUT", "PATCH", "DELETE"):
                 kwargs["content"] = endpoint.body

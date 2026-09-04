@@ -37,37 +37,24 @@ from ..utils.openclaw_payloads import (
 
 from ..exceptions import AuthorizationRequired
 
+from ._base import BaseAttacker
+
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║            ⚠  OFFSEC-AI OPENCLAW ATTACK MODULE ⚠                   ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active security testing against this OpenClaw target.   ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
 
-
-class OpenClawAttacker:
+class OpenClawAttacker(BaseAttacker):
     """
     Active attack module for OpenClaw gateway instances.
 
     Requires authorized=True. Will refuse all operations if not authorized.
     """
 
+    _MODULE_NAME = "OPENCLAW"
+
     def __init__(self, authorized: bool = False, judge: object | None = None) -> None:
-        if not authorized:
-            raise AuthorizationRequired(
-                "OpenClawAttacker requires authorized=True. "
-                "Only use this against systems you have explicit written authorization to test."
-            )
-        self.authorized = True
-        self._judge = judge
-        logger.warning(AUTHORIZATION_BANNER)
+        super().__init__(authorized=authorized, judge=judge)
 
     async def attack(
         self,
@@ -108,7 +95,7 @@ class OpenClawAttacker:
         )
 
         extra_headers = {
-            "User-Agent": "offsec-ai/2.0.1 (authorized red-team)",
+            "User-Agent": f"{USER_AGENT} (authorized red-team)",
             **(headers or {}),
         }
 

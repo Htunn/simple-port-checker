@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 import httpx
 
 from ..exceptions import AuthorizationRequired
+
+from ._base import BaseAttacker
 from ..models.auth_result import (
     AuthAttackReport,
     AuthAttackResult,
@@ -41,42 +43,28 @@ from ..utils.auth_payloads import (
     STATE_BYPASS_PAYLOADS,
 )
 
-logger = logging.getLogger(__name__)
 
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║              ⚠  OFFSEC-AI AUTH ATTACK MODULE ⚠                     ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active security testing against this target.             ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
+from ..utils.constants import USER_AGENT
+logger = logging.getLogger(__name__)
 
 # A synthetic registered redirect_uri used as the "legitimate" base for probes.
 # We intentionally use an IANA-reserved domain so no real server is contacted.
 _LEGIT_REDIRECT_URI = "https://offsec-probe.invalid/callback"
 
 
-class AuthAttacker:
+class AuthAttacker(BaseAttacker):
     """
     Active attack module for OIDC, OAuth 2.0, and SAML endpoints.
 
     Requires authorized=True. Raises AuthorizationRequired otherwise.
     """
 
+    _MODULE_NAME = "AUTH"
+
     def __init__(
         self, authorized: bool = False, judge: object | None = None
     ) -> None:
-        if not authorized:
-            raise AuthorizationRequired(
-                "AuthAttacker requires authorized=True. "
-                "Only use this against systems you have explicit written authorization to test."
-            )
-        self.authorized = True
-        self._judge = judge
+        super().__init__(authorized=authorized, judge=judge)
 
     async def attack(
         self,
@@ -98,10 +86,6 @@ class AuthAttacker:
             timeout:     Per-request timeout in seconds.
             scan_result: Optional prior AuthScanResult to guide attacks.
         """
-        if not self.authorized:
-            raise AuthorizationRequired("Not authorized.")
-
-        print(AUTHORIZATION_BANNER)
         logger.warning(
             "Auth attack started against target=%s protocol=%s mode=%s timestamp=%s",
             target,
@@ -253,7 +237,7 @@ class AuthAttacker:
         results: list[AuthAttackResult] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+            headers={"User-Agent": USER_AGENT, **headers},
             timeout=timeout,
             trust_env=False,
             follow_redirects=False,  # We want to see where it redirects
@@ -322,7 +306,7 @@ class AuthAttacker:
         results: list[AuthAttackResult] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+            headers={"User-Agent": USER_AGENT, **headers},
             timeout=timeout,
             trust_env=False,
             follow_redirects=False,
@@ -390,7 +374,7 @@ class AuthAttacker:
         results: list[AuthAttackResult] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+            headers={"User-Agent": USER_AGENT, **headers},
             timeout=timeout,
             trust_env=False,
             follow_redirects=False,
@@ -458,7 +442,7 @@ class AuthAttacker:
         results: list[AuthAttackResult] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+            headers={"User-Agent": USER_AGENT, **headers},
             timeout=timeout,
             trust_env=False,
             follow_redirects=False,
@@ -514,7 +498,7 @@ class AuthAttacker:
         results: list[AuthAttackResult] = []
 
         async with httpx.AsyncClient(
-            headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+            headers={"User-Agent": USER_AGENT, **headers},
             timeout=timeout,
             trust_env=False,
             verify=False,  # noqa: S501
@@ -596,7 +580,7 @@ class AuthAttacker:
             response_text = "Cannot perform interactive auth code acquisition in automated scan."
 
             async with httpx.AsyncClient(
-                headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+                headers={"User-Agent": USER_AGENT, **headers},
                 timeout=timeout,
                 trust_env=False,
                 verify=False,  # noqa: S501
@@ -662,7 +646,7 @@ class AuthAttacker:
                 xsw_body = self._build_xsw_saml(probe["xsw_variant"])
 
                 async with httpx.AsyncClient(
-                    headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+                    headers={"User-Agent": USER_AGENT, **headers},
                     timeout=timeout,
                     trust_env=False,
                     verify=False,  # noqa: S501
@@ -769,7 +753,7 @@ class AuthAttacker:
 
             if jwks_uri:
                 async with httpx.AsyncClient(
-                    headers={"User-Agent": "offsec-ai/2.0.1", **headers},
+                    headers={"User-Agent": USER_AGENT, **headers},
                     timeout=timeout,
                     trust_env=False,
                     verify=False,  # noqa: S501

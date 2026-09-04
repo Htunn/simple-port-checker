@@ -44,6 +44,7 @@ from ..utils.mcp_cve_db import (
     scan_for_dangerous_keywords,
     scan_for_secrets,
 )
+from ..utils.constants import MCP_PROTOCOL_VERSION, USER_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ class MCPScanner:
             headers={
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
-                "User-Agent": "offsec-ai/2.0.1",
+                "User-Agent": USER_AGENT,
                 **self.headers,
             },
             timeout=self.timeout,
@@ -172,7 +173,7 @@ class MCPScanner:
             "id": 1,
             "method": "initialize",
             "params": {
-                "protocolVersion": "2024-11-05",
+                "protocolVersion": MCP_PROTOCOL_VERSION,
                 "capabilities": {"roots": {"listChanged": False}},
                 "clientInfo": {"name": "offsec-ai", "version": "2.0.0"},
             },
@@ -204,14 +205,14 @@ class MCPScanner:
 
         # Try without any auth header
         no_auth_client = httpx.AsyncClient(
-            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream", "User-Agent": "offsec-ai/2.0.1"},
+            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream", "User-Agent": USER_AGENT},
             timeout=self.timeout,
             trust_env=False,
         )
         async with no_auth_client:
             try:
                 payload = {"jsonrpc": "2.0", "id": 99, "method": "initialize",
-                           "params": {"protocolVersion": "2024-11-05",
+                           "params": {"protocolVersion": MCP_PROTOCOL_VERSION,
                                       "capabilities": {"roots": {"listChanged": False}},
                                       "clientInfo": {"name": "probe", "version": "2.0.0"}}}
                 resp = await no_auth_client.post(self.target, json=payload)
@@ -339,7 +340,7 @@ class MCPScanner:
     def _stdio_initialize(self, proc: subprocess.Popen) -> MCPServerInfo:
         resp = self._stdio_rpc(proc, {
             "jsonrpc": "2.0", "id": 1, "method": "initialize",
-            "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+            "params": {"protocolVersion": MCP_PROTOCOL_VERSION, "capabilities": {},
                        "clientInfo": {"name": "offsec-ai", "version": "2.0.0"}},
         })
         result_data = resp.get("result", {})

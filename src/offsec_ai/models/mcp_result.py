@@ -8,19 +8,17 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
+
+# Backward-compatible alias
+MCPVulnSeverity = VulnSeverity
+
 
 class MCPTransport(str, Enum):
     HTTP = "http"
     SSE = "sse"
     STDIO = "stdio"
-
-
-class MCPVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
 
 
 class MCPTool(BaseModel):
@@ -57,19 +55,9 @@ class MCPServerInfo(BaseModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
-class MCPVulnerability(BaseModel):
+class MCPVulnerability(BaseVulnerability):
     """A security vulnerability found on an MCP endpoint."""
-    vuln_id: str            # e.g. "MCP-2024-001" or "OFFSEC-MCP-TI-001"
-    cve_id: str | None = None
-    severity: MCPVulnSeverity
-    title: str
-    description: str
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     affected_component: str = ""   # e.g. tool name, resource URI
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class MCPAuthPosture(BaseModel):

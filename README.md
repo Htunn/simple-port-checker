@@ -33,6 +33,15 @@
 
 ## Features
 
+### New in v2.8.0 — Internal Consistency & Maintainability Pass
+
+| Feature | Description |
+|---------|-------------|
+| 🧱 **Shared base classes** | `BaseScanner` / `BaseAttacker` (`core/_base.py`) centralise constructor boilerplate, the HTTP client factory, and the authorization guard previously duplicated across every protocol module (MCP, A2A, Auth, K8s, OpenClaw, Postman, multi-turn LLM) |
+| 🩹 **Dynamic `User-Agent`** | Fixed stale hardcoded version strings (`offsec-ai/2.0.1`, `offsec-ai/2.3.0`, `offsec-ai/2.7.0`) sent by MCP, A2A, Auth, K8s, OpenClaw, AI-OWASP, and Postman scanners/attackers — all now send `offsec-ai/<installed-version>` |
+| 🗂️ **Shared vulnerability model** | `VulnSeverity` and `BaseVulnerability` (`models/severity.py`, `models/vulnerability.py`) are now the single source of truth for severity levels and common finding fields across every protocol-specific vulnerability class |
+| 🔇 **Cleaner stdout** | Attacker authorization banners are now emitted once via structured logging instead of a mix of `print()` and `logger.warning()`, so piping JSON/report output to a file or another tool no longer gets polluted with banner text |
+
 ### New in v2.7.0 — Postman Collection Security Scanner & Attacker
 
 | Feature | Description |

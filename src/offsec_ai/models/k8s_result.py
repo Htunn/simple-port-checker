@@ -8,13 +8,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
 
-class K8sVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
+# Backward-compatible alias
+K8sVulnSeverity = VulnSeverity
 
 
 class K8sComponent(str, Enum):
@@ -50,22 +48,11 @@ class K8sServerInfo(BaseModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
-class K8sVulnerability(BaseModel):
+class K8sVulnerability(BaseVulnerability):
     """A single Kubernetes security finding."""
-    vuln_id: str
     owasp_id: str                     # K01–K10
-    cve_id: str | None = None
-    severity: K8sVulnSeverity
-    title: str
-    description: str
     component: K8sComponent | None = None
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     discovered_at: datetime = Field(default_factory=datetime.utcnow)
-    # Optional LLM judge annotations
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class K8sScanResult(BaseModel):

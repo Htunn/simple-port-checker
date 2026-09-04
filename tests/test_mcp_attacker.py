@@ -77,12 +77,14 @@ class TestMCPAttackerAuthBypass:
         # At least auth bypass probes ran
         assert len(report.results) > 0
 
-    async def test_attack_logs_authorization_target(self, capsys):
-        """Authorization banner must be printed to stdout when attack runs."""
+    async def test_attack_logs_authorization_target(self, caplog):
+        """Authorization banner must appear in logs when attacker is instantiated."""
         import httpx
         import respx
 
-        attacker = MCPAttacker(authorized=True)
+        with caplog.at_level("WARNING"):
+            attacker = MCPAttacker(authorized=True)
+
         target = "http://mock-banner.local/mcp"
 
         with respx.mock:
@@ -94,5 +96,4 @@ class TestMCPAttackerAuthBypass:
             )
             await attacker.attack(target=target, transport="http", mode="safe")
 
-        captured = capsys.readouterr()
-        assert "AUTHORIZATION" in captured.out or "authorization" in captured.out.lower()
+        assert any("AUTHORIZATION" in r.message.upper() for r in caplog.records)

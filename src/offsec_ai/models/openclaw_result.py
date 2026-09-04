@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
 
-class OpenClawVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
+# Backward-compatible alias
+OpenClawVulnSeverity = VulnSeverity
 
 
 class OpenClawAuthPosture(BaseModel):
@@ -50,19 +47,9 @@ class OpenClawServerInfo(BaseModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
-class OpenClawVulnerability(BaseModel):
+class OpenClawVulnerability(BaseVulnerability):
     """A single vulnerability finding."""
-    vuln_id: str
-    cve_id: str | None = None
-    severity: OpenClawVulnSeverity
-    title: str
-    description: str
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     discovered_at: datetime = Field(default_factory=datetime.utcnow)
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class OpenClawAccessibleEndpoint(BaseModel):

@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .severity import VulnSeverity
+from .vulnerability import BaseVulnerability
 
-class A2AVulnSeverity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
+# Backward-compatible alias
+A2AVulnSeverity = VulnSeverity
 
 
 class A2ASkill(BaseModel):
@@ -77,19 +74,9 @@ class A2AAuthPosture(BaseModel):
     notes: str = ""
 
 
-class A2AVulnerability(BaseModel):
+class A2AVulnerability(BaseVulnerability):
     """A security vulnerability found on an A2A endpoint."""
-    vuln_id: str            # e.g. "OFFSEC-A2A-AUTH-001"
-    cve_id: str | None = None
-    severity: A2AVulnSeverity
-    title: str
-    description: str
-    evidence: str = ""
-    remediation: str = ""
-    references: list[str] = Field(default_factory=list)
     affected_component: str = ""
-    llm_confidence: float | None = None
-    llm_reasoning: str = ""
 
 
 class A2AScanResult(BaseModel):

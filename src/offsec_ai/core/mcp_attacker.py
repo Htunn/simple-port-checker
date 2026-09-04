@@ -37,36 +37,23 @@ from ..utils.mcp_payloads import (
 
 from ..exceptions import AuthorizationRequired
 
+from ._base import BaseAttacker
+
+
+from ..utils.constants import MCP_PROTOCOL_VERSION, USER_AGENT
 logger = logging.getLogger(__name__)
 
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║                  ⚠  OFFSEC-AI MCP ATTACK MODULE ⚠                  ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active security testing against this target.             ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
-
-
-class MCPAttacker:
+class MCPAttacker(BaseAttacker):
     """
     Active attack module for MCP endpoints.
 
     Requires authorized=True. Will refuse all operations if not authorized.
     """
 
+    _MODULE_NAME = "MCP"
+
     def __init__(self, authorized: bool = False, judge: object | None = None) -> None:
-        if not authorized:
-            raise AuthorizationRequired(
-                "MCPAttacker requires authorized=True. "
-                "Only use this against systems you have explicit written authorization to test."
-            )
-        self.authorized = True
-        self._judge = judge
+        super().__init__(authorized=authorized, judge=judge)
 
     async def attack(
         self,
@@ -88,10 +75,6 @@ class MCPAttacker:
             timeout:     Per-request timeout.
             scan_result: Optional prior MCPScanResult to guide attacks.
         """
-        if not self.authorized:
-            raise AuthorizationRequired("Not authorized.")
-
-        print(AUTHORIZATION_BANNER)
         logger.warning(
             "MCP attack started against target=%s transport=%s mode=%s timestamp=%s",
             target,
@@ -187,14 +170,14 @@ class MCPAttacker:
         results = []
         init_payload = {
             "jsonrpc": "2.0", "id": 1, "method": "initialize",
-            "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+            "params": {"protocolVersion": MCP_PROTOCOL_VERSION, "capabilities": {},
                        "clientInfo": {"name": "offsec-ai"}},
         }
         for probe in AUTH_BYPASS_PAYLOADS:
             test_headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
-                "User-Agent": "offsec-ai/2.0.1",
+                "User-Agent": USER_AGENT,
                 **probe.get("headers", {}),
             }
             triggered = False
@@ -258,7 +241,7 @@ class MCPAttacker:
                 async with httpx.AsyncClient(
                     headers={"Content-Type": "application/json",
                              "Accept": "application/json, text/event-stream",
-                             "User-Agent": "offsec-ai/2.0.1", **headers},
+                             "User-Agent": USER_AGENT, **headers},
                     timeout=timeout,
                     trust_env=False,
                 ) as client:
@@ -321,7 +304,7 @@ class MCPAttacker:
                     async with httpx.AsyncClient(
                         headers={"Content-Type": "application/json",
                                  "Accept": "application/json, text/event-stream",
-                                 "User-Agent": "offsec-ai/2.0.1", **headers},
+                                 "User-Agent": USER_AGENT, **headers},
                         timeout=timeout,
                         trust_env=False,
                     ) as client:
@@ -383,7 +366,7 @@ class MCPAttacker:
                     async with httpx.AsyncClient(
                         headers={"Content-Type": "application/json",
                                  "Accept": "application/json, text/event-stream",
-                                 "User-Agent": "offsec-ai/2.0.1", **headers},
+                                 "User-Agent": USER_AGENT, **headers},
                         timeout=timeout,
                         trust_env=False,
                     ) as client:

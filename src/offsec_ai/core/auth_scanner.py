@@ -32,6 +32,8 @@ from ..models.auth_result import (
 )
 from ..utils.auth_cve_db import match_cves
 
+
+from ..utils.constants import USER_AGENT
 logger = logging.getLogger(__name__)
 
 # SAML XML namespaces
@@ -96,7 +98,7 @@ class AuthScanner:
         async with httpx.AsyncClient(
             headers={
                 "Accept": "application/json, application/xml, text/xml, */*",
-                "User-Agent": "offsec-ai/2.0.1",
+                "User-Agent": USER_AGENT,
                 **self.headers,
             },
             timeout=self.timeout,

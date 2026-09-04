@@ -38,6 +38,7 @@ from ..utils.ai_owasp_payloads import (
     get_payloads,
 )
 from ..utils.ai_owasp_remediation import LLM_CATEGORIES
+from ..utils.constants import USER_AGENT
 
 
 # Default categories for each scan mode
@@ -98,7 +99,7 @@ class LLMOwaspScanner:
         async with httpx.AsyncClient(
             headers={
                 "Content-Type": "application/json",
-                "User-Agent": "offsec-ai/2.0.1",
+                "User-Agent": USER_AGENT,
                 **self.headers,
             },
             timeout=self.timeout,

@@ -23,6 +23,8 @@ from urllib.parse import urljoin
 import httpx
 
 from ..exceptions import AuthorizationRequired
+
+from ._base import BaseAttacker
 from ..models.k8s_result import (
     K8sAttackReport,
     K8sAttackResult,
@@ -42,24 +44,14 @@ from ..utils.k8s_payloads import (
 # Ports that use TLS — mirrors the constant defined in k8s_scanner
 _TLS_PORTS: frozenset[int] = frozenset({6443, 443, 10250, 10259, 10257, 2380, 8443})
 
-logger = logging.getLogger(__name__)
 
-AUTHORIZATION_BANNER = """
-╔══════════════════════════════════════════════════════════════════════╗
-║              ⚠  OFFSEC-AI KUBERNETES ATTACK MODULE ⚠               ║
-║                                                                      ║
-║  You have declared that you have EXPLICIT WRITTEN AUTHORIZATION      ║
-║  to perform active security testing against this Kubernetes cluster. ║
-║                                                                      ║
-║  Unauthorized use of this module is illegal and unethical.           ║
-║  The authors assume no liability for unauthorized use.               ║
-╚══════════════════════════════════════════════════════════════════════╝
-"""
+from ..utils.constants import USER_AGENT
+logger = logging.getLogger(__name__)
 
 _RESPONSE_BODY_CAP = 4096
 
 
-class K8sAttacker:
+class K8sAttacker(BaseAttacker):
     """
     Active attack module for Kubernetes cluster components.
 
@@ -71,15 +63,10 @@ class K8sAttacker:
                 etcd key dump, cloud metadata SSRF (K08).
     """
 
+    _MODULE_NAME = "KUBERNETES"
+
     def __init__(self, authorized: bool = False, judge: Any | None = None) -> None:
-        if not authorized:
-            raise AuthorizationRequired(
-                "K8sAttacker requires authorized=True. "
-                "Only use against clusters you have explicit written authorization to test."
-            )
-        self.authorized = True
-        self._judge = judge
-        logger.warning(AUTHORIZATION_BANNER)
+        super().__init__(authorized=authorized, judge=judge)
 
     async def attack(
         self,
@@ -116,7 +103,7 @@ class K8sAttacker:
         )
 
         extra_headers = {
-            "User-Agent": "offsec-ai/2.3.0 (authorized red-team)",
+            "User-Agent": f"{USER_AGENT} (authorized red-team)",
             **(headers or {}),
         }
 
