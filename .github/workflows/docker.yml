@@ -112,6 +112,16 @@ jobs:
           # Test the pushed image (GHCR)
           docker run --rm ghcr.io/${{ steps.owner.outputs.value }}/${{ vars.IMAGE_NAME }}:${{ steps.version.outputs.version }} --help
 
+      - name: Update Docker Hub repository overview
+        if: github.event_name != 'pull_request'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ vars.DOCKER_USERNAME }}/${{ vars.IMAGE_NAME }}
+          short-description: "Offensive-security toolkit: port/L7/mTLS/cert scanning, OWASP Top 10, AI/LLM + MCP + A2A + K8s + auth + blockchain security testing"
+          readme-filepath: ./DOCKER.md
+
   integration-test:
     runs-on: ubuntu-latest
     environment: pypi
