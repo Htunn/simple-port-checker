@@ -257,8 +257,10 @@ class PostmanScanner:
         for vuln in result.vulnerabilities:
             if vuln.severity not in ambiguous:
                 continue
+            if not self._judge:
+                continue
             try:
-                verdict = self._judge.evaluate(
+                verdict = self._judge.evaluate(  # type: ignore[attr-defined]
                     category=vuln.owasp_api_category or vuln.vuln_id,
                     probe=vuln.title,
                     response=vuln.evidence or vuln.description,

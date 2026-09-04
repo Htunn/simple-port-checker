@@ -359,10 +359,10 @@ class A2AScanner:
         for iface in card.supported_interfaces:
             binding = iface.get("protocolBinding", "").upper()
             if binding in ("JSONRPC", "JSON-RPC", "HTTP+JSON", "HTTP"):
-                return iface.get("url", "")
+                return str(iface.get("url", ""))
         # Fallback: first interface regardless of binding
         if card.supported_interfaces:
-            return card.supported_interfaces[0].get("url", "")
+            return str(card.supported_interfaces[0].get("url", ""))
         # Last resort: construct from base target
         return self.target
 
@@ -600,7 +600,7 @@ class A2AScanner:
             if not self._judge:
                 continue
             try:
-                verdict = self._judge.evaluate(
+                verdict = self._judge.evaluate(  # type: ignore[attr-defined]
                     category=vuln.vuln_id,
                     probe=vuln.title,
                     response=vuln.evidence or vuln.description,

@@ -142,9 +142,9 @@ class A2AAttacker(BaseAttacker):
             for iface in scan_result.agent_card.supported_interfaces:
                 binding = iface.get("protocolBinding", "").upper()
                 if binding in ("JSONRPC", "JSON-RPC", "HTTP+JSON", "HTTP"):
-                    return iface.get("url", base_url)
+                    return str(iface.get("url", base_url))
             # Fall back to first interface
-            return scan_result.agent_card.supported_interfaces[0].get("url", base_url)
+            return str(scan_result.agent_card.supported_interfaces[0].get("url", base_url))
         return base_url
 
     def _make_client(

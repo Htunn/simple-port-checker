@@ -22,7 +22,7 @@ _PATH_PARAM_PATTERN = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)")
 
 def load_collection(path: str | Path) -> dict[str, Any]:
     """Load and JSON-parse a Postman collection export file."""
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    data: dict[str, Any] = json.loads(Path(path).read_text(encoding="utf-8"))
     if "info" not in data or "item" not in data:
         raise ValueError(
             "File does not look like a Postman Collection v2.x export "
@@ -63,7 +63,7 @@ def _substitute(text: str, variables: dict[str, str]) -> tuple[str, list[str]]:
         return text, []
     unresolved: list[str] = []
 
-    def _replace(match: re.Match) -> str:
+    def _replace(match: re.Match[str]) -> str:
         name = match.group(1).strip()
         if name in variables:
             return variables[name]
@@ -79,7 +79,7 @@ def _extract_url(url_field: Any) -> str:
     if isinstance(url_field, dict):
         raw = url_field.get("raw")
         if raw:
-            return raw
+            return str(raw)
         host = ".".join(str(h) for h in url_field.get("host", []) or [])
         path = "/".join(str(p) for p in url_field.get("path", []) or [])
         return f"{host}/{path}".strip("/")
