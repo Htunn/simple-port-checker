@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-09-07
+
+### Added
+
+- **Agentic REPL (`offensive-ai agent`)** — an interactive, natural-language shell where an LLM picks and calls the right scanner/attacker tool via native provider tool-calling. Purely additive: no changes to any existing CLI command, module API, or base package dependency.
+  - `src/offensive_ai/utils/llm_provider.py` — provider auto-detection (`detect_provider()`, `default_model()`) shared with `LLMJudge` (Gemini → Anthropic → OpenAI priority).
+  - `src/offensive_ai/core/agent_llm.py` — `AgentLLMClient` with framework-free, provider-native tool-calling adapters for OpenAI, Anthropic, and Gemini; common `ToolSpec`/`ToolCall`/`AgentTurn` vocabulary.
+  - `src/offensive_ai/core/agent_tools.py` — registry of 22 tools wrapping every scanner (read-only, always available) and attacker (`requires_authorization=True`) module.
+  - `src/offensive_ai/core/agent_session.py` — the tool-calling loop: conversation history, dual authorization gate (session flag + per-call confirmation) for attack tools, audit logging, and graceful handling of blank/empty model completions.
+  - `src/offensive_ai/core/agent_repl.py` — `prompt_toolkit`-based interactive REPL with `/help`, `/tools`, `/history`, `/clear`, `/exit` slash commands.
+  - New CLI command `offensive-ai agent` (`--i-have-authorization`, `--provider`, `--model`).
+  - New optional extra `agent = ["prompt_toolkit"]` in `pyproject.toml`.
+  - New doc page [`offensive-ai-docs/agent.md`](offensive-ai-docs/agent.md).
+  - New Makefile targets `venv`, `venv-install`, `test-local` — a self-contained local pipeline that mirrors CI (`.github/workflows/test.yml`) exactly, for reproducing CI results locally.
+  - 29 new tests across `tests/test_agent_tools.py`, `tests/test_agent_llm.py`, `tests/test_agent_session.py`.
+
+### Fixed
+
+- **Security**: `LLMConversationAttacker.attack()` passed the entire caller-supplied `patterns` list straight into `asyncio.gather()`, admitting one concurrent multi-turn HTTP conversation per entry with no dedup or limit — an oversized/duplicated custom pattern list could burst dozens of simultaneous conversations against the target endpoint. The list is now deduplicated and capped at 8 entries before task creation, and conversations are additionally limited to 4 concurrent in-flight requests via a semaphore. Built-in `safe`/`deep` default pattern sets (2/4 patterns) are unaffected.
+- `LLMJudge` / agent default Gemini model updated from the now-retired `gemini-1.5-flash` to `gemini-2.5-flash` (the old default returns HTTP 404 from Google's API).
+- Gemini tool-calling adapter used an invalid `"function"` role for tool results (current API only accepts `SYSTEM`/`USER`/`MODEL`); fixed to wrap tool results as role `"user"`.
+
 ## [3.0.0] - 2026-09-04
 
 ### Changed

@@ -39,6 +39,27 @@ from ._base import BaseAttacker
 
 logger = logging.getLogger(__name__)
 
+# Hard cap on patterns admitted per attack() call, regardless of how large a
+# caller-supplied pattern list is (the built-in safe/deep defaults have <=4).
+_MAX_PATTERNS = 8
+# Caps concurrent multi-turn conversations in flight against the endpoint.
+_MAX_CONCURRENT_PATTERNS = 4
+
+
+def _sanitize_patterns(patterns: list[str]) -> list[str]:
+    """Deduplicate (preserving order) and cap the number of patterns admitted."""
+    seen: set[str] = set()
+    sanitized: list[str] = []
+    for pat in patterns:
+        if pat in seen:
+            continue
+        seen.add(pat)
+        sanitized.append(pat)
+        if len(sanitized) >= _MAX_PATTERNS:
+            break
+    return sanitized
+
+
 # ---------------------------------------------------------------------------
 # Result models
 # ---------------------------------------------------------------------------
@@ -266,13 +287,18 @@ class LLMConversationAttacker(BaseAttacker):
             ["crescendo", "many_shot"] if mode == "safe"
             else ["crescendo", "many_shot", "context_priming", "goal_hijack"]
         )
-        run_patterns = patterns if patterns is not None else default_patterns
+        run_patterns = (
+            _sanitize_patterns(patterns) if patterns is not None else default_patterns
+        )
+
+        semaphore = asyncio.Semaphore(_MAX_CONCURRENT_PATTERNS)
+
+        async def _run_bounded(pat: str) -> MultiTurnAttackResult:
+            async with semaphore:
+                return await self._run_pattern(client, endpoint, payload, pat, api_key)
 
         async with httpx.AsyncClient(trust_env=False, verify=False) as client:  # noqa: S501
-            tasks = [
-                self._run_pattern(client, endpoint, payload, pat, api_key)
-                for pat in run_patterns
-            ]
+            tasks = [_run_bounded(pat) for pat in run_patterns]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for pat, res in zip(run_patterns, results):

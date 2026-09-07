@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "offensive-ai"
-version = "3.0.0"
+version = "3.1.0"
 description = "Offensive-security toolkit: port scanning, L7/WAF detection, mTLS, certificate analysis, OWASP Top 10 (with LLM judge), AI/LLM OWASP Top 10 black-box probing, MCP endpoint security scanning, OpenClaw gateway security assessment, OIDC/OAuth2/SAML auth protocol security, Postman Collection API security scanning and attacking, blockchain JSON-RPC node scanning/attacking and smart contract static analysis"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -76,6 +76,9 @@ ai = [
 ]
 gemini = [
     "google-generativeai>=0.7.0",
+]
+agent = [
+    "prompt_toolkit>=3.0.0",
 ]
 
 [project.urls]
@@ -173,6 +176,15 @@ module = [
     "offensive_ai.utils.llm_jailbreaks",
 ]
 ignore_errors = true
+
+# agent_llm.py and agent_repl.py lazily import genuinely optional SDKs
+# (openai/anthropic/google-generativeai/prompt_toolkit) that CI never installs (only the
+# "dev" extra) but a contributor's local venv might — the correctness of the import's
+# "# type: ignore" comments is inherently environment-dependent, so only unused-ignore
+# warnings are relaxed here; all other strict checks still apply.
+[[tool.mypy.overrides]]
+module = ["offensive_ai.core.agent_llm", "offensive_ai.core.agent_repl"]
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 minversion = "7.0"

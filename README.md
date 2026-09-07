@@ -27,11 +27,25 @@
 
 `offensive-ai` is a Python library and CLI that combines classic network reconnaissance with modern AI/LLM security testing. It probes live AI/LLM endpoints for the [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/), scans and actively attacks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers for known CVEs, and performs full-stack infrastructure security assessments.
 
-> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, `blockchain-attack`, deep mode) require the `--i-have-authorization` flag. Only use against systems you own or have explicit written permission to test.
+> **Legal Notice**: Active attack features (`mcp-attack`, `openclaw-attack`, `k8s-attack`, `auth-attack`, `a2a-attack`, `postman-attack`, `blockchain-attack`, deep mode, and `agent`'s attack tools with `--i-have-authorization`) require explicit confirmation of authorization. Only use against systems you own or have explicit written permission to test.
 
 ---
 
 ## Features
+
+### New in v3.1.0 — Agentic REPL & Hardening
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 **`offensive-ai agent`** | Interactive, natural-language REPL — an LLM picks and calls the right scanner/attacker tool via native provider tool-calling (OpenAI / Anthropic / Gemini), no LangChain or agent framework involved |
+| 🛠️ **22 built-in tools** | Every scanner (`scan_mcp`, `scan_a2a`, `scan_auth`, `scan_blockchain`, `scan_k8s`, `scan_openclaw`, `scan_postman`, `scan_ai_owasp`, `scan_owasp`, `check_hybrid_identity`, `check_mtls`, `detect_l7`, `scan_ports`) and attacker (`attack_*`, `guardrail_bench`, `llm_conversation_attack`) is exposed as a callable tool |
+| 🔐 **Dual authorization gate** | Attack tools require both the session-level `--i-have-authorization` flag **and** an interactive y/N confirmation before every individual attack tool call — scan tools never need either |
+| 💬 **Slash commands** | `/help`, `/tools`, `/history`, `/clear`, `/exit` inside the REPL |
+| 📦 **Purely additive** | New optional `agent` extra (`prompt_toolkit`); zero changes to any existing CLI command or base package dependency |
+
+See the [Agentic REPL docs](https://docs.offensive-ai.org/agent) for the full authorization model, tool list, and Python API.
+
+**Security fix**: `LLMConversationAttacker.attack()` no longer admits an unbounded number of concurrent multi-turn conversations from a caller-supplied `patterns` list — the list is now deduplicated, capped at 8 entries, and concurrency-limited to 4 in-flight conversations at a time.
 
 ### New in v3.0.0 — Project Rebrand: `offsec-ai` → `offensive-ai`
 
@@ -191,6 +205,10 @@ docker run --rm ghcr.io/htunn/offensive-ai:latest --help
 ### CLI
 
 ```bash
+# Agentic REPL — natural language, LLM picks the right tool
+offensive-ai agent
+offensive-ai agent --i-have-authorization   # unlocks attack tools (still confirms each one)
+
 # Blockchain JSON-RPC node security
 offensive-ai blockchain-scan node.example.com --port 8545
 offensive-ai blockchain-scan node.example.com --llm-judge
@@ -320,6 +338,38 @@ async def main():
 
 asyncio.run(main())
 ```
+
+---
+
+## Agentic REPL
+
+`offensive-ai agent` is an interactive, natural-language shell. Describe what you want in plain English and an LLM decides which scanner/attacker tool to call, executes it, and summarizes the result — no need to remember exact subcommands and flags.
+
+```bash
+pip install "offensive-ai[agent,ai]"       # REPL UI + OpenAI/Anthropic
+pip install "offensive-ai[agent,gemini]"   # REPL UI + Gemini
+
+export GEMINI_API_KEY=...   # or ANTHROPIC_API_KEY / OPENAI_API_KEY
+
+offensive-ai agent
+```
+
+```
+agent> Scan https://mcp.example.com/mcp for MCP security issues and summarize the findings.
+
+The MCP endpoint https://mcp.example.com/mcp has several critical and high-severity
+vulnerabilities:
+
+Critical:
+  * Tool-Poisoning via Malicious Tool Descriptions (MCP-ADV-2024-001)
+
+High:
+  * Unauthenticated MCP Endpoint (MCP-ADV-2024-002)
+```
+
+Attack tools (`attack_mcp`, `attack_a2a`, `guardrail_bench`, etc.) require **both** `--i-have-authorization` at launch **and** an interactive y/N confirmation before each individual attack call. Scan tools are always available and never need confirmation.
+
+See the full [Agentic REPL documentation](offensive-ai-docs/agent.md) for the tool list, slash commands, and Python API.
 
 ---
 
@@ -1276,6 +1326,7 @@ offensive-ai hybrid-identity example.com --verbose --output results.json
 offensive-ai --help
 
 Commands:
+  agent               Interactive REPL agent: natural language -> tool-calling LLM -> scanners/attackers
   ai-owasp-scan       Probe a live LLM/AI endpoint for AI OWASP Top 10
   mcp-scan            Scan an MCP endpoint for security vulnerabilities
   mcp-attack          Perform authorized active testing against an MCP server

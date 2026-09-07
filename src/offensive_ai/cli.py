@@ -27,6 +27,7 @@ from rich.progress import (
 )
 from rich.panel import Panel
 from rich.text import Text
+from rich.markup import escape as rich_escape
 
 from .core.port_scanner import PortChecker, ScanConfig
 from .core.l7_detector import L7Detector
@@ -52,7 +53,10 @@ from .core.blockchain_scanner import BlockchainScanner, analyze_contract
 from .core.blockchain_attacker import BlockchainAttacker
 from .core.auth_scanner import AuthScanner
 from .core.auth_attacker import AuthAttacker
-from .exceptions import AuthorizationRequired
+from .core.agent_llm import AgentLLMClient
+from .core.agent_session import AgentSession
+from .core.agent_tools import ALL_TOOLS
+from .exceptions import AuthorizationRequired, ConfigError
 from .models.scan_result import ScanResult, BatchScanResult
 from .models.l7_result import L7Result, BatchL7Result
 from .models.mtls_result import MTLSResult, BatchMTLSResult
@@ -5198,3 +5202,34 @@ def _display_postman_attack_report(report: PostmanAttackReport, judge_provider: 
         console.print(table)
     else:
         console.print("\n[green]No attacks triggered. Target appears resilient to tested probes.[/green]")
+
+
+@main.command("agent")
+@click.option(
+    "--i-have-authorization",
+    "i_have_authorization",
+    is_flag=True,
+    default=False,
+    help="Confirm explicit authorization to enable attack tools (each call still asks for confirmation).",
+)
+@click.option("--provider", help="Override LLM provider auto-detection (openai, anthropic, gemini).")
+@click.option("--model", help="Override the default model for the selected provider.")
+def agent_command(i_have_authorization: bool, provider: Optional[str], model: Optional[str]) -> None:
+    """Interactive REPL agent: natural language -> tool-calling LLM -> scanners/attackers."""
+    from .core.agent_repl import run as run_agent_repl
+
+    llm = AgentLLMClient(provider=provider, model=model)
+    if not llm.is_available():
+        console.print(
+            "[red]No LLM provider configured.[/red] Set GEMINI_API_KEY, ANTHROPIC_API_KEY, or "
+            "OPENAI_API_KEY, and install the matching extra: "
+            + rich_escape("pip install offensive-ai[ai] or pip install offensive-ai[gemini].")
+        )
+        sys.exit(1)
+
+    session = AgentSession(llm=llm, tools=ALL_TOOLS, authorized=i_have_authorization)
+    try:
+        asyncio.run(run_agent_repl(session, authorized=i_have_authorization))
+    except (ImportError, ConfigError) as exc:
+        console.print(f"[red]{rich_escape(str(exc))}[/red]")
+        sys.exit(1)

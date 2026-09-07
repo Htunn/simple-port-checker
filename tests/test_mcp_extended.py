@@ -469,7 +469,7 @@ class TestLLMJudgeDefaultModels:
     def test_default_gemini_model(self):
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gem-test"}, clear=True):
             judge = LLMJudge()
-            assert judge.model == "gemini-1.5-flash"
+            assert judge.model == "gemini-2.5-flash"
 
     def test_model_env_override(self):
         with patch.dict(os.environ, {

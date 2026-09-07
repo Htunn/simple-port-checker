@@ -9,7 +9,7 @@ Configure via environment variables:
     ANTHROPIC_API_KEY   — enables Anthropic provider (second priority)
     OPENAI_API_KEY      — enables OpenAI provider (third priority)
     OFFENSIVE_AI_LLM_BASE_URL — enables a local/custom OpenAI-compatible provider
-    OFFENSIVE_AI_LLM_MODEL    — model name to use (default: gemini-1.5-flash / claude-3-haiku / gpt-4o-mini)
+    OFFENSIVE_AI_LLM_MODEL    — model name to use (default: gemini-2.5-flash / claude-3-haiku / gpt-4o-mini)
 
     If multiple keys are set, Gemini is used first, then Anthropic, then OpenAI.
 
@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import os
 from typing import Any
+
+from ..utils.llm_provider import default_model, detect_provider
 
 
 class LLMJudge:
@@ -51,22 +53,10 @@ class LLMJudge:
         self._client: Any = None
 
     def _detect_provider(self) -> str | None:
-        if os.getenv("GEMINI_API_KEY"):
-            return "gemini"
-        if os.getenv("ANTHROPIC_API_KEY"):
-            return "anthropic"
-        if os.getenv("OPENAI_API_KEY") or os.getenv("OFFENSIVE_AI_LLM_BASE_URL"):
-            return "openai"
-        return None
+        return detect_provider()
 
     def _default_model(self) -> str:
-        if self.provider == "openai":
-            return os.getenv("OFFENSIVE_AI_LLM_MODEL", "gpt-4o-mini")
-        if self.provider == "anthropic":
-            return os.getenv("OFFENSIVE_AI_LLM_MODEL", "claude-3-haiku-20240307")
-        if self.provider == "gemini":
-            return os.getenv("OFFENSIVE_AI_LLM_MODEL", "gemini-1.5-flash")
-        return ""
+        return default_model(self.provider)
 
     def evaluate(
         self,

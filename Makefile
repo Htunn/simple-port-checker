@@ -1,4 +1,10 @@
-.PHONY: help install install-dev test lint format type-check clean build publish docs dev-setup docker-build docker-run docker-dev docker-push docker-test
+.PHONY: help install install-dev test lint format type-check clean build publish docs dev-setup docker-build docker-run docker-dev docker-push docker-test venv venv-install test-local
+
+# Self-contained local venv used by the venv-* / test-local targets (does not
+# touch whatever environment is currently activated in your shell).
+VENV_DIR := .venv
+VENV_PY := $(VENV_DIR)/bin/python
+VENV_PIP := $(VENV_DIR)/bin/pip
 
 # Default target
 help:
@@ -18,6 +24,11 @@ help:
 	@echo "  docs         Generate documentation"
 	@echo "  dev-setup    Set up development environment"
 	@echo "  pre-commit   Run pre-commit hooks"
+	@echo ""
+	@echo "Fully-automated local test pipeline (creates its own .venv):"
+	@echo "  venv          Create .venv if missing and upgrade pip"
+	@echo "  venv-install  venv + pip install -e .[dev] (mirrors CI's install step)"
+	@echo "  test-local    venv-install + flake8 + mypy + pytest (mirrors CI exactly)"
 	@echo ""
 	@echo "Docker commands:"
 	@echo "  docker-build    Build Docker image"
@@ -83,6 +94,24 @@ dev: format lint test
 # CI workflow
 ci: lint type-check test-cov
 	@echo "CI checks completed successfully!"
+
+# ---------------------------------------------------------------------------
+# Fully-automated local test pipeline — self-contained, mirrors .github/workflows/test.yml
+# exactly (same "[dev]" extra, same flake8/mypy/pytest invocations). Safe to
+# run from any shell state: never touches an already-activated venv.
+# ---------------------------------------------------------------------------
+
+venv:
+	@test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
+	$(VENV_PIP) install --upgrade pip -q
+
+venv-install: venv
+	$(VENV_PIP) install -e ".[dev]" -q
+
+test-local: venv-install
+	$(VENV_PY) -m flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+	$(VENV_PY) -m mypy src/
+	$(VENV_PY) -m pytest tests/ -v --cov=src/offensive_ai --cov-report=term --cov-fail-under=40
 
 # Quick test
 quick:

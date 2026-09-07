@@ -4,7 +4,7 @@ FROM python:3.12-slim-bookworm
 # Set metadata
 LABEL maintainer="htunn <htunnthuthu.linux@gmail.com>"
 LABEL description="A comprehensive tool for checking firewall ports, L7 protection services, SSL/TLS certificate analysis, and OWASP Top 10 vulnerability scanning"
-LABEL version="3.0.0"
+LABEL version="3.1.0"
 LABEL org.opencontainers.image.source="https://github.com/htunn/offensive-ai"
 LABEL org.opencontainers.image.documentation="https://github.com/htunn/offensive-ai#readme"
 LABEL org.opencontainers.image.licenses="MIT"
